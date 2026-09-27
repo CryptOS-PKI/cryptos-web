@@ -13,19 +13,18 @@ name: Web CI (lint, test, build)
 # `npm run build`, so a type error in a test file passes the test suite and
 # fails the production build.
 
+# Pull requests only, and not while the PR is a draft. There is no run on push
+# to main: the squash merge lands the tree the PR run already tested.
+#
 # Skip when a change touches only Markdown or issue templates. A mixed change
 # still runs, since paths-ignore only skips when every changed file matches.
 on:
-  push:
-    branches: [main]
-    paths-ignore:
-      - "**.md"
-      - ".github/ISSUE_TEMPLATE/**"
   pull_request:
     branches: [main]
     # edited is here so retargeting a stacked PR onto main starts CI. Jobs
-    # skip edited events that did not change the base (title/body edits).
-    types: [opened, synchronize, reopened, edited]
+    # skip edited events that did not change the base (title/body edits), and
+    # a skipped job is not billed.
+    types: [opened, synchronize, reopened, ready_for_review, edited]
     paths-ignore:
       - "**.md"
       - ".github/ISSUE_TEMPLATE/**"
@@ -33,18 +32,18 @@ on:
 permissions:
   contents: read
 
-# One run per PR per workflow: a new push cancels the older PR run. Pushes to
-# main are never cancelled, so every main commit keeps a result. A title or
+# One run per PR per workflow: a new push cancels the older PR run. A title or
 # body edit gets its own group, so its run never cancels real CI.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}${{ github.event.action == 'edited' && github.event.changes.base == null && format('-edit-{0}', github.run_id) || '' }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}${{ github.event.action == 'edited' && github.event.changes.base == null && format('-edit-{0}', github.run_id) || '' }}
+  cancel-in-progress: true
 
 jobs:
   web-validation:
     name: Web validation (lint, test, build)${{ github.event.action == 'edited' && github.event.changes.base == null && ' (edit, not run)' || '' }}
-    if: github.event.action != 'edited' || github.event.changes.base != null
+    if: github.event.pull_request.draft == false && (github.event.action != 'edited' || github.event.changes.base != null)
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v4
