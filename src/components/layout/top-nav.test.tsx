@@ -61,4 +61,14 @@ describe("TopNav", () => {
     expect(screen.getByRole("link", { name: /operators/i })).toHaveAttribute("href", "/operators");
     expect(screen.getByRole("link", { name: /audit/i })).toBeInTheDocument();
   });
+
+  it("places Agent keys right after Operators", () => {
+    render(
+      <MemoryRouter>
+        <TopNav />
+      </MemoryRouter>,
+    );
+    const hrefs = screen.getAllByRole("link").map((a) => a.getAttribute("href"));
+    expect(hrefs.indexOf("/agent-keys")).toBe(hrefs.indexOf("/operators") + 1);
+  });
 });

@@ -34,6 +34,7 @@ const items: { end?: boolean; label: string; to: string }[] = [
   { label: "Profiles", to: "/profiles" },
   { label: "Protocols", to: "/protocols" },
   { label: "Operators", to: "/operators" },
+  { label: "Agent keys", to: "/agent-keys" },
   { label: "Audit", to: "/audit" },
 ];
 
