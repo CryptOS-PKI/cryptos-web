@@ -197,6 +197,22 @@ export const getCert = (serial: string): Cert | undefined => certs.find((c) => c
 // array and never touch the mock one, so flipping VITE_FLEET_MODE never
 // mixes the two. Mirrors the live-store pattern in lib/nodes.ts.
 let liveCerts: Cert[] = [];
+
+// The per-node slice of the live set, rebuilt only when a refresh replaces it.
+// A fresh filter() on every getSnapshot call hands useSyncExternalStore a new
+// array each time, which React reads as a store change and re-renders forever
+// ("Maximum update depth exceeded"), throwing the node detail page.
+let liveByNode: Map<string, Cert[]> = new Map();
+const reindexLive = (): void => {
+  liveByNode = new Map();
+  for (const c of liveCerts) {
+    const arr = liveByNode.get(c.issuerNodeName) ?? [];
+    arr.push(c);
+    liveByNode.set(c.issuerNodeName, arr);
+  }
+};
+const liveCertsFor = (nodeName: string): Cert[] => liveByNode.get(nodeName) ?? EMPTY;
+
 const liveListeners = new Set<() => void>();
 const emitLive = (): void => {
   for (const l of liveListeners) l();
@@ -243,6 +259,7 @@ export const refreshLiveCerts = async (node?: string): Promise<void> => {
   try {
     const response = await fleetClient().listCertificates({ node: node ?? "" });
     liveCerts = response.certificates.map(fromCertificate);
+    reindexLive();
     emitLive();
   } catch (error) {
     // eslint-disable-next-line no-console -- surfaced for local live debugging
@@ -262,10 +279,8 @@ export const useCerts = (nodeName: string): Cert[] => {
 
   return useSyncExternalStore(
     mode === "mock" ? subscribe : subscribeLive,
-    () =>
-      mode === "mock" ? certsFor(nodeName) : liveCerts.filter((c) => c.issuerNodeName === nodeName),
-    () =>
-      mode === "mock" ? certsFor(nodeName) : liveCerts.filter((c) => c.issuerNodeName === nodeName),
+    () => (mode === "mock" ? certsFor(nodeName) : liveCertsFor(nodeName)),
+    () => (mode === "mock" ? certsFor(nodeName) : liveCertsFor(nodeName)),
   );
 };
 
