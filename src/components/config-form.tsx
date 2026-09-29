@@ -22,7 +22,13 @@ import type { MachineConfig } from "@/gen/fleet/cryptos/v1/config_pb";
 
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/auth";
-import { applyNodeConfig, type ApplyResult, getNodeConfig } from "@/lib/config";
+import {
+  applyNodeConfig,
+  type ApplyResult,
+  formatList,
+  getNodeConfig,
+  parseList,
+} from "@/lib/config";
 import { fleetMode } from "@/lib/fleet/mode";
 import { type Node } from "@/lib/mock";
 
@@ -82,9 +88,15 @@ const MockConfigDemo = ({ node }: { node: Node }) => {
   );
 };
 
+// sameList compares two list-valued fields by content, so a control the operator
+// left alone is never mistaken for an edit.
+const sameList = (a: readonly string[], b: readonly string[]) =>
+  a.length === b.length && a.every((entry, i) => entry === b[i]);
+
 // LiveConfigForm implements the whole-config-safe fetch-edit-apply flow: on
 // mount it fetches the node's FULL current config and holds it as the baseline,
-// the form edits only a safe subset (revocation base URL, key-protection tier),
+// the form edits only a safe subset (revocation base URL, key-protection tier,
+// DNS resolver),
 // and Apply sends the baseline with just those fields changed -- never a fresh
 // partial config, which would drop untouched fields such as `management` and
 // unlink the node from the fleet. Applying is admin-only and mirrors the
@@ -98,6 +110,8 @@ const LiveConfigForm = ({ node }: { node: Node }) => {
   const [loadError, setLoadError] = useState("");
   const [crl, setCrl] = useState("");
   const [tier, setTier] = useState(tiers[0]);
+  const [nameservers, setNameservers] = useState("");
+  const [search, setSearch] = useState("");
 
   const [pending, setPending] = useState(false);
   const [applyError, setApplyError] = useState("");
@@ -110,6 +124,8 @@ const LiveConfigForm = ({ node }: { node: Node }) => {
       setBaseline(config);
       setCrl(config.pki?.revocationBaseUrl ?? "");
       setTier(modeToTier[config.stateKey?.mode ?? ""] ?? tiers[0]);
+      setNameservers(formatList(config.network?.nameservers));
+      setSearch(formatList(config.network?.search));
     } catch (error_: unknown) {
       setLoadError(error_ instanceof Error ? error_.message : "Failed to load config");
     }
@@ -139,6 +155,23 @@ const LiveConfigForm = ({ node }: { node: Node }) => {
           ...merged.stateKey,
           mode: tierToMode[tier] ?? "",
         } as MachineConfig["stateKey"];
+      }
+
+      // A node with a hostname revocation URL needs its resolver to pass the
+      // revocation preflight, so the resolver is only rewritten when the
+      // operator actually changed it; otherwise the baseline network, with any
+      // fields this form does not know about, goes back untouched.
+      const nextNameservers = parseList(nameservers);
+      const nextSearch = parseList(search);
+      if (
+        !sameList(nextNameservers, baseline.network?.nameservers ?? []) ||
+        !sameList(nextSearch, baseline.network?.search ?? [])
+      ) {
+        merged.network = {
+          ...merged.network,
+          nameservers: nextNameservers,
+          search: nextSearch,
+        } as MachineConfig["network"];
       }
 
       const applied = await applyNodeConfig(node.name, merged);
@@ -189,6 +222,26 @@ const LiveConfigForm = ({ node }: { node: Node }) => {
             </option>
           ))}
         </select>
+      </label>
+      <label className="block space-y-1">
+        <span className={label}>DNS nameservers</span>
+        <input
+          className={field}
+          disabled={!isAdmin}
+          onChange={(e) => setNameservers(e.target.value)}
+          placeholder="10.0.0.53, 10.0.1.53"
+          value={nameservers}
+        />
+      </label>
+      <label className="block space-y-1">
+        <span className={label}>DNS search domains</span>
+        <input
+          className={field}
+          disabled={!isAdmin}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="pki.example.org"
+          value={search}
+        />
       </label>
 
       {result ? (

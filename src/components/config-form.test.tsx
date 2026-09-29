@@ -32,7 +32,8 @@ let mode: "live" | "mock" = "live";
 
 let level: "admin" | "operator" | "viewer" = "admin";
 
-vi.mock("@/lib/config", () => ({
+vi.mock("@/lib/config", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/config")>()),
   applyNodeConfig: (...args: unknown[]) => applyNodeConfig(...args),
   getNodeConfig: (...args: unknown[]) => getNodeConfig(...args),
 }));
@@ -122,6 +123,85 @@ describe("ConfigForm (live) whole-config-replace safety", () => {
     expect(screen.queryByRole("button", { name: /apply/i })).not.toBeInTheDocument();
     expect(screen.getByText(/requires admin level/i)).toBeInTheDocument();
     expect(applyNodeConfig).not.toHaveBeenCalled();
+  });
+});
+
+// A fetched config that already carries a resolver, so the tests can prove the
+// form shows it, keeps it on an unrelated edit, and writes only a real change.
+const withResolver = (): MachineConfig =>
+  ({
+    ...baseline(),
+    network: {
+      address: "10.0.0.5/24",
+      gateway: "10.0.0.1",
+      interface: "eth0",
+      nameservers: ["10.0.0.53", "10.0.1.53"],
+      search: ["pki.acme"],
+    },
+  }) as unknown as MachineConfig;
+
+describe("ConfigForm (live) DNS resolver", () => {
+  beforeEach(() => {
+    mode = "live";
+    level = "admin";
+    getNodeConfig.mockReset().mockResolvedValue(withResolver());
+    applyNodeConfig.mockReset().mockResolvedValue({ generation: 5, requiresReboot: false });
+  });
+
+  it("shows the fetched nameservers and search domains", async () => {
+    render(<ConfigForm node={issuingNode()} />);
+    expect(await screen.findByLabelText(/dns nameservers/i)).toHaveValue("10.0.0.53, 10.0.1.53");
+    expect(screen.getByLabelText(/dns search domains/i)).toHaveValue("pki.acme");
+  });
+
+  it("keeps the resolver untouched when only the CRL URL is edited", async () => {
+    render(<ConfigForm node={issuingNode()} />);
+    fireEvent.change(await screen.findByLabelText(/revocation base url/i), {
+      target: { value: "http://pki.acme/new/crl" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /apply/i }));
+
+    await waitFor(() => expect(applyNodeConfig).toHaveBeenCalledTimes(1));
+    const [, sent] = applyNodeConfig.mock.calls[0] as [string, MachineConfig];
+    const want = structuredClone(withResolver());
+    want.pki!.revocationBaseUrl = "http://pki.acme/new/crl";
+    expect(sent).toEqual(want);
+  });
+
+  it("sends edited nameservers and search domains with the rest of network intact", async () => {
+    render(<ConfigForm node={issuingNode()} />);
+    fireEvent.change(await screen.findByLabelText(/dns nameservers/i), {
+      target: { value: "10.9.9.53 10.9.8.53" },
+    });
+    fireEvent.change(screen.getByLabelText(/dns search domains/i), {
+      target: { value: "pki.acme, acme" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /apply/i }));
+
+    await waitFor(() => expect(applyNodeConfig).toHaveBeenCalledTimes(1));
+    const [, sent] = applyNodeConfig.mock.calls[0] as [string, MachineConfig];
+    const want = structuredClone(withResolver());
+    want.network!.nameservers = ["10.9.9.53", "10.9.8.53"];
+    want.network!.search = ["pki.acme", "acme"];
+    expect(sent).toEqual(want);
+  });
+
+  it("does not add a network block to a config that had none when nothing is typed", async () => {
+    getNodeConfig.mockResolvedValue(baseline());
+    render(<ConfigForm node={issuingNode()} />);
+    expect(await screen.findByLabelText(/dns nameservers/i)).toHaveValue("");
+    fireEvent.click(screen.getByRole("button", { name: /apply/i }));
+
+    await waitFor(() => expect(applyNodeConfig).toHaveBeenCalledTimes(1));
+    const [, sent] = applyNodeConfig.mock.calls[0] as [string, MachineConfig];
+    expect(sent.network).toBeUndefined();
+  });
+
+  it("shows the resolver read-only to a non-admin", async () => {
+    level = "viewer";
+    render(<ConfigForm node={issuingNode()} />);
+    expect(await screen.findByLabelText(/dns nameservers/i)).toBeDisabled();
+    expect(screen.getByLabelText(/dns search domains/i)).toBeDisabled();
   });
 });
 

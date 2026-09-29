@@ -19,7 +19,7 @@ limitations under the License.
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { MachineConfig } from "@/gen/fleet/cryptos/v1/config_pb";
-import { applyNodeConfig, getNodeConfig } from "@/lib/config";
+import { applyNodeConfig, formatList, getNodeConfig, parseList } from "@/lib/config";
 
 const getNodeConfigRpc = vi.fn();
 const applyNodeConfigRpc = vi.fn();
@@ -80,5 +80,23 @@ describe("applyNodeConfig (live)", () => {
     mode = "mock";
     await expect(applyNodeConfig("acme-int-01", fetchedConfig())).rejects.toThrow(/live mode/i);
     expect(applyNodeConfigRpc).not.toHaveBeenCalled();
+  });
+});
+
+describe("parseList / formatList", () => {
+  it("splits on commas and whitespace and drops empty entries", () => {
+    expect(parseList(" 10.0.0.53, 10.0.1.53\n  pki.example.org ,, ")).toEqual([
+      "10.0.0.53",
+      "10.0.1.53",
+      "pki.example.org",
+    ]);
+    expect(parseList("   ")).toEqual([]);
+  });
+
+  it("formats a list so parseList reads it back unchanged", () => {
+    const list = ["10.0.0.53", "10.0.1.53"];
+    expect(formatList(list)).toBe("10.0.0.53, 10.0.1.53");
+    expect(parseList(formatList(list))).toEqual(list);
+    expect(formatList(undefined)).toBe("");
   });
 });

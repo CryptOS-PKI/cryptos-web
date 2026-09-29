@@ -65,3 +65,16 @@ export const applyNodeConfig = async (
     requiresReboot: response.requiresReboot,
   };
 };
+
+// parseList reads a list-valued config field (nameservers, search domains) from
+// a single text input. Commas and whitespace both separate entries because
+// operators paste resolv.conf-style lists as often as comma-separated ones.
+export const parseList = (text: string): string[] =>
+  text
+    .split(/[\s,]+/)
+    .map((entry) => entry.trim())
+    .filter((entry) => entry !== "");
+
+// formatList renders a list-valued config field for a text input in a form
+// parseList reads back unchanged.
+export const formatList = (list: readonly string[] | undefined): string => (list ?? []).join(", ");

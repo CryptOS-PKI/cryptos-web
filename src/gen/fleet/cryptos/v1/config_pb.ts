@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file cryptos/v1/config.proto.
  */
 export const file_cryptos_v1_config: GenFile = /*@__PURE__*/
-  fileDesc("ChdjcnlwdG9zL3YxL2NvbmZpZy5wcm90bxIKY3J5cHRvcy52MSKJAwoNTWFjaGluZUNvbmZpZxITCgthcGlfdmVyc2lvbhgBIAEoCRIMCgRraW5kGAIgASgJEiYKCG1ldGFkYXRhGAMgASgLMhQuY3J5cHRvcy52MS5NZXRhZGF0YRIeCgRyb2xlGAQgASgLMhAuY3J5cHRvcy52MS5Sb2xlEiQKB25ldHdvcmsYBSABKAsyEy5jcnlwdG9zLnYxLk5ldHdvcmsSJAoHc3RvcmFnZRgGIAEoCzITLmNyeXB0b3MudjEuU3RvcmFnZRIoCglib290c3RyYXAYByABKAsyFS5jcnlwdG9zLnYxLkJvb3RzdHJhcBIcCgNwa2kYCCABKAsyDy5jcnlwdG9zLnYxLlBraRIkCgdpbnN0YWxsGAkgASgLMhMuY3J5cHRvcy52MS5JbnN0YWxsEicKCXN0YXRlX2tleRgKIAEoCzIULmNyeXB0b3MudjEuU3RhdGVLZXkSKgoKbWFuYWdlbWVudBgLIAEoCzIWLmNyeXB0b3MudjEuTWFuYWdlbWVudCJWCgpNYW5hZ2VtZW50EhIKCm1hbmFnZXJfY24YASABKAkSEQoJdHJ1c3RfcGVtGAIgASgJEiEKGW9wZXJhdG9yX3N1cmZhY2VfcmVhZG9ubHkYAyABKAgiPgoIU3RhdGVLZXkSDAoEbW9kZRgBIAEoCRIkCgNrbXMYAiABKAsyFy5jcnlwdG9zLnYxLkttc1N0YXRlS2V5IjIKC0ttc1N0YXRlS2V5EhAKCGVuZHBvaW50GAEgASgJEhEKCXRydXN0X3BlbRgCIAEoCSIYCghNZXRhZGF0YRIMCgRuYW1lGAEgASgJIhQKBFJvbGUSDAoEa2luZBgBIAEoCSI+CgdOZXR3b3JrEhEKCWludGVyZmFjZRgBIAEoCRIPCgdhZGRyZXNzGAIgASgJEg8KB2dhdGV3YXkYAyABKAkiPAoHU3RvcmFnZRIdChVzdGF0ZV9wYXJ0aXRpb25fbGFiZWwYASABKAkSEgoKZmlyc3RfYm9vdBgCIAEoCCI+CglCb290c3RyYXASFgoOYWRtaW5fY2VydF9wZW0YASABKAkSGQoRYWRtaW5fY2VydF9zaGEyNTYYAiABKAki9QIKA1BraRIUCgxyb290X2tleV9hbGcYASABKAkSKQoMcm9vdF9zdWJqZWN0GAIgASgLMhMuY3J5cHRvcy52MS5TdWJqZWN0EhsKE3Jvb3RfdmFsaWRpdHlfeWVhcnMYAyABKA0SGwoTcGF0aF9sZW5fY29uc3RyYWludBgEIAEoDRIwCghwcm9maWxlcxgFIAMoCzIeLmNyeXB0b3MudjEuQ2VydGlmaWNhdGVQcm9maWxlEiIKBnBhcmVudBgGIAEoCzISLmNyeXB0b3MudjEuUGFyZW50EhsKE3Jldm9jYXRpb25fYmFzZV91cmwYByABKAkSJwofYWxsb3dfdW52ZXJpZmllZF9yZXZvY2F0aW9uX3VybBgIIAEoCBIdChVjcmxfbmV4dF91cGRhdGVfaG91cnMYCSABKA0SHAoUcmV2b2NhdGlvbl9odHRwX3BvcnQYCiABKA0SGgoScm9vdF9sZWFmX2lzc3VhbmNlGAsgASgJIjUKBlBhcmVudBITCgtjYV9jZXJ0X3BlbRgBIAEoCRIWCg5jYV9jZXJ0X3NoYTI1NhgCIAEoCSKzAgoSQ2VydGlmaWNhdGVQcm9maWxlEgwKBG5hbWUYASABKAkSDwoHa2V5X2FsZxgCIAEoCRIkCgdzdWJqZWN0GAMgASgLMhMuY3J5cHRvcy52MS5TdWJqZWN0EhUKDXZhbGlkaXR5X2RheXMYBCABKA0SNwoRYmFzaWNfY29uc3RyYWludHMYBSABKAsyHC5jcnlwdG9zLnYxLkJhc2ljQ29uc3RyYWludHMSEQoJa2V5X3VzYWdlGAYgAygJEhUKDWV4dF9rZXlfdXNhZ2UYByADKAkSKQoEc2FucxgIIAEoCzIbLmNyeXB0b3MudjEuU3ViamVjdEFsdE5hbWVzEjMKEGV4dHJhX2V4dGVuc2lvbnMYCSADKAsyGS5jcnlwdG9zLnYxLlg1MDlFeHRlbnNpb24iRQoQQmFzaWNDb25zdHJhaW50cxINCgVpc19jYRgBIAEoCBIVCghwYXRoX2xlbhgCIAEoDUgAiAEBQgsKCV9wYXRoX2xlbiJGCg9TdWJqZWN0QWx0TmFtZXMSCwoDZG5zGAEgAygJEgoKAmlwGAIgAygJEg0KBWVtYWlsGAMgAygJEgsKA3VyaRgEIAMoCSI9Cg1YNTA5RXh0ZW5zaW9uEgsKA29pZBgBIAEoCRIQCghjcml0aWNhbBgCIAEoCBINCgV2YWx1ZRgDIAEoDCIXCgdJbnN0YWxsEgwKBGRpc2sYASABKAkiRQoHU3ViamVjdBITCgtjb21tb25fbmFtZRgBIAEoCRIUCgxvcmdhbml6YXRpb24YAiABKAkSDwoHY291bnRyeRgDIAEoCUI0WjJnaXRodWIuY29tL0NyeXB0T1MtUEtJL2FwaS9nby9jcnlwdG9zL3YxO2NyeXB0b3N2MWIGcHJvdG8z");
+  fileDesc("ChdjcnlwdG9zL3YxL2NvbmZpZy5wcm90bxIKY3J5cHRvcy52MSKJAwoNTWFjaGluZUNvbmZpZxITCgthcGlfdmVyc2lvbhgBIAEoCRIMCgRraW5kGAIgASgJEiYKCG1ldGFkYXRhGAMgASgLMhQuY3J5cHRvcy52MS5NZXRhZGF0YRIeCgRyb2xlGAQgASgLMhAuY3J5cHRvcy52MS5Sb2xlEiQKB25ldHdvcmsYBSABKAsyEy5jcnlwdG9zLnYxLk5ldHdvcmsSJAoHc3RvcmFnZRgGIAEoCzITLmNyeXB0b3MudjEuU3RvcmFnZRIoCglib290c3RyYXAYByABKAsyFS5jcnlwdG9zLnYxLkJvb3RzdHJhcBIcCgNwa2kYCCABKAsyDy5jcnlwdG9zLnYxLlBraRIkCgdpbnN0YWxsGAkgASgLMhMuY3J5cHRvcy52MS5JbnN0YWxsEicKCXN0YXRlX2tleRgKIAEoCzIULmNyeXB0b3MudjEuU3RhdGVLZXkSKgoKbWFuYWdlbWVudBgLIAEoCzIWLmNyeXB0b3MudjEuTWFuYWdlbWVudCJWCgpNYW5hZ2VtZW50EhIKCm1hbmFnZXJfY24YASABKAkSEQoJdHJ1c3RfcGVtGAIgASgJEiEKGW9wZXJhdG9yX3N1cmZhY2VfcmVhZG9ubHkYAyABKAgiPgoIU3RhdGVLZXkSDAoEbW9kZRgBIAEoCRIkCgNrbXMYAiABKAsyFy5jcnlwdG9zLnYxLkttc1N0YXRlS2V5IjIKC0ttc1N0YXRlS2V5EhAKCGVuZHBvaW50GAEgASgJEhEKCXRydXN0X3BlbRgCIAEoCSIYCghNZXRhZGF0YRIMCgRuYW1lGAEgASgJIhQKBFJvbGUSDAoEa2luZBgBIAEoCSJjCgdOZXR3b3JrEhEKCWludGVyZmFjZRgBIAEoCRIPCgdhZGRyZXNzGAIgASgJEg8KB2dhdGV3YXkYAyABKAkSEwoLbmFtZXNlcnZlcnMYBCADKAkSDgoGc2VhcmNoGAUgAygJIjwKB1N0b3JhZ2USHQoVc3RhdGVfcGFydGl0aW9uX2xhYmVsGAEgASgJEhIKCmZpcnN0X2Jvb3QYAiABKAgiPgoJQm9vdHN0cmFwEhYKDmFkbWluX2NlcnRfcGVtGAEgASgJEhkKEWFkbWluX2NlcnRfc2hhMjU2GAIgASgJIvUCCgNQa2kSFAoMcm9vdF9rZXlfYWxnGAEgASgJEikKDHJvb3Rfc3ViamVjdBgCIAEoCzITLmNyeXB0b3MudjEuU3ViamVjdBIbChNyb290X3ZhbGlkaXR5X3llYXJzGAMgASgNEhsKE3BhdGhfbGVuX2NvbnN0cmFpbnQYBCABKA0SMAoIcHJvZmlsZXMYBSADKAsyHi5jcnlwdG9zLnYxLkNlcnRpZmljYXRlUHJvZmlsZRIiCgZwYXJlbnQYBiABKAsyEi5jcnlwdG9zLnYxLlBhcmVudBIbChNyZXZvY2F0aW9uX2Jhc2VfdXJsGAcgASgJEicKH2FsbG93X3VudmVyaWZpZWRfcmV2b2NhdGlvbl91cmwYCCABKAgSHQoVY3JsX25leHRfdXBkYXRlX2hvdXJzGAkgASgNEhwKFHJldm9jYXRpb25faHR0cF9wb3J0GAogASgNEhoKEnJvb3RfbGVhZl9pc3N1YW5jZRgLIAEoCSI1CgZQYXJlbnQSEwoLY2FfY2VydF9wZW0YASABKAkSFgoOY2FfY2VydF9zaGEyNTYYAiABKAkizwIKEkNlcnRpZmljYXRlUHJvZmlsZRIMCgRuYW1lGAEgASgJEg8KB2tleV9hbGcYAiABKAkSJAoHc3ViamVjdBgDIAEoCzITLmNyeXB0b3MudjEuU3ViamVjdBIVCg12YWxpZGl0eV9kYXlzGAQgASgNEjcKEWJhc2ljX2NvbnN0cmFpbnRzGAUgASgLMhwuY3J5cHRvcy52MS5CYXNpY0NvbnN0cmFpbnRzEhEKCWtleV91c2FnZRgGIAMoCRIVCg1leHRfa2V5X3VzYWdlGAcgAygJEikKBHNhbnMYCCABKAsyGy5jcnlwdG9zLnYxLlN1YmplY3RBbHROYW1lcxIzChBleHRyYV9leHRlbnNpb25zGAkgAygLMhkuY3J5cHRvcy52MS5YNTA5RXh0ZW5zaW9uEhoKEmFsbG93X3JlcXVlc3Rfc2FucxgKIAEoCCJFChBCYXNpY0NvbnN0cmFpbnRzEg0KBWlzX2NhGAEgASgIEhUKCHBhdGhfbGVuGAIgASgNSACIAQFCCwoJX3BhdGhfbGVuImsKD1N1YmplY3RBbHROYW1lcxILCgNkbnMYASADKAkSCgoCaXAYAiADKAkSDQoFZW1haWwYAyADKAkSCwoDdXJpGAQgAygJEhYKDmtyYjVfcHJpbmNpcGFsGAUgAygJEgsKA3VwbhgGIAMoCSI9Cg1YNTA5RXh0ZW5zaW9uEgsKA29pZBgBIAEoCRIQCghjcml0aWNhbBgCIAEoCBINCgV2YWx1ZRgDIAEoDCIXCgdJbnN0YWxsEgwKBGRpc2sYASABKAkiaQoHU3ViamVjdBITCgtjb21tb25fbmFtZRgBIAEoCRIUCgxvcmdhbml6YXRpb24YAiABKAkSDwoHY291bnRyeRgDIAEoCRIQCghwcm92aW5jZRgEIAEoCRIQCghsb2NhbGl0eRgFIAEoCUI0WjJnaXRodWIuY29tL0NyeXB0T1MtUEtJL2FwaS9nby9jcnlwdG9zL3YxO2NyeXB0b3N2MWIGcHJvdG8z");
 
 /**
  * MachineConfig is the declarative configuration applied via ApplyConfig.
@@ -246,6 +246,22 @@ export type Network = Message<"cryptos.v1.Network"> & {
    * @generated from field: string gateway = 3;
    */
   gateway: string;
+
+  /**
+   * DNS servers the node resolves names through, as IPv4 literals, in
+   * order. Empty means the node uses the DNS servers its DHCP lease
+   * supplied, if any.
+   *
+   * @generated from field: repeated string nameservers = 4;
+   */
+  nameservers: string[];
+
+  /**
+   * DNS search domains, in order. Only meaningful with a resolver.
+   *
+   * @generated from field: repeated string search = 5;
+   */
+  search: string[];
 };
 
 /**
@@ -466,7 +482,8 @@ export type CertificateProfile = Message<"cryptos.v1.CertificateProfile"> & {
   keyUsage: string[];
 
   /**
-   * e.g. "server_auth", "client_auth".
+   * Named values ("server_auth", "client_auth") or dotted OIDs such as
+   * "1.3.6.1.5.2.3.5" (Kerberos KDC Authentication).
    *
    * @generated from field: repeated string ext_key_usage = 7;
    */
@@ -483,6 +500,15 @@ export type CertificateProfile = Message<"cryptos.v1.CertificateProfile"> & {
    * @generated from field: repeated cryptos.v1.X509Extension extra_extensions = 9;
    */
   extraExtensions: X509Extension[];
+
+  /**
+   * allow_request_sans lets an admin IssueLeaf call replace this profile's
+   * SANs with the DNS names it supplies (IssueLeafRequest.dns_names). Off by
+   * default: the profile's static SANs are then the only names stamped.
+   *
+   * @generated from field: bool allow_request_sans = 10;
+   */
+  allowRequestSans: boolean;
 };
 
 /**
@@ -540,6 +566,23 @@ export type SubjectAltNames = Message<"cryptos.v1.SubjectAltNames"> & {
    * @generated from field: repeated string uri = 4;
    */
   uri: string[];
+
+  /**
+   * Kerberos principal names, e.g. "krbtgt/AD.EXAMPLE.ORG@AD.EXAMPLE.ORG",
+   * stamped as KRB5PrincipalName otherName entries (id-pkinit-san,
+   * 1.3.6.1.5.2.2, RFC 4556).
+   *
+   * @generated from field: repeated string krb5_principal = 5;
+   */
+  krb5Principal: string[];
+
+  /**
+   * Microsoft user principal names, e.g. "user@ad.example.org", stamped as
+   * otherName entries of type 1.3.6.1.4.1.311.20.2.3.
+   *
+   * @generated from field: repeated string upn = 6;
+   */
+  upn: string[];
 };
 
 /**
@@ -620,6 +663,20 @@ export type Subject = Message<"cryptos.v1.Subject"> & {
    * @generated from field: string country = 3;
    */
   country: string;
+
+  /**
+   * province is the X.509 ST relative distinguished name (state or province).
+   *
+   * @generated from field: string province = 4;
+   */
+  province: string;
+
+  /**
+   * locality is the X.509 L relative distinguished name (city or locality).
+   *
+   * @generated from field: string locality = 5;
+   */
+  locality: string;
 };
 
 /**
