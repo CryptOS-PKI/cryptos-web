@@ -19,6 +19,8 @@ limitations under the License.
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
+import type { MachineConfig } from "@/gen/fleet/cryptos/v1/config_pb";
+
 import { AdoptPage } from "@/pages/adopt";
 
 const useAuth = vi.fn();
@@ -86,6 +88,38 @@ describe("AdoptPage", () => {
       expect(screen.getByText(/acme-edge-07 is established/i)).toBeInTheDocument(),
     );
     expect(adoptNode).toHaveBeenCalledWith("host:9000", "AB:CD:EF", expect.anything());
+  });
+
+  it("sends the DNS nameservers and search domains in the initial config", async () => {
+    useAuth.mockReturnValue({ operator: { level: "admin" } });
+    previewAdoption.mockResolvedValue({ certSha256: "AB:CD:EF", subject: "CN=maintenance" });
+    listInstallDisks.mockResolvedValue([]);
+    adoptNode.mockReset().mockReturnValue(
+      (async function* () {
+        yield { detail: "Done.", done: true, phase: "established" };
+      })(),
+    );
+    render(<AdoptPage />);
+
+    fireEvent.change(screen.getByLabelText(/endpoint/i), { target: { value: "host:9000" } });
+    fireEvent.click(screen.getByRole("button", { name: /preview/i }));
+    await waitFor(() => screen.getByRole("button", { name: /confirm fingerprint/i }));
+    fireEvent.click(screen.getByRole("button", { name: /confirm fingerprint/i }));
+
+    fireEvent.change(screen.getByLabelText(/node name/i), { target: { value: "acme-edge-07" } });
+    fireEvent.change(screen.getByLabelText(/install disk/i), { target: { value: "/dev/nvme0n1" } });
+    fireEvent.change(screen.getByLabelText(/dns nameservers/i), {
+      target: { value: "10.0.0.53, 10.0.1.53" },
+    });
+    fireEvent.change(screen.getByLabelText(/dns search domains/i), {
+      target: { value: "pki.acme" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /adopt node/i }));
+
+    await waitFor(() => expect(adoptNode).toHaveBeenCalledTimes(1));
+    const config = adoptNode.mock.calls[0][2] as MachineConfig;
+    expect(config.network?.nameservers).toEqual(["10.0.0.53", "10.0.1.53"]);
+    expect(config.network?.search).toEqual(["pki.acme"]);
   });
 
   it("surfaces a preview error inline", async () => {

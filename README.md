@@ -12,7 +12,7 @@ Conceptually `manager/` and `web/` are one application split across two repos. T
 
 - ⚛️ **React + TypeScript**
 - ⚡ **Vite** (bundler)
-- 🔌 **Talks to `manager/` via Connect-Web** (gRPC-over-HTTP/2), using TS stubs generated from [`api/`](https://github.com/CryptOS-PKI/api)
+- 🔌 **Talks to `manager/` via Connect-Web** (gRPC-over-HTTP/2), using TS stubs generated from [`api/`](https://github.com/CryptOS-PKI/api). The stubs are checked in under `src/gen/fleet/` and copied from the api repo's `gen/ts/` whenever its protos change, so a config edited here keeps every field the node sends
 - 🔐 **Browser-side mTLS** for operator authentication (smart-card or YubiKey-backed client cert in the OS cert store; no passwords)
 - 🛡️ **Strict CSP**, no third-party JS, no CDN fetches at runtime — the bundle is fully self-contained so the project stays air-gap-friendly
 

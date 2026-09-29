@@ -33,6 +33,7 @@ import {
   listInstallDisks,
   previewAdoption,
 } from "@/lib/adopt";
+import { parseList } from "@/lib/config";
 import { useNodes } from "@/lib/nodes";
 
 const field = "w-full rounded-md border bg-card px-3 py-2 font-mono text-sm";
@@ -120,6 +121,8 @@ export const AdoptPage = () => {
   const [netInterface, setNetInterface] = useState("eth0");
   const [address, setAddress] = useState("");
   const [gateway, setGateway] = useState("");
+  const [nameservers, setNameservers] = useState("");
+  const [search, setSearch] = useState("");
   const [rootCn, setRootCn] = useState("");
   const [validityYears, setValidityYears] = useState("10");
   const [disk, setDisk] = useState("");
@@ -234,7 +237,13 @@ export const AdoptPage = () => {
       install: { disk },
       kind: "MachineConfig",
       metadata: { name: nodeName },
-      network: { address, gateway, interface: netInterface },
+      network: {
+        address,
+        gateway,
+        interface: netInterface,
+        nameservers: parseList(nameservers),
+        search: parseList(search),
+      },
       pki,
       role: { kind: role },
       stateKey: { mode: tierToMode[tier] ?? "" },
@@ -413,6 +422,26 @@ export const AdoptPage = () => {
               onChange={(e) => setGateway(e.target.value)}
               placeholder="10.0.0.1"
               value={gateway}
+            />
+          </label>
+          {/* A CA whose revocation base URL is a hostname cannot pass its
+              revocation preflight without a resolver. */}
+          <label className="block space-y-1">
+            <span className={label}>DNS nameservers</span>
+            <input
+              className={field}
+              onChange={(e) => setNameservers(e.target.value)}
+              placeholder="10.0.0.53, 10.0.1.53"
+              value={nameservers}
+            />
+          </label>
+          <label className="block space-y-1">
+            <span className={label}>DNS search domains</span>
+            <input
+              className={field}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="pki.example.org"
+              value={search}
             />
           </label>
           {/* The install disk is discovered from the node so the operator picks

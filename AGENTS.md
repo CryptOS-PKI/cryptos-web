@@ -8,8 +8,9 @@ hook-enforced rules). Keep this file current when the build, layout, or public A
 Fleet Manager web frontend for CryptOS-PKI. React + TypeScript, built with Vite, served by manager/.
 
 This is a leaf application (a static bundle). It is **UI-first with mock data**: there is no backend
-wiring yet. The api repo only generates Go stubs today and Connect-Web is deferred, so the UI reads
-typed fixtures from `src/lib/mock.ts` that stand in for the manager's gRPC responses. The whole
+wiring yet. Live surfaces talk to the manager through Connect-Web using the TypeScript stubs in
+`src/gen/fleet/`; mock mode reads typed fixtures from `src/lib/mock.ts` that stand in for the
+manager's gRPC responses. The whole
 bundle is self-contained (fonts bundled as woff2, strict CSP, no runtime CDN) for air-gap use.
 
 ## Layout
@@ -35,4 +36,8 @@ bundle is self-contained (fonts bundled as woff2, strict CSP, no runtime CDN) fo
   `.claude/hooks` (run `bash .claude/hooks/install.sh` once per clone).
 - Open every PR as a draft. CI skips drafts, so run the full checks locally, push once they pass,
   and mark the PR ready when the work is finished; see CLAUDE.md "CI and Actions minutes".
-- <project-specific conventions, non-obvious constraints, and traps an agent should know>
+- `src/gen/fleet/` is a copy of the api repo's `gen/ts/cryptos/` at its current `main`; never edit
+  it by hand. Refresh it whenever an api change adds a field. Connect-Web decodes JSON with unknown
+  fields ignored, so a stale stub drops a new field without an error, and a config read, edited and
+  applied through the UI then clears that field on the node. `src/lib/wire-fields.test.ts` pins
+  the newer fields; extend it when you refresh.
