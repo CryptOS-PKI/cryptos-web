@@ -26,19 +26,32 @@ import type { AuditEvent as ProtoAuditEvent } from "@/gen/fleet/cryptos/fleet/v1
 // Leaf store: imports NO domain store (domain stores import recordAudit from
 // here). Own fixed clock keeps events deterministic without Date.now().
 export interface AuditEvent {
+  /** Subject CN of the operator certificate that acted, or that the agent key is bound to. */
+  actorCn?: string;
+  actorKind?: AuditActorKind;
   at: string;
   id: string;
   kind: AuditKind;
+  outcome?: string;
   summary: string;
-  targetKind?: "cert" | "enrollment" | "node" | "profile" | "protocol";
+  targetKind?: "cert" | "enrollment" | "mcp-key" | "node" | "profile" | "protocol";
   targetPath?: string;
+  /** MCP tool name, when the action came through an agent. */
+  tool?: string;
+  via?: string;
 }
+
+export type AuditActorKind = "cert" | "mcp_key";
 
 export type AuditKind =
   | "config-applied"
   | "enroll-approved"
   | "enroll-rejected"
   | "issued"
+  | "mcp-key-created"
+  | "mcp-key-first-used"
+  | "mcp-key-rejected"
+  | "mcp-key-revoked"
   | "profile-applied"
   | "profile-created"
   | "profile-deleted"
@@ -54,11 +67,15 @@ const daysFromNow = (days: number): string =>
 
 const seed = (): AuditEvent[] => [
   {
+    actorCn: "operator@example.org",
+    actorKind: "cert",
     at: daysFromNow(-1),
     id: "aud-0009",
+    outcome: "ok",
     kind: "revoked",
     summary: "Revoked svc-9.acme.example (keyCompromise)",
     targetKind: "cert",
+    via: "web",
   },
   {
     at: daysFromNow(-2),
@@ -123,11 +140,16 @@ const seed = (): AuditEvent[] => [
     targetPath: "/profiles/TLS Server (LDAPS)",
   },
   {
+    actorCn: "operator@example.org",
+    actorKind: "mcp_key",
     at: daysFromNow(-10),
     id: "aud-0000",
     kind: "issued",
+    outcome: "ok",
     summary: "Issued leaf svc-1.acme.example on acme-issuing-01",
     targetKind: "cert",
+    tool: "cert_issue_from_csr",
+    via: "mcp",
   },
 ];
 
@@ -162,6 +184,10 @@ const knownAuditKinds = new Set<AuditKind>([
   "enroll-approved",
   "enroll-rejected",
   "issued",
+  "mcp-key-created",
+  "mcp-key-first-used",
+  "mcp-key-rejected",
+  "mcp-key-revoked",
   "profile-applied",
   "profile-created",
   "profile-deleted",
@@ -174,6 +200,7 @@ const knownAuditKinds = new Set<AuditKind>([
 const knownTargetKinds = new Set<NonNullable<AuditEvent["targetKind"]>>([
   "cert",
   "enrollment",
+  "mcp-key",
   "node",
   "profile",
   "protocol",
@@ -182,15 +209,23 @@ const knownTargetKinds = new Set<NonNullable<AuditEvent["targetKind"]>>([
 // AuditEvent (proto) -> the web AuditEvent shape. kind is narrowed to the
 // known AuditKind union, falling back to "config-applied" (a benign,
 // non-destructive-sounding kind) for an unrecognized value.
+// The actor fields are empty on entries recorded before the manager captured an
+// actor, and they map to undefined so the table renders them as unknown.
 const fromProtoEvent = (event: ProtoAuditEvent): AuditEvent => ({
+  actorCn: event.actorCn || undefined,
+  actorKind:
+    event.actorKind === "cert" || event.actorKind === "mcp_key" ? event.actorKind : undefined,
   at: event.at,
   id: event.id,
   kind: knownAuditKinds.has(event.kind as AuditKind) ? (event.kind as AuditKind) : "config-applied",
+  outcome: event.outcome || undefined,
   summary: event.summary,
   targetKind: knownTargetKinds.has(event.targetKind as NonNullable<AuditEvent["targetKind"]>)
     ? (event.targetKind as NonNullable<AuditEvent["targetKind"]>)
     : undefined,
   targetPath: event.targetPath || undefined,
+  tool: event.tool || undefined,
+  via: event.via || undefined,
 });
 
 const AUDIT_POLL_INTERVAL_MS = 10_000;

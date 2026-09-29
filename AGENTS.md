@@ -16,7 +16,10 @@ bundle is self-contained (fonts bundled as woff2, strict CSP, no runtime CDN) fo
 ## Layout
 
 - `src/main.tsx` - entry; mounts the theme + auth providers and the router.
-- `src/App.tsx` - route table (Fleet `/`, Nodes `/nodes`, node detail `/nodes/:name`, Audit, 404).
+- `src/App.tsx` - route table (Fleet `/`, Nodes `/nodes`, node detail `/nodes/:name`, Operators,
+  Agent keys `/agent-keys`, Audit, 404). The MCP sign-in consent page `/oauth/consent` is routed
+  outside the auth gate on purpose: the manager authenticates that request with the browser's
+  client certificate, and it talks to `/oauth2/consent/<id>` with plain `fetch`, not Connect.
 - `src/components/layout/` - app shell: header, sidebar nav, wordmark, theme toggle, auth gate.
 - `src/components/ui/` - shadcn/ui primitives (button, card, badge, separator).
 - `src/context/` - `theme.tsx` (dark/light, persisted) and `auth.tsx` (browser-mTLS gate stub).

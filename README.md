@@ -24,6 +24,16 @@ The same bundle adapts at runtime based on the role of the node being viewed:
 - 🔌 **Intermediate / Issuing nodes** — issuance profiles, certificate inventory, CSR review, CRL / OCSP status, adapter health, audit log tail.
 - 👁️ **All nodes** — live status, configuration view (read-only when the node is linked to FM, which is the normal mode).
 
+## 🤖 Agent access (MCP)
+
+The Fleet Manager serves an MCP endpoint so AI agents can manage the fleet. An agent never gets more than the operator who let it in, and this UI is where that consent happens:
+
+- 🔑 **Sign-in consent** at `/oauth/consent?req=<id>`. An MCP client's OAuth sign-in lands here in the operator's browser. The page shows the client's name, the loopback host the code returns to, and the operator certificate that will own the key, and lets the operator pick a level ceiling (up to their own level) and a label before choosing Approve or Deny. It sits outside the console's Log in step, because the manager authenticates the request with the certificate the browser presents. It talks to the manager's `/oauth2/consent/<id>` endpoint as plain JSON on the same origin.
+- 🗝️ **Agent keys** (next to Operators) lists your keys with their client, ceiling, creation time, last use and status, and lets you revoke one. An admin can switch to every operator's keys. **Create key** mints a key for a client that cannot open the browser sign-in. The key is shown once, with a copy button, and is discarded when the dialog closes; the manager keeps only a hash of it.
+- 📜 **Audit** shows who acted (the certificate CN, and whether it acted directly or through an agent key), the surface it came through (web, mcp or api), the MCP tool and the outcome. Entries recorded before the manager captured an actor show a dash.
+
+A key is bound to the operator certificate that created it. It stops working when that certificate is revoked or renewed, and its effective level is the certificate's live level or its ceiling, whichever is lower.
+
 ## 🚦 Status
 
 **Pre-alpha.** This repo currently contains only the LICENSE and this README. Vite + React + TypeScript scaffolding lands in a follow-up PR when Phase 2 frontend work begins.
