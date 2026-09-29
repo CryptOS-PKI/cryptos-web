@@ -19,6 +19,10 @@ limitations under the License.
 import { type DescMessage, fromJson, type JsonValue, toJson } from "@bufbuild/protobuf";
 import { describe, expect, it } from "vitest";
 
+import {
+  AuditEventSchema as FleetAuditEventSchema,
+  McpKeySchema,
+} from "@/gen/fleet/cryptos/fleet/v1/fleet_pb";
 import { AuditEventSchema } from "@/gen/fleet/cryptos/v1/audit_pb";
 import { MachineConfigSchema } from "@/gen/fleet/cryptos/v1/config_pb";
 import { NodeStatusSchema } from "@/gen/fleet/cryptos/v1/status_pb";
@@ -70,6 +74,39 @@ describe("generated stubs keep every field the node sends", () => {
   it("keeps audit event details", () => {
     const wire = { details: { profile: "workstation", serial: "0a1b" } };
     expect(roundTrip(AuditEventSchema, wire)).toEqual(wire);
+  });
+
+  it("keeps the actor fields on a manager audit event", () => {
+    const wire = {
+      actorCn: "operator@example.org",
+      actorKind: "mcp_key",
+      actorSerial: "0A:BC:DE",
+      at: "2026-09-01T00:00:00Z",
+      id: "aud-1",
+      keyId: "key-1",
+      kind: "issued",
+      outcome: "ok",
+      requestDigest: "ab12",
+      summary: "Issued leaf svc.example.org",
+      tool: "cert_issue_from_csr",
+      via: "mcp",
+    };
+    expect(roundTrip(FleetAuditEventSchema, wire)).toEqual(wire);
+  });
+
+  it("keeps every MCP key field", () => {
+    const wire = {
+      clientName: "Example Agent",
+      createdAt: "2026-09-01T00:00:00Z",
+      id: "key-1",
+      label: "build agent",
+      lastUsedAt: "2026-09-02T00:00:00Z",
+      levelCeiling: "operator",
+      operatorCn: "operator@example.org",
+      operatorSerial: "0A:BC:DE",
+      revokedAt: "2026-09-03T00:00:00Z",
+    };
+    expect(roundTrip(McpKeySchema, wire)).toEqual(wire);
   });
 
   it("keeps the revocation preflight and resolver status", () => {
