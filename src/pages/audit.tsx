@@ -29,6 +29,10 @@ const KIND_TONE: Record<AuditKind, string> = {
   "enroll-approved": "text-success",
   "enroll-rejected": "text-destructive",
   issued: "text-success",
+  "mcp-key-created": "text-success",
+  "mcp-key-first-used": "text-muted-foreground",
+  "mcp-key-rejected": "text-destructive",
+  "mcp-key-revoked": "text-destructive",
   "profile-applied": "text-primary",
   "profile-created": "text-muted-foreground",
   "profile-deleted": "text-destructive",
@@ -37,6 +41,20 @@ const KIND_TONE: Record<AuditKind, string> = {
   rekeyed: "text-primary",
   renewed: "text-primary",
   revoked: "text-destructive",
+};
+
+const DASH = "\u2014";
+
+const ACTOR_KIND_LABEL: Record<NonNullable<AuditEvent["actorKind"]>, string> = {
+  cert: "certificate",
+  mcp_key: "agent key",
+};
+
+const OUTCOME_TONE: Record<string, string> = {
+  denied: "text-destructive",
+  error: "text-destructive",
+  ok: "text-success",
+  pending: "text-warning",
 };
 
 const auditColumns: ColumnDef<AuditEvent, unknown>[] = [
@@ -50,7 +68,51 @@ const auditColumns: ColumnDef<AuditEvent, unknown>[] = [
     ),
     header: "Kind",
   },
-  { accessorFn: (e) => e.targetKind ?? "\u2014", header: "Target", id: "targetKind" },
+  { accessorFn: (e) => e.targetKind ?? DASH, header: "Target", id: "targetKind" },
+  {
+    accessorFn: (e) => e.actorCn ?? DASH,
+    cell: ({ row }) =>
+      row.original.actorCn ? (
+        <div className="flex flex-col">
+          <span>{row.original.actorCn}</span>
+          {row.original.actorKind ? (
+            <span className="text-[11px] text-muted-foreground">
+              {ACTOR_KIND_LABEL[row.original.actorKind]}
+            </span>
+          ) : null}
+        </div>
+      ) : (
+        DASH
+      ),
+    header: "Actor",
+    id: "actor",
+  },
+  {
+    accessorFn: (e) => e.via ?? DASH,
+    cell: ({ row }) => (
+      <div className="flex flex-col">
+        <span>{row.original.via ?? DASH}</span>
+        {row.original.tool ? (
+          <span className="text-[11px] text-muted-foreground">{row.original.tool}</span>
+        ) : null}
+      </div>
+    ),
+    header: "Via",
+    id: "via",
+  },
+  {
+    accessorFn: (e) => e.outcome ?? DASH,
+    cell: ({ row }) =>
+      row.original.outcome ? (
+        <span className={OUTCOME_TONE[row.original.outcome] ?? "text-muted-foreground"}>
+          {row.original.outcome}
+        </span>
+      ) : (
+        DASH
+      ),
+    header: "Outcome",
+    id: "outcome",
+  },
   {
     accessorKey: "summary",
     cell: ({ row }) =>
@@ -81,6 +143,8 @@ export const AuditPage = () => {
         facets={[
           { columnId: "kind", optionLabel: (v) => v.replaceAll("-", " "), title: "Kind" },
           { columnId: "targetKind", title: "Target" },
+          { columnId: "via", title: "Via" },
+          { columnId: "outcome", title: "Outcome" },
         ]}
         initialSort={[]}
         searchKeys={["summary"]}
