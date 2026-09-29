@@ -7,11 +7,11 @@ hook-enforced rules). Keep this file current when the build, layout, or public A
 
 Fleet Manager web frontend for CryptOS-PKI. React + TypeScript, built with Vite, served by manager/.
 
-This is a leaf application (a static bundle). It is **UI-first with mock data**: there is no backend
-wiring yet. Live surfaces talk to the manager through Connect-Web using the TypeScript stubs in
-`src/gen/fleet/`; mock mode reads typed fixtures from `src/lib/mock.ts` that stand in for the
-manager's gRPC responses. The whole
-bundle is self-contained (fonts bundled as woff2, strict CSP, no runtime CDN) for air-gap use.
+This is a leaf application (a static bundle). Live mode (the default) is wired to the manager: live
+surfaces talk to it through Connect-Web using the TypeScript stubs in `src/gen/fleet/`. Mock mode
+(`VITE_FLEET_MODE=mock`, which the test suite pins) reads typed fixtures from `src/lib/mock.ts` that
+stand in for the manager's gRPC responses. The whole bundle is self-contained (fonts bundled as
+woff2, strict CSP, no runtime CDN) for air-gap use.
 
 ## Layout
 

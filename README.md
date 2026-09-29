@@ -26,12 +26,25 @@ The same bundle adapts at runtime based on the role of the node being viewed:
 
 ## 🚦 Status
 
-**Pre-alpha.** This repo currently contains only the LICENSE and this README. Vite + React + TypeScript scaffolding lands in a follow-up PR when Phase 2 frontend work begins.
+**Pre-alpha**, working toward v1.0.0. The fleet console is built and runs against a real manager: the fleet overview and topology, nodes (config, profiles, issuance, re-key), certificates, issuance profiles, protocol adapters, enrollment and adoption, operators, the Root CA pages and the audit log. Sign-in is an explicit Log in step that reads the operator's identity and level from the client certificate the browser presented.
+
+It has two data sources, chosen at build time with `VITE_FLEET_MODE`:
+
+- 📡 **`live`** (the default) reads everything from the manager over Connect. `VITE_FLEET_API` is the manager's address (default `http://localhost:8080`).
+- 🧪 **`mock`** keeps every page on the in-memory fixtures in `src/lib/mock.ts`, for UI work without a manager or a client certificate. The test suite runs in this mode.
+
+To run it locally:
+
+```bash
+npm ci                            # install exactly what the lockfile pins
+VITE_FLEET_MODE=mock npm run dev  # offline, on the fixtures
+npm run dev                       # live, against a manager at VITE_FLEET_API
+```
 
 The build phases (project-wide):
 
-1. 🪨 Phase 1 — Core OS + single-node Root CA MVP (in progress; no frontend work yet)
-2. 🔌 **Phase 2 — Role-aware API + protocol adapters + Fleet Manager.** This repo's first real scaffolding lands here.
+1. 🪨 Phase 1 — Core OS + single-node Root CA MVP (no frontend in this phase)
+2. 🔌 **Phase 2 — Role-aware API + protocol adapters + Fleet Manager.** This repo is Phase 2 work.
 3. 🛡️ Phase 3 — Pool, HA, extensions, isolation, recovery.
 
 ## 🧭 Companion repos
@@ -42,17 +55,20 @@ The build phases (project-wide):
 
 ## 🛠️ Build
 
-Requires Node 24+ and npm. All dependencies are self-hosted (fonts bundled as woff2, no runtime CDN).
+Requires Node 22 LTS (the version CI builds on) and npm. All dependencies are self-hosted (fonts bundled as woff2, no runtime CDN).
 
 ```bash
-npm install      # install dependencies
+npm ci           # install dependencies from the lockfile
 npm run dev      # start the Vite dev server
 npm run build    # type-check and produce the static bundle in dist/
+npm run preview  # serve the built dist/ locally
 npm run lint     # eslint (typescript-eslint) + prettier --check
+npm run format   # prettier --write
 npm test         # vitest
+task license     # check the Apache 2.0 headers (task license:fix adds them)
 ```
 
-The pre-push gate runs `npm run lint`, `npm test`, and `task license` (Apache 2.0 headers).
+The pre-push hook runs `npm run lint` and `npm test`. CI runs lint, test and build on every pull request, and checks the license headers with `task license`.
 
 ## 📄 License
 
