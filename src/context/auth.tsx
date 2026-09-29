@@ -91,7 +91,7 @@ const toLevel = (s: string): OperatorLevel => (s === "admin" || s === "operator"
 // certificate. The manager serves the web surface anonymously, so a successful
 // answer means the service is up and any failure on the API was the client's
 // certificate rather than an outage.
-const webSurfaceReachable = async (): Promise<boolean> => {
+export const webSurfaceReachable = async (): Promise<boolean> => {
   try {
     const resp = await fetch(`${globalThis.location.origin}/`, {
       cache: "no-store",

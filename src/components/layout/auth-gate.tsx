@@ -18,9 +18,8 @@ limitations under the License.
 
 import type { ReactNode } from "react";
 
-import type { DenialReason } from "@/context/auth";
-
 import { CertificateHelp } from "@/components/layout/certificate-help";
+import { denialCopy } from "@/components/layout/denial-copy";
 import { DiagnosticsCopy } from "@/components/layout/diagnostics-copy";
 import { Wordmark } from "@/components/layout/wordmark";
 import { Button } from "@/components/ui/button";
@@ -34,33 +33,7 @@ import { useAuth } from "@/context/auth";
 // explanation. Signing in is an explicit action -- holding a valid certificate
 // does not walk you into the console.
 
-// Each denial gets its own copy, because each one has a different fix. Sending
-// an operator to install a certificate when the manager is simply unreachable
-// wastes their time.
-const denial: Record<DenialReason, { detail: string; title: string }> = {
-  "certificate-not-sent": {
-    detail:
-      "Your browser connected without sending a certificate. If one is installed, the browser has remembered not to send it to this site: fully quit and restart the browser, then log in again. Otherwise, install one.",
-    title: "Certificate not sent",
-  },
-  "no-certificate": {
-    detail:
-      "Your browser did not present one, so there is nothing to log in with. The service is running -- this is a certificate you need to install, not an outage.",
-    title: "No operator certificate",
-  },
-  "not-authorized": {
-    detail:
-      "The certificate your browser presented is not authorized for this fleet. It may lack an access level, or it may have been revoked.",
-    title: "Certificate not authorized",
-  },
-  unavailable: {
-    detail:
-      "The Fleet Manager API could not be reached. The service may be starting, or the node it proxies may be down.",
-    title: "Fleet Manager unavailable",
-  },
-};
-
-const Shell = ({ children }: { children: ReactNode }) => (
+export const GateShell = ({ children }: { children: ReactNode }) => (
   <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-background px-6">
     <Wordmark className="text-2xl" />
     {children}
@@ -80,20 +53,20 @@ export const AuthGate = ({ children }: { children: ReactNode }) => {
 
   if (status === "presenting") {
     return (
-      <Shell>
+      <GateShell>
         <div className="flex items-center gap-3 font-mono text-sm text-muted-foreground">
           <span aria-hidden="true" className="size-2 animate-pulse rounded-full bg-primary" />
           Checking your operator certificate&hellip;
         </div>
-      </Shell>
+      </GateShell>
     );
   }
 
   if (status === "denied") {
-    const { detail, title } = denial[reason ?? "not-authorized"];
+    const { detail, title } = denialCopy[reason ?? "not-authorized"];
 
     return (
-      <Shell>
+      <GateShell>
         <div className="flex max-w-md flex-col items-center gap-2 text-center font-mono text-sm text-muted-foreground">
           <span className="text-primary">{title}</span>
           <span>{detail}</span>
@@ -106,12 +79,12 @@ export const AuthGate = ({ children }: { children: ReactNode }) => {
         <Button onClick={login} type="button" variant="outline">
           Try again
         </Button>
-      </Shell>
+      </GateShell>
     );
   }
 
   return (
-    <Shell>
+    <GateShell>
       <div className="flex max-w-md flex-col items-center gap-2 text-center font-mono text-sm text-muted-foreground">
         <span>Fleet Manager for CryptOS-PKI.</span>
         <span>
@@ -122,6 +95,6 @@ export const AuthGate = ({ children }: { children: ReactNode }) => {
       <Button onClick={login} type="button">
         Log in
       </Button>
-    </Shell>
+    </GateShell>
   );
 };

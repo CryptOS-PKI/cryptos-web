@@ -36,6 +36,10 @@ export default defineConfig({
         changeOrigin: true,
         target: process.env.VITE_MANAGER_PROXY ?? "http://127.0.0.1:18099",
       },
+      "/oauth2": {
+        changeOrigin: true,
+        target: process.env.VITE_MANAGER_PROXY ?? "http://127.0.0.1:18099",
+      },
     },
   },
   test: {
