@@ -49,6 +49,24 @@ describe("generateLeafKeyAndCSR", () => {
     await expect(csr.verify()).resolves.toBe(true);
   });
 
+  // CryptOS nodes certify ECDSA subject keys on P-384 only, and the external
+  // CAs used for operator credentials expect P-384 too (#138).
+  it("mints a P-384 key and signs the CSR with ECDSA-SHA384", async () => {
+    const { csrDer, privateKey } = await generateLeafKeyAndCSR({
+      sans: [],
+      subjectCn: "op.acme.example",
+    });
+
+    expect((privateKey.algorithm as EcKeyAlgorithm).namedCurve).toBe("P-384");
+
+    const csr = new Pkcs10CertificateRequest(toArrayBuffer(csrDer));
+    const publicKey = await csr.publicKey.export();
+    expect((publicKey.algorithm as EcKeyAlgorithm).namedCurve).toBe("P-384");
+    expect(csr.signatureAlgorithm.name).toBe("ECDSA");
+    expect((csr.signatureAlgorithm as EcdsaParams).hash).toMatchObject({ name: "SHA-384" });
+    await expect(csr.verify()).resolves.toBe(true);
+  });
+
   it("carries the SANs as a subjectAltName extension", async () => {
     const { csrDer } = await generateLeafKeyAndCSR({
       sans: ["a.acme.example", "b.acme.example"],

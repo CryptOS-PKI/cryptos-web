@@ -27,6 +27,90 @@ const dummyCertDer = new Uint8Array([0x30, 0x03, 0x02, 0x01, 0x2a]);
 
 const STRONG = "correct-horse-battery-staple";
 
+// A minimal DER reader for the round-trip test: it only has to walk the shapes
+// assemblePkcs12 emits (definite lengths, no high tag numbers).
+interface Tlv {
+  tag: number;
+  content: Uint8Array;
+}
+
+const readTlv = (bytes: Uint8Array, offset: number): { next: number; tlv: Tlv } => {
+  const tag = bytes[offset];
+  let len = bytes[offset + 1];
+  let start = offset + 2;
+  if (len & 0x80) {
+    const n = len & 0x7f;
+    len = 0;
+    for (let k = 0; k < n; k++) len = (len << 8) | bytes[start + k];
+    start += n;
+  }
+  return { next: start + len, tlv: { content: bytes.subarray(start, start + len), tag } };
+};
+
+const children = (content: Uint8Array): Tlv[] => {
+  const out: Tlv[] = [];
+  let offset = 0;
+  while (offset < content.length) {
+    const { next, tlv } = readTlv(content, offset);
+    out.push(tlv);
+    offset = next;
+  }
+  return out;
+};
+
+const only = (bytes: Uint8Array): Tlv => readTlv(bytes, 0).tlv;
+
+const bufferOf = (bytes: Uint8Array): ArrayBuffer => {
+  const copy = new ArrayBuffer(bytes.byteLength);
+  new Uint8Array(copy).set(bytes);
+  return copy;
+};
+
+// unshroudKey pulls the shrouded-key bag out of a PFX, and undoes its PBES2
+// (PBKDF2-HMAC-SHA256 + AES-256-CBC) envelope, returning the plain PKCS#8.
+const unshroudKey = async (pfx: Uint8Array, passphrase: string): Promise<Uint8Array> => {
+  // PFX ::= SEQUENCE { version, authSafe ContentInfo, macData }
+  const [, authSafe] = children(only(pfx).content);
+  // ContentInfo ::= SEQUENCE { id-data, [0] OCTET STRING (AuthenticatedSafe) }
+  const authenticatedSafe = only(only(children(authSafe.content)[1].content).content);
+  // The first ContentInfo in the AuthenticatedSafe carries the key SafeContents.
+  const [keyContentInfo] = children(authenticatedSafe.content);
+  const safeContents = only(only(children(keyContentInfo.content)[1].content).content);
+  const [safeBag] = children(safeContents.content);
+  // SafeBag ::= SEQUENCE { bagId, [0] EncryptedPrivateKeyInfo }
+  const epki = only(children(safeBag.content)[1].content);
+  const [algorithm, encryptedData] = children(epki.content);
+  const [, pbes2Params] = children(algorithm.content);
+  const [kdf, scheme] = children(pbes2Params.content);
+  const [salt, iterations] = children(children(kdf.content)[1].content);
+  const iv = children(scheme.content)[1];
+
+  let iterationCount = 0;
+  for (const b of iterations.content) iterationCount = iterationCount * 256 + b;
+
+  const baseKey = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(passphrase),
+    "PBKDF2",
+    false,
+    ["deriveKey"],
+  );
+  const aesKey = await crypto.subtle.deriveKey(
+    { hash: "SHA-256", iterations: iterationCount, name: "PBKDF2", salt: bufferOf(salt.content) },
+    baseKey,
+    { length: 256, name: "AES-CBC" },
+    false,
+    ["decrypt"],
+  );
+  return new Uint8Array(
+    await crypto.subtle.decrypt(
+      { iv: bufferOf(iv.content), name: "AES-CBC" },
+      aesKey,
+      bufferOf(encryptedData.content),
+    ),
+  );
+};
+
 describe("assemblePkcs12", () => {
   it("rejects a passphrase shorter than the floor", async () => {
     const { privateKey } = await generateLeafKeyAndCSR({ sans: [], subjectCn: "op" });
@@ -55,6 +139,28 @@ describe("assemblePkcs12", () => {
     const pfx = await assemblePkcs12(dummyCertDer, privateKey, STRONG);
     const asText = new TextDecoder("latin1").decode(pfx);
     expect(asText.includes(STRONG)).toBe(false);
+  });
+
+  // The browser now mints P-384 operator keys (#138); the shrouded key bag must
+  // carry that key intact so the .p12 imports as the same P-384 key.
+  it("round-trips a P-384 key through the shrouded key bag", async () => {
+    const { privateKey } = await generateLeafKeyAndCSR({ sans: [], subjectCn: "op" });
+    expect((privateKey.algorithm as EcKeyAlgorithm).namedCurve).toBe("P-384");
+
+    const pfx = await assemblePkcs12(dummyCertDer, privateKey, STRONG);
+    const pkcs8 = await unshroudKey(pfx, STRONG);
+
+    const original = new Uint8Array(await crypto.subtle.exportKey("pkcs8", privateKey));
+    expect(pkcs8).toEqual(original);
+
+    const imported = await crypto.subtle.importKey(
+      "pkcs8",
+      bufferOf(pkcs8),
+      { name: "ECDSA", namedCurve: "P-384" },
+      true,
+      ["sign"],
+    );
+    expect((imported.algorithm as EcKeyAlgorithm).namedCurve).toBe("P-384");
   });
 
   it("is deterministic in structure but not in ciphertext (random salt/iv)", async () => {

@@ -21,11 +21,14 @@ import {
   SubjectAlternativeNameExtension,
 } from "@peculiar/x509";
 
-// The leaf keypair is ECDSA P-256, generated in the browser with WebCrypto.
-// The private key is extractable so it can be exported -- but only ever as a
-// passphrase-encrypted PKCS#8, never in plaintext.
-const LEAF_KEY_ALGORITHM: EcKeyGenParams = { name: "ECDSA", namedCurve: "P-256" };
-const CSR_SIGNING_ALGORITHM: EcdsaParams = { name: "ECDSA", hash: "SHA-256" };
+// The leaf keypair is ECDSA P-384, generated in the browser with WebCrypto, and
+// the CSR is signed with ECDSA-SHA384 to match the curve. A CryptOS node
+// certifies ECDSA subject keys on P-384 only, and the external CAs used for
+// operator credentials expect P-384 as well (#138). The private key is
+// extractable so it can be exported -- but only ever as a passphrase-encrypted
+// PKCS#8, never in plaintext.
+const LEAF_KEY_ALGORITHM: EcKeyGenParams = { name: "ECDSA", namedCurve: "P-384" };
+const CSR_SIGNING_ALGORITHM: EcdsaParams = { name: "ECDSA", hash: "SHA-384" };
 
 // The 18-character floor is a hard, in-code guard on every export path -- the
 // UI never gets to skip it, and there is no plaintext branch to fall back to.
@@ -42,12 +45,12 @@ export const PBKDF2_ITERATIONS = 210_000;
 export const SALT_BYTES = 16;
 export const IV_BYTES = 16;
 
-// generateLeafKeyAndCSR mints an extractable ECDSA P-256 keypair in the
+// generateLeafKeyAndCSR mints an extractable ECDSA P-384 keypair in the
 // browser and builds a PKCS#10 CSR carrying the subject CN and, when SANs are
 // supplied, a subjectAltName extension. Only the DER CSR is meant to leave the
 // browser; privateKey stays in memory for the caller to export on demand.
 export const generateLeafKeyAndCSR = async (params: {
-  keyAlg?: "ECDSA-P256";
+  keyAlg?: "ECDSA-P384";
   sans: string[];
   subjectCn: string;
 }): Promise<{ csrDer: Uint8Array; privateKey: CryptoKey }> => {
