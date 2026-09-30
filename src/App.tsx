@@ -20,6 +20,7 @@ import { AppShell } from "@/components/layout/app-shell";
 import { AuthGate } from "@/components/layout/auth-gate";
 import { AdoptPage } from "@/pages/adopt";
 import { AgentKeysPage } from "@/pages/agent-keys";
+import { ApprovalsPage } from "@/pages/approvals";
 import { AuditPage } from "@/pages/audit";
 import { CertificatesPage } from "@/pages/certificates";
 import { DashboardPage } from "@/pages/dashboard";
@@ -71,6 +72,7 @@ export const App = () => {
         <Route element={<AuditPage />} path="audit" />
         <Route element={<OperatorsPage />} path="operators" />
         <Route element={<AgentKeysPage />} path="agent-keys" />
+        <Route element={<ApprovalsPage />} path="approvals" />
         <Route element={<AdoptPage />} path="adopt" />
         <Route element={<CertificatesPage />} path="certificates" />
         <Route element={<ProfilesPage />} path="profiles" />

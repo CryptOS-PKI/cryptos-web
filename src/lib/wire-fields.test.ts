@@ -18,6 +18,7 @@ import { type DescMessage, fromJson, type JsonValue, toJson } from "@bufbuild/pr
 import { describe, expect, it } from "vitest";
 
 import {
+  ApprovalSchema,
   AuditEventSchema as FleetAuditEventSchema,
   McpKeySchema,
 } from "@/gen/fleet/cryptos/fleet/v1/fleet_pb";
@@ -105,6 +106,26 @@ describe("generated stubs keep every field the node sends", () => {
       revokedAt: "2026-09-03T00:00:00Z",
     };
     expect(roundTrip(McpKeySchema, wire)).toEqual(wire);
+  });
+
+  it("keeps every approval field", () => {
+    const wire = {
+      createdAt: "2026-09-01T00:00:00Z",
+      decidedAt: "2026-09-01T00:05:00Z",
+      decidedByCn: "admin@example.org",
+      decidedBySerial: "0D:EF",
+      expiresAt: "2026-09-01T00:15:00Z",
+      id: "ap-1",
+      keyId: "key-1",
+      requestDigest: "ab".repeat(32),
+      requestedByCn: "operator@example.org",
+      requestedBySerial: "0A:BC:DE",
+      requiredLevel: "admin",
+      status: "approved",
+      summary: "Decommission node issuing-2",
+      tool: "node_decommission",
+    };
+    expect(roundTrip(ApprovalSchema, wire)).toEqual(wire);
   });
 
   it("keeps the revocation preflight and resolver status", () => {

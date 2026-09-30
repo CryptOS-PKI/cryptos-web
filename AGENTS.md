@@ -17,7 +17,8 @@ woff2, strict CSP, no runtime CDN) for air-gap use.
 
 - `src/main.tsx` - entry; mounts the theme + auth providers and the router.
 - `src/App.tsx` - route table (Fleet `/`, Nodes `/nodes`, node detail `/nodes/:name`, Operators,
-  Agent keys `/agent-keys`, Audit, 404). The MCP sign-in consent page `/oauth/consent` is routed
+  Agent keys `/agent-keys`, Approvals `/approvals` (accepts `?id=<approval>` from the manager's
+  approval link), Audit, 404). The MCP sign-in consent page `/oauth/consent` is routed
   outside the auth gate on purpose: the manager authenticates that request with the browser's
   client certificate, and it talks to `/oauth2/consent/<id>` with plain `fetch`, not Connect.
 - `src/components/layout/` - app shell: header, sidebar nav, wordmark, theme toggle, auth gate.
@@ -49,3 +50,7 @@ woff2, strict CSP, no runtime CDN) for air-gap use.
   `errorCode()` from `src/lib/fleet/error-code.ts`, never on the message text, and add a code to
   its `ErrorCode` map when a page handles one. The Operators page does this for 1400 (no
   `operator_ca_node` configured) and shows a not-configured view instead of the refusal.
+- The Approvals nav badge counts pending approvals through `listApprovals`. It recounts on every
+  navigation, every 30 seconds, and when `decideApproval` dispatches the `APPROVALS_CHANGED`
+  window event (`src/lib/approvals.ts`). A new surface that changes an approval should go through
+  `decideApproval` so the badge stays current.

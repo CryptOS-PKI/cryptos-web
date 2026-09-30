@@ -14,9 +14,41 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { NavLink } from "react-router-dom";
+import { useCallback, useEffect, useState } from "react";
+import { NavLink, useLocation } from "react-router-dom";
 
+import { APPROVALS_CHANGED, listApprovals } from "@/lib/approvals";
 import { cn } from "@/lib/utils";
+
+// New step-up requests arrive without any action in this tab, so the count is
+// also refreshed on a slow timer, on every navigation, and after a decision.
+const PENDING_REFRESH_MS = 30_000;
+
+const usePendingApprovals = (): number => {
+  const { pathname } = useLocation();
+  const [count, setCount] = useState(0);
+
+  const refresh = useCallback(() => {
+    listApprovals({ status: "pending" })
+      .then((rows) => setCount(rows.length))
+      .catch(() => setCount(0));
+  }, []);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh, pathname]);
+
+  useEffect(() => {
+    const timer = setInterval(refresh, PENDING_REFRESH_MS);
+    globalThis.addEventListener(APPROVALS_CHANGED, refresh);
+    return () => {
+      clearInterval(timer);
+      globalThis.removeEventListener(APPROVALS_CHANGED, refresh);
+    };
+  }, [refresh]);
+
+  return count;
+};
 
 const items: { end?: boolean; label: string; to: string }[] = [
   { end: true, label: "Dashboard", to: "/" },
@@ -33,10 +65,12 @@ const items: { end?: boolean; label: string; to: string }[] = [
   { label: "Protocols", to: "/protocols" },
   { label: "Operators", to: "/operators" },
   { label: "Agent keys", to: "/agent-keys" },
+  { label: "Approvals", to: "/approvals" },
   { label: "Audit", to: "/audit" },
 ];
 
 export const TopNav = () => {
+  const pending = usePendingApprovals();
   return (
     <nav className="flex items-center gap-1 border-b bg-card px-4">
       {items.map(({ end, label, to }) => (
@@ -54,6 +88,14 @@ export const TopNav = () => {
           to={to}
         >
           {label}
+          {to === "/approvals" && pending > 0 ? (
+            <span
+              aria-label={`${pending} pending approval${pending === 1 ? "" : "s"}`}
+              className="ml-1.5 rounded-full bg-warning px-1.5 py-0.5 text-[10px] font-semibold leading-none text-warning-foreground"
+            >
+              {pending}
+            </span>
+          ) : null}
         </NavLink>
       ))}
     </nav>
