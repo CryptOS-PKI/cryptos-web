@@ -114,8 +114,8 @@ export const ApprovalsPage = () => {
         role="note"
       >
         An agent asks for approval before a tool that changes the fleet runs. Approving lets that
-        exact request through once; check that the summary and request digest match what the agent
-        showed you. You can decide only requests at or below your own level.
+        exact request through once; check that the approval ID and summary in the confirmation match
+        what the agent showed you. You can decide only requests at or below your own level.
       </p>
 
       {loadError ? (

@@ -38,7 +38,7 @@ const target = {
 describe("ApprovalDecideDialog", () => {
   beforeEach(() => decideApproval.mockReset());
 
-  it("repeats the summary and the full request digest before approving", async () => {
+  it("repeats the approval ID and summary to check, and the digest as an audit detail", async () => {
     decideApproval.mockResolvedValue({ ...target, status: "approved" });
     const onDecided = vi.fn();
     const onClose = vi.fn();
@@ -46,8 +46,15 @@ describe("ApprovalDecideDialog", () => {
       <ApprovalDecideDialog approve onClose={onClose} onDecided={onDecided} target={target} />,
     );
 
-    expect(screen.getByRole("dialog")).toHaveTextContent("Revoke certificate 0a1b on issuing-1");
-    expect(screen.getByRole("dialog")).toHaveTextContent(digest);
+    const dialog = screen.getByRole("dialog");
+    expect(dialog).toHaveTextContent("ap-1");
+    expect(dialog).toHaveTextContent("Revoke certificate 0a1b on issuing-1");
+    expect(dialog).toHaveTextContent(
+      "Check that the approval ID and summary match what the agent showed you.",
+    );
+    expect(dialog).toHaveTextContent(digest);
+    expect(dialog).toHaveTextContent("Recorded in the audit log");
+    expect(dialog).not.toHaveTextContent(/digest match/i);
     expect(decideApproval).not.toHaveBeenCalled();
 
     fireEvent.click(screen.getByRole("button", { name: /^approve$/i }));

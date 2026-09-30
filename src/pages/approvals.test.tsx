@@ -128,6 +128,17 @@ describe("ApprovalsPage", () => {
     expect(screen.queryByText("Issue a leaf for svc.example.org")).not.toBeInTheDocument();
   });
 
+  it("tells the approver to check the approval ID and summary, not the digest", async () => {
+    useAuth.mockReturnValue({ operator: { level: "admin" } });
+    renderAt();
+
+    const note = await screen.findByRole("note");
+    expect(note).toHaveTextContent(
+      "check that the approval ID and summary in the confirmation match what the agent showed you",
+    );
+    expect(note).not.toHaveTextContent(/digest/i);
+  });
+
   it("switches the filter to every status", async () => {
     useAuth.mockReturnValue({ operator: { level: "admin" } });
     renderAt();

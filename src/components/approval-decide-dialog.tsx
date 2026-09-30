@@ -19,9 +19,11 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { type ApprovalRow, decideApproval } from "@/lib/approvals";
 
-// ApprovalDecideDialog confirms an approve or deny. It repeats the summary and
-// the full request digest so the operator can match them against what the
-// agent reported before letting the action through.
+// ApprovalDecideDialog confirms an approve or deny. It repeats the approval ID
+// and summary, which the manager's pending_approval response also gives the
+// agent, so the operator can match them against what the agent showed before
+// letting the action through. The request digest is shown as a detail only: the
+// agent never receives it, and the audit log records it with the decision.
 export const ApprovalDecideDialog = ({
   approve,
   onClose,
@@ -76,6 +78,12 @@ export const ApprovalDecideDialog = ({
             {target.tool} &middot; {target.requestedByCn} &middot; needs {target.requiredLevel}
           </p>
         </div>
+        <div className="space-y-1">
+          <p className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+            Approval ID
+          </p>
+          <p className="break-all font-mono text-sm">{target.id}</p>
+        </div>
         <p className="text-sm">{target.summary}</p>
         <div className="space-y-1">
           <p className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
@@ -84,10 +92,13 @@ export const ApprovalDecideDialog = ({
           <p className="break-all rounded-md border bg-secondary/50 p-2 font-mono text-xs">
             {target.requestDigest}
           </p>
+          <p className="text-xs text-muted-foreground">
+            Recorded in the audit log with the decision and the agent&apos;s call.
+          </p>
         </div>
         <p className="text-sm text-muted-foreground">
           {approve
-            ? "The agent can run this exact request once. Check that the summary and digest match what the agent showed you."
+            ? "The agent can run this exact request once. Check that the approval ID and summary match what the agent showed you."
             : "The agent's request is refused and cannot be retried with this approval."}
         </p>
         {error ? (
