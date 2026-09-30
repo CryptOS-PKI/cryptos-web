@@ -82,4 +82,4 @@ The pre-push hook runs `npm run lint` and `npm test`. CI runs lint, test and bui
 
 ## 📄 License
 
-[Apache License 2.0](LICENSE). Copyright 2026 Shane.
+[Apache License 2.0](LICENSE). Copyright The CryptOS Authors.
