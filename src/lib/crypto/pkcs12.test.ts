@@ -14,6 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import "reflect-metadata";
+import { BasicConstraintsExtension, X509CertificateGenerator } from "@peculiar/x509";
 import { describe, expect, it } from "vitest";
 
 import { generateLeafKeyAndCSR, MIN_PASSPHRASE_LENGTH } from "@/lib/crypto/leaf-key";
@@ -111,6 +113,46 @@ const unshroudKey = async (pfx: Uint8Array, passphrase: string): Promise<Uint8Ar
   );
 };
 
+// certBags returns the DER certificates from the cert SafeContents (the second
+// ContentInfo of the AuthenticatedSafe), in bag order.
+const certBags = (pfx: Uint8Array): Uint8Array[] => {
+  const [, authSafe] = children(only(pfx).content);
+  const authenticatedSafe = only(only(children(authSafe.content)[1].content).content);
+  const [, certContentInfo] = children(authenticatedSafe.content);
+  const safeContents = only(only(children(certContentInfo.content)[1].content).content);
+  return children(safeContents.content).map((bag) => {
+    // SafeBag ::= SEQUENCE { bagId, [0] CertBag }; CertBag ::= SEQUENCE { certId, [0] OCTET STRING }
+    const cert = only(children(bag.content)[1].content);
+    return only(children(cert.content)[1].content).content;
+  });
+};
+
+const ECDSA_P384 = { name: "ECDSA", namedCurve: "P-384" } as const;
+const SHA384 = { name: "ECDSA", hash: "SHA-384" } as const;
+
+// makeAnchorAndLeaf mints a throwaway P-384 CA and a leaf for privateKey's
+// public half, so the PFX carries real certificates rather than opaque bytes.
+const makeAnchorAndLeaf = async (
+  publicKey: CryptoKey,
+): Promise<{ anchorDer: Uint8Array; leafDer: Uint8Array }> => {
+  const caKeys = await crypto.subtle.generateKey(ECDSA_P384, false, ["sign", "verify"]);
+  const anchor = await X509CertificateGenerator.createSelfSigned({
+    extensions: [new BasicConstraintsExtension(true, undefined, true)],
+    keys: caKeys,
+    name: "CN=Example Root CA G1",
+    signingAlgorithm: SHA384,
+  });
+  const leaf = await X509CertificateGenerator.create({
+    extensions: [new BasicConstraintsExtension(false, undefined, true)],
+    issuer: anchor.subject,
+    publicKey,
+    signingAlgorithm: SHA384,
+    signingKey: caKeys.privateKey,
+    subject: "CN=admin@example.org",
+  });
+  return { anchorDer: new Uint8Array(anchor.rawData), leafDer: new Uint8Array(leaf.rawData) };
+};
+
 describe("assemblePkcs12", () => {
   it("rejects a passphrase shorter than the floor", async () => {
     const { privateKey } = await generateLeafKeyAndCSR({ sans: [], subjectCn: "op" });
@@ -160,6 +202,27 @@ describe("assemblePkcs12", () => {
       true,
       ["sign"],
     );
+    expect((imported.algorithm as EcKeyAlgorithm).namedCurve).toBe("P-384");
+  });
+
+  it("carries a single cert bag when no chain is given", async () => {
+    const { privateKey } = await generateLeafKeyAndCSR({ sans: [], subjectCn: "op" });
+    const pfx = await assemblePkcs12(dummyCertDer, privateKey, STRONG);
+    expect(certBags(pfx)).toEqual([dummyCertDer]);
+  });
+
+  it("round-trips a P-384 key with the anchor as the chain", async () => {
+    const keys = await crypto.subtle.generateKey(ECDSA_P384, true, ["sign", "verify"]);
+    const { anchorDer, leafDer } = await makeAnchorAndLeaf(keys.publicKey);
+
+    const pfx = await assemblePkcs12(leafDer, keys.privateKey, STRONG, [anchorDer]);
+
+    expect(certBags(pfx)).toEqual([leafDer, anchorDer]);
+    const pkcs8 = await unshroudKey(pfx, STRONG);
+    expect(pkcs8).toEqual(new Uint8Array(await crypto.subtle.exportKey("pkcs8", keys.privateKey)));
+    const imported = await crypto.subtle.importKey("pkcs8", bufferOf(pkcs8), ECDSA_P384, true, [
+      "sign",
+    ]);
     expect((imported.algorithm as EcKeyAlgorithm).namedCurve).toBe("P-384");
   });
 

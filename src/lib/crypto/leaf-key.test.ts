@@ -14,19 +14,33 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { Pkcs10CertificateRequest } from "@peculiar/x509";
+import {
+  BasicConstraintsExtension,
+  ExtendedKeyUsage,
+  ExtendedKeyUsageExtension,
+  KeyUsageFlags,
+  KeyUsagesExtension,
+  Pkcs10CertificateRequest,
+} from "@peculiar/x509";
 import { describe, expect, it } from "vitest";
 
 import {
   exportEncryptedKey,
   generateLeafKeyAndCSR,
   generateStrongPassphrase,
+  importEncryptedKey,
+  OPERATOR_LEVEL_OID,
   toPemEncryptedKey,
 } from "@/lib/crypto/leaf-key";
 
 // toArrayBuffer copies the CSR bytes into a plain ArrayBuffer so the peculiar
 // parser's AsnEncodedType typing is satisfied (Node types a Uint8Array's
 // buffer as ArrayBufferLike, which the overload rejects).
+// Pkcs10CertificateRequest.getExtension matches on the OID string only.
+const OID_EKU = "2.5.29.37";
+const OID_KEY_USAGE = "2.5.29.15";
+const OID_BASIC_CONSTRAINTS = "2.5.29.19";
+
 const toArrayBuffer = (view: Uint8Array): ArrayBuffer => {
   const copy = new ArrayBuffer(view.byteLength);
   new Uint8Array(copy).set(view);
@@ -75,6 +89,109 @@ describe("generateLeafKeyAndCSR", () => {
     const csr = new Pkcs10CertificateRequest(toArrayBuffer(csrDer));
     const san = csr.getExtension("2.5.29.17");
     expect(san).not.toBeNull();
+  });
+});
+
+describe("generateLeafKeyAndCSR extensionRequest", () => {
+  it("requests the operator profile: level (non-critical), EKU, KU and BC (critical)", async () => {
+    const { csrDer } = await generateLeafKeyAndCSR({
+      extensionRequest: { level: "admin" },
+      sans: [],
+      subjectCn: "admin@example.org",
+    });
+    const csr = new Pkcs10CertificateRequest(toArrayBuffer(csrDer));
+    await expect(csr.verify()).resolves.toBe(true);
+
+    // The level extension must be non-critical: Go's x509.Verify, which the
+    // TLS server runs on client certs, refuses unhandled critical extensions.
+    const level = csr.getExtension(OPERATOR_LEVEL_OID);
+    expect(level).not.toBeNull();
+    expect(level?.critical).toBe(false);
+    // An ASN.1 PrintableString carrying the level token.
+    expect(new Uint8Array(level!.value)).toEqual(
+      new Uint8Array([0x13, 0x05, ...new TextEncoder().encode("admin")]),
+    );
+
+    const eku = csr.getExtension(OID_EKU) as ExtendedKeyUsageExtension | null;
+    expect(eku).not.toBeNull();
+    expect(eku?.critical).toBe(false);
+    expect(eku?.usages).toEqual([ExtendedKeyUsage.clientAuth]);
+
+    const ku = csr.getExtension(OID_KEY_USAGE) as KeyUsagesExtension | null;
+    expect(ku?.critical).toBe(true);
+    expect(ku?.usages).toBe(KeyUsageFlags.digitalSignature);
+
+    const bc = csr.getExtension(OID_BASIC_CONSTRAINTS) as BasicConstraintsExtension | null;
+    expect(bc?.critical).toBe(true);
+    expect(bc?.ca).toBe(false);
+  });
+
+  it("encodes each level token", async () => {
+    for (const token of ["viewer", "operator"] as const) {
+      const { csrDer } = await generateLeafKeyAndCSR({
+        extensionRequest: { level: token },
+        sans: [],
+        subjectCn: "op@example.org",
+      });
+      const csr = new Pkcs10CertificateRequest(toArrayBuffer(csrDer));
+      const value = new Uint8Array(csr.getExtension(OPERATOR_LEVEL_OID)!.value);
+      expect(value[0]).toBe(0x13);
+      expect(new TextDecoder().decode(value.subarray(2))).toBe(token);
+    }
+  });
+
+  it("adds no operator extensions without the option", async () => {
+    const { csrDer } = await generateLeafKeyAndCSR({
+      sans: ["svc.acme.example"],
+      subjectCn: "svc.acme.example",
+    });
+    const csr = new Pkcs10CertificateRequest(toArrayBuffer(csrDer));
+    expect(csr.getExtension(OPERATOR_LEVEL_OID)).toBeNull();
+    expect(csr.getExtension(OID_EKU)).toBeNull();
+    expect(csr.getExtension(OID_KEY_USAGE)).toBeNull();
+    expect(csr.getExtension(OID_BASIC_CONSTRAINTS)).toBeNull();
+  });
+});
+
+describe("importEncryptedKey", () => {
+  const PASSPHRASE = "correct horse battery staple";
+
+  it("round-trips with exportEncryptedKey to the same usable P-384 key", async () => {
+    const { privateKey } = await generateLeafKeyAndCSR({ sans: [], subjectCn: "op" });
+    const encrypted = await exportEncryptedKey(privateKey, PASSPHRASE);
+
+    const imported = await importEncryptedKey(encrypted, PASSPHRASE);
+
+    expect(imported.type).toBe("private");
+    expect(imported.extractable).toBe(true);
+    expect((imported.algorithm as EcKeyAlgorithm).namedCurve).toBe("P-384");
+    const original = new Uint8Array(await crypto.subtle.exportKey("pkcs8", privateKey));
+    const recovered = new Uint8Array(await crypto.subtle.exportKey("pkcs8", imported));
+    expect(recovered).toEqual(original);
+  });
+
+  it("imports a P-256 key backup too", async () => {
+    const keys = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, [
+      "sign",
+      "verify",
+    ]);
+    const encrypted = await exportEncryptedKey(keys.privateKey, PASSPHRASE);
+    const imported = await importEncryptedKey(encrypted, PASSPHRASE);
+    expect((imported.algorithm as EcKeyAlgorithm).namedCurve).toBe("P-256");
+  });
+
+  it("fails cleanly on a wrong passphrase", async () => {
+    const { privateKey } = await generateLeafKeyAndCSR({ sans: [], subjectCn: "op" });
+    const encrypted = await exportEncryptedKey(privateKey, PASSPHRASE);
+    await expect(importEncryptedKey(encrypted, "wrong horse battery staple")).rejects.toThrow(
+      "The passphrase is wrong or the key file is damaged.",
+    );
+  });
+
+  it("refuses bytes that are not a PBES2 encrypted key", async () => {
+    await expect(
+      importEncryptedKey(new Uint8Array([0x30, 0x03, 0x02, 0x01, 0x00]), PASSPHRASE),
+    ).rejects.toThrow("Not a supported encrypted private key");
   });
 });
 
