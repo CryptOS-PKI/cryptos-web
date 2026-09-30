@@ -2,6 +2,9 @@
 
 > 🖥️ The web frontend for the [CryptOS-PKI](https://github.com/CryptOS-PKI) Fleet Manager. React + TypeScript, built with Vite to a static bundle that [`manager`](https://github.com/CryptOS-PKI/manager) embeds and serves on its own TLS listener.
 
+> [!WARNING]
+> 🚧 **Pre-1.0: any release can change fundamentally.** CryptOS is pre-1.0. Until v1.0.0, any release may change configuration, APIs, on-disk and state formats, trust setup, and upgrade paths, sometimes with no migration path. If you run it in production, you accept that risk. Read [each release's upgrade notes](https://github.com/CryptOS-PKI/web/releases) before you upgrade.
+
 ## ✨ What it is
 
 This is the **only** web UI in the project, by design. CryptOS CA nodes ([`cryptos`](https://github.com/CryptOS-PKI/cryptos)) do not ship a web frontend in the OS image — they expose mTLS gRPC and that's it. When a fleet operator wants a web UI, they stand up the Fleet Manager (`manager/` backend + this frontend), link nodes to it, and use this UI for day-to-day operations.
