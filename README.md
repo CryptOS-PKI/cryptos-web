@@ -45,10 +45,20 @@ It has two data sources, chosen at build time with `VITE_FLEET_MODE`:
 
 To run it locally:
 
+**Linux / macOS**
+
 ```bash
 npm ci                            # install exactly what the lockfile pins
 VITE_FLEET_MODE=mock npm run dev  # offline, on the fixtures
 npm run dev                       # live, against a manager at VITE_FLEET_API
+```
+
+**Windows (PowerShell)**
+
+```powershell
+npm ci                                                             # install exactly what the lockfile pins
+$env:VITE_FLEET_MODE = "mock"; npm run dev                         # offline, on the fixtures
+Remove-Item Env:VITE_FLEET_MODE -ErrorAction SilentlyContinue; npm run dev  # live, against a manager at VITE_FLEET_API
 ```
 
 The build phases (project-wide):
