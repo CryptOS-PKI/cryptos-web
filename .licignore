@@ -13,6 +13,9 @@
 # ...even when they live in subdirectories:
 !*/
 
+# golic skips *.d.ts by default; this one is hand-written and keeps its header.
+!src/vite-env.d.ts
+
 # Never the build output, deps, caches, or generated docs:
 /node_modules/**
 **/node_modules/**
