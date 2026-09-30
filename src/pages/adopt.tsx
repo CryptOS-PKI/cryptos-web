@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import { create } from "@bufbuild/protobuf";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import type { InstallDisk } from "@/gen/fleet/cryptos/v1/node_pb";
 
@@ -26,8 +26,11 @@ import {
   type AdoptionPreview,
   adoptNode,
   type AdoptPhase,
+  AWAITING_FINGERPRINT,
+  confirmAdoptionFingerprint,
   fetchParentAnchor,
   formatDiskSize,
+  formatFingerprint,
   listInstallDisks,
   previewAdoption,
 } from "@/lib/adopt";
@@ -47,14 +50,24 @@ const tierToMode: Record<string, string> = {
 };
 
 // The manager's documented phases, in order, so the progress rail can show
-// every step and mark those already passed. A root self-signs via the ceremony
-// and reaches "established"; a subordinate skips the ceremony and ends at
-// "awaiting-certificate", completed later by a subordinate enrollment.
-const ROOT_PHASES = ["applying-config", "installing", "awaiting-reboot", "ceremony", "established"];
+// every step and mark those already passed. After the reboot the manager
+// waits for the operator to confirm the installed node's fingerprint. A root
+// then self-signs via the ceremony and reaches "established"; a subordinate
+// skips the ceremony and ends at "awaiting-certificate", completed later by a
+// subordinate enrollment.
+const ROOT_PHASES = [
+  "applying-config",
+  "installing",
+  "awaiting-reboot",
+  "awaiting-fingerprint-confirmation",
+  "ceremony",
+  "established",
+];
 const SUBORDINATE_PHASES = [
   "applying-config",
   "installing",
   "awaiting-reboot",
+  "awaiting-fingerprint-confirmation",
   "awaiting-certificate",
 ];
 
@@ -145,6 +158,13 @@ export const AdoptPage = () => {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
 
+  // The installed node's fingerprint the manager is waiting on, cleared once
+  // the operator confirms it or the adoption moves on.
+  const [confirming, setConfirming] = useState(false);
+  const [installedConfirmed, setInstalledConfirmed] = useState(false);
+  const [cancelled, setCancelled] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
+
   const selectParent = async (name: string) => {
     setParentName(name);
     setParentAnchor("");
@@ -204,11 +224,35 @@ export const AdoptPage = () => {
     }
   };
 
+  const confirmInstalled = async (step: AdoptPhase) => {
+    setError("");
+    setConfirming(true);
+    try {
+      await confirmAdoptionFingerprint(step.adoptionId, step.presentedCertSha256);
+      setInstalledConfirmed(true);
+    } catch (error_: unknown) {
+      setError(error_ instanceof Error ? error_.message : "Fingerprint confirmation failed");
+    } finally {
+      setConfirming(false);
+    }
+  };
+
+  // cancelAdoption ends the stream, which stops the adoption on the manager
+  // before it trusts or records anything.
+  const cancelAdoption = () => {
+    setCancelled(true);
+    abortRef.current?.abort();
+  };
+
   const runAdopt = async () => {
     if (!confirmedPin) return;
     setError("");
     setPending(true);
     setPhase(null);
+    setInstalledConfirmed(false);
+    setCancelled(false);
+    const controller = new AbortController();
+    abortRef.current = controller;
     // The initial config the manager applies to the maintenance node. Only the
     // fields the operator set are populated; the node fills its build-time
     // defaults for the rest.
@@ -247,15 +291,22 @@ export const AdoptPage = () => {
       stateKey: { mode: tierToMode[tier] ?? "" },
     });
     try {
-      for await (const step of adoptNode(endpoint, confirmedPin, config)) {
+      for await (const step of adoptNode(endpoint, confirmedPin, config, controller.signal)) {
         setPhase(step);
       }
     } catch (error_: unknown) {
-      setError(error_ instanceof Error ? error_.message : "Adoption failed");
+      if (controller.signal.aborted) {
+        setError("Adoption cancelled. The manager trusted and recorded nothing for this node.");
+      } else {
+        setError(error_ instanceof Error ? error_.message : "Adoption failed");
+      }
     } finally {
       setPending(false);
     }
   };
+
+  const awaitingInstalled =
+    phase?.phase === AWAITING_FINGERPRINT && !phase.done && !installedConfirmed && !cancelled;
 
   const established = phase?.done && phase.phase === "established";
   const awaitingCert = phase?.done && phase.phase === "awaiting-certificate";
@@ -497,6 +548,41 @@ export const AdoptPage = () => {
                   {phase.detail}
                 </p>
               ) : null}
+            </div>
+          ) : null}
+
+          {/* The installed node presents a new certificate after its reboot.
+              Nothing links it to the maintenance fingerprint confirmed in step
+              1, so the operator checks it against the node's console before
+              the manager trusts it. */}
+          {awaitingInstalled && phase ? (
+            <div className="space-y-2 rounded-md border border-warning/40 bg-warning/10 p-3">
+              <p className="text-xs text-muted-foreground">
+                The node rebooted into its installed system with a new certificate. Compare this
+                fingerprint with the Mgmt SHA-256 line on the node&apos;s console before trusting
+                it.
+              </p>
+              <p className="break-all font-mono text-xs">
+                <span className="text-muted-foreground">sha256 </span>
+                {formatFingerprint(phase.presentedCertSha256)}
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  disabled={confirming}
+                  onClick={() => void confirmInstalled(phase)}
+                  size="sm"
+                >
+                  {confirming ? "Confirming…" : "Fingerprint matches the console"}
+                </Button>
+                <Button
+                  disabled={confirming}
+                  onClick={cancelAdoption}
+                  size="sm"
+                  variant="destructive"
+                >
+                  Does not match: cancel adoption
+                </Button>
+              </div>
             </div>
           ) : null}
 

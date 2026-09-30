@@ -27,13 +27,27 @@ vi.mock("@/context/auth", () => ({ useAuth: () => useAuth() }));
 const previewAdoption = vi.fn();
 const adoptNode = vi.fn();
 const listInstallDisks = vi.fn();
+const confirmAdoptionFingerprint = vi.fn();
 vi.mock("@/lib/adopt", () => ({
   adoptNode: (...a: unknown[]) => adoptNode(...a),
+  AWAITING_FINGERPRINT: "awaiting-fingerprint-confirmation",
+  confirmAdoptionFingerprint: (...a: unknown[]) => confirmAdoptionFingerprint(...a),
   fetchParentAnchor: vi.fn(),
   formatDiskSize: (b: bigint) => `${b}`,
+  formatFingerprint: (fp: string) => `fmt(${fp})`,
   listInstallDisks: (...a: unknown[]) => listInstallDisks(...a),
   previewAdoption: (...a: unknown[]) => previewAdoption(...a),
 }));
+
+const startAdoption = async () => {
+  fireEvent.change(screen.getByLabelText(/endpoint/i), { target: { value: "host:9000" } });
+  fireEvent.click(screen.getByRole("button", { name: /preview/i }));
+  await waitFor(() => screen.getByRole("button", { name: /confirm fingerprint/i }));
+  fireEvent.click(screen.getByRole("button", { name: /confirm fingerprint/i }));
+  fireEvent.change(screen.getByLabelText(/node name/i), { target: { value: "acme-edge-07" } });
+  fireEvent.change(screen.getByLabelText(/install disk/i), { target: { value: "/dev/nvme0n1" } });
+  fireEvent.click(screen.getByRole("button", { name: /adopt node/i }));
+};
 
 describe("AdoptPage", () => {
   it("gates the whole wizard behind admin level", () => {
@@ -85,7 +99,12 @@ describe("AdoptPage", () => {
     await waitFor(() =>
       expect(screen.getByText(/acme-edge-07 is established/i)).toBeInTheDocument(),
     );
-    expect(adoptNode).toHaveBeenCalledWith("host:9000", "AB:CD:EF", expect.anything());
+    expect(adoptNode).toHaveBeenCalledWith(
+      "host:9000",
+      "AB:CD:EF",
+      expect.anything(),
+      expect.any(AbortSignal),
+    );
   });
 
   it("sends the DNS nameservers and search domains in the initial config", async () => {
@@ -118,6 +137,93 @@ describe("AdoptPage", () => {
     const config = adoptNode.mock.calls[0][2] as MachineConfig;
     expect(config.network?.nameservers).toEqual(["10.0.0.53", "10.0.1.53"]);
     expect(config.network?.search).toEqual(["pki.acme"]);
+  });
+
+  it("shows the installed node's fingerprint and confirms it for the adoption", async () => {
+    useAuth.mockReturnValue({ operator: { level: "admin" } });
+    previewAdoption.mockResolvedValue({ certSha256: "AB:CD:EF", subject: "CN=maintenance" });
+    listInstallDisks.mockResolvedValue([]);
+    confirmAdoptionFingerprint.mockReset().mockImplementation(async () => {});
+    adoptNode.mockReset().mockReturnValue(
+      (async function* () {
+        yield {
+          adoptionId: "adopt-1",
+          detail: "Waiting.",
+          done: false,
+          phase: "awaiting-fingerprint-confirmation",
+          presentedCertSha256: "5f5f",
+        };
+      })(),
+    );
+    render(<AdoptPage />);
+    await startAdoption();
+
+    await waitFor(() => expect(screen.getByText("fmt(5f5f)")).toBeInTheDocument());
+    expect(screen.getByText(/mgmt sha-256/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /matches the console/i }));
+
+    await waitFor(() => expect(confirmAdoptionFingerprint).toHaveBeenCalledWith("adopt-1", "5f5f"));
+    await waitFor(() =>
+      expect(
+        screen.queryByRole("button", { name: /matches the console/i }),
+      ).not.toBeInTheDocument(),
+    );
+  });
+
+  it("surfaces a refused fingerprint confirm inline", async () => {
+    useAuth.mockReturnValue({ operator: { level: "admin" } });
+    previewAdoption.mockResolvedValue({ certSha256: "AB:CD:EF", subject: "CN=maintenance" });
+    listInstallDisks.mockResolvedValue([]);
+    confirmAdoptionFingerprint.mockReset().mockRejectedValue(new Error("fingerprint mismatch"));
+    adoptNode.mockReset().mockReturnValue(
+      (async function* () {
+        yield {
+          adoptionId: "adopt-1",
+          detail: "",
+          done: false,
+          phase: "awaiting-fingerprint-confirmation",
+          presentedCertSha256: "5f5f",
+        };
+      })(),
+    );
+    render(<AdoptPage />);
+    await startAdoption();
+
+    await waitFor(() => screen.getByRole("button", { name: /matches the console/i }));
+    fireEvent.click(screen.getByRole("button", { name: /matches the console/i }));
+    await waitFor(() => expect(screen.getByText(/fingerprint mismatch/i)).toBeInTheDocument());
+  });
+
+  it("cancels the adoption when the fingerprint does not match", async () => {
+    useAuth.mockReturnValue({ operator: { level: "admin" } });
+    previewAdoption.mockResolvedValue({ certSha256: "AB:CD:EF", subject: "CN=maintenance" });
+    listInstallDisks.mockResolvedValue([]);
+    confirmAdoptionFingerprint.mockReset();
+    let signal: AbortSignal | undefined;
+    adoptNode.mockReset().mockImplementation((...a: unknown[]) => {
+      signal = a[3] as AbortSignal;
+      return (async function* () {
+        yield {
+          adoptionId: "adopt-1",
+          detail: "",
+          done: false,
+          phase: "awaiting-fingerprint-confirmation",
+          presentedCertSha256: "5f5f",
+        };
+        await new Promise((_, reject) =>
+          signal?.addEventListener("abort", () => reject(new Error("aborted"))),
+        );
+      })();
+    });
+    render(<AdoptPage />);
+    await startAdoption();
+
+    await waitFor(() => screen.getByRole("button", { name: /does not match/i }));
+    fireEvent.click(screen.getByRole("button", { name: /does not match/i }));
+
+    expect(signal?.aborted).toBe(true);
+    expect(confirmAdoptionFingerprint).not.toHaveBeenCalled();
+    await waitFor(() => expect(screen.getByText(/adoption cancelled/i)).toBeInTheDocument());
   });
 
   it("surfaces a preview error inline", async () => {

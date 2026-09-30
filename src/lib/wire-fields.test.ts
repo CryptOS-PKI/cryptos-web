@@ -18,6 +18,7 @@ import { type DescMessage, fromJson, type JsonValue, toJson } from "@bufbuild/pr
 import { describe, expect, it } from "vitest";
 
 import {
+  AdoptNodeResponseSchema,
   ApprovalSchema,
   AuditEventSchema as FleetAuditEventSchema,
   McpKeySchema,
@@ -37,6 +38,15 @@ const roundTrip = (schema: DescMessage, wire: JsonValue): JsonValue =>
   toJson(schema, fromJson(schema, wire, { ignoreUnknownFields: true }));
 
 describe("generated stubs keep every field the node sends", () => {
+  it("keeps the adoption ID and the presented fingerprint on an adoption message", () => {
+    const wire = {
+      adoptionId: "adopt-1",
+      phase: "awaiting-fingerprint-confirmation",
+      presentedCertSha256: "5f".repeat(32),
+    };
+    expect(roundTrip(AdoptNodeResponseSchema, wire)).toEqual(wire);
+  });
+
   it("keeps network nameservers and search domains on a MachineConfig", () => {
     const wire = {
       apiVersion: "cryptos.dev/v1alpha1",
