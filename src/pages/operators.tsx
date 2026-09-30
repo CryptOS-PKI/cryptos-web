@@ -22,6 +22,7 @@ import { OperatorIssueDialog } from "@/components/operator-issue-dialog";
 import { OperatorRevokeDialog } from "@/components/operator-revoke-dialog";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/auth";
+import { ErrorCode, errorCode } from "@/lib/fleet/error-code";
 import { listOperatorCredentials, type OperatorCredentialRow } from "@/lib/operators";
 
 const th =
@@ -39,14 +40,23 @@ export const OperatorsPage = () => {
 
   const [rows, setRows] = useState<OperatorCredentialRow[]>([]);
   const [loadError, setLoadError] = useState("");
+  const [caUnconfigured, setCaUnconfigured] = useState(false);
   const [showIssue, setShowIssue] = useState(false);
   const [revokeTarget, setRevokeTarget] = useState<null | OperatorCredentialRow>(null);
 
   const load = useCallback(async () => {
     setLoadError("");
+    setCaUnconfigured(false);
     try {
       setRows(await listOperatorCredentials());
     } catch (error_: unknown) {
+      if (errorCode(error_) === ErrorCode.OperatorCAUnconfigured) {
+        console.info("fleet: ListOperatorCredentials: no operator-CA node configured");
+        setRows([]);
+        setCaUnconfigured(true);
+        return;
+      }
+      console.warn("fleet: ListOperatorCredentials failed", error_);
       setLoadError(error_ instanceof Error ? error_.message : "Failed to load credentials");
     }
   }, []);
@@ -54,6 +64,13 @@ export const OperatorsPage = () => {
   useEffect(() => {
     void load();
   }, [load]);
+
+  const signedInAs = operator ? (
+    <p className="mx-auto mt-2 max-w-xl font-mono text-xs">
+      You are signed in as <span className="text-foreground">{operator.commonName}</span> (
+      {operator.level}), serial <span className="text-foreground">{operator.serial}</span>
+    </p>
+  ) : null;
 
   return (
     <section className="space-y-5">
@@ -64,7 +81,7 @@ export const OperatorsPage = () => {
             {rows.filter((r) => !r.revoked).length} active of {rows.length} operator credentials
           </p>
         </div>
-        {isAdmin ? (
+        {isAdmin && !caUnconfigured ? (
           <Button onClick={() => setShowIssue(true)} size="sm">
             {"Issue operator…"}
           </Button>
@@ -98,7 +115,22 @@ export const OperatorsPage = () => {
             </tr>
           </thead>
           <tbody>
-            {rows.length === 0 ? (
+            {caUnconfigured ? (
+              <tr>
+                <td className="px-3 py-6 text-center text-sm text-muted-foreground" colSpan={6}>
+                  <p className="text-foreground">No operator-CA node is configured.</p>
+                  <p className="mx-auto mt-1 max-w-xl">
+                    Listing, issuing and revoking operator credentials need an operator-CA node
+                    designated with <span className="font-mono">operator_ca_node</span> in the
+                    manager&apos;s configuration. Until one is set the manager also enforces no
+                    operator-certificate revocation, so a revoked credential keeps working until it
+                    expires.
+                  </p>
+                  {signedInAs}
+                </td>
+              </tr>
+            ) : null}
+            {rows.length === 0 && !caUnconfigured ? (
               <tr>
                 {/* "No operator credentials" read as "this fleet has no
                     operators" while the reader was signed in as one (#85). The
@@ -115,14 +147,7 @@ export const OperatorsPage = () => {
                     node — cannot be listed or revoked here, because the manager has no record of
                     it.
                   </p>
-                  {operator ? (
-                    <p className="mx-auto mt-2 max-w-xl font-mono text-xs">
-                      You are signed in as{" "}
-                      <span className="text-foreground">{operator.commonName}</span> (
-                      {operator.level}), serial{" "}
-                      <span className="text-foreground">{operator.serial}</span>
-                    </p>
-                  ) : null}
+                  {signedInAs}
                   <p className="mx-auto mt-2 max-w-xl">
                     Issuing and revoking from here need an operator-CA node designated with{" "}
                     <span className="font-mono">operator_ca_node</span>. Without one the manager

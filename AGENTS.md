@@ -44,3 +44,8 @@ woff2, strict CSP, no runtime CDN) for air-gap use.
   fields ignored, so a stale stub drops a new field without an error, and a config read, edited and
   applied through the UI then clears that field on the node. `src/lib/wire-fields.test.ts` pins
   the newer fields; extend it when you refresh.
+- The manager puts a stable numeric code on every error it returns (metadata key
+  `x-cryptos-error-code`; the table is the manager's `docs/error-codes.md`). Branch on it with
+  `errorCode()` from `src/lib/fleet/error-code.ts`, never on the message text, and add a code to
+  its `ErrorCode` map when a page handles one. The Operators page does this for 1400 (no
+  `operator_ca_node` configured) and shows a not-configured view instead of the refusal.

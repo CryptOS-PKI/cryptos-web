@@ -18,6 +18,7 @@ limitations under the License.
 
 import type { ReactNode } from "react";
 
+import { Code, ConnectError } from "@connectrpc/connect";
 import { render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -103,5 +104,52 @@ describe("OperatorsPage empty state", () => {
     // And the reader is an operator, so saying otherwise is plainly wrong.
     expect(screen.getByText(/operator@example.org/)).toBeInTheDocument();
     expect(screen.getByText(/operator_ca_node/)).toBeInTheDocument();
+  });
+});
+
+// With no operator_ca_node the manager refuses the list with error 1400. That
+// is a deployment state, not a failure, so the page explains it instead of
+// showing the generic refusal.
+describe("OperatorsPage without an operator-CA node", () => {
+  const refusal =
+    "The Fleet Manager refused this request (error 1400). Quote that code when reporting it.";
+
+  it("shows the not-configured view naming operator_ca_node, not the refusal", async () => {
+    const { listOperatorCredentials } = await import("@/lib/operators");
+    vi.mocked(listOperatorCredentials).mockRejectedValueOnce(
+      new ConnectError(refusal, Code.FailedPrecondition, { "x-cryptos-error-code": "1400" }),
+    );
+    useAuth.mockReturnValue({
+      operator: { commonName: "operator@example.org", level: "admin", serial: "0A:BC" },
+    });
+
+    render(<OperatorsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/no operator-CA node is configured/i)).toBeInTheDocument();
+    });
+    expect(screen.getByText("operator_ca_node")).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.queryByText(/refused this request/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/has not issued any operator credentials/i)).not.toBeInTheDocument();
+    // Issuing would only be refused with the same code.
+    expect(screen.queryByRole("button", { name: /issue operator/i })).not.toBeInTheDocument();
+  });
+
+  it("still shows any other refusal as an error", async () => {
+    const { listOperatorCredentials } = await import("@/lib/operators");
+    vi.mocked(listOperatorCredentials).mockRejectedValueOnce(
+      new ConnectError("The Fleet Manager refused this request (error 1100).", Code.Unavailable, {
+        "x-cryptos-error-code": "1100",
+      }),
+    );
+    useAuth.mockReturnValue({ operator: { level: "admin" } });
+
+    render(<OperatorsPage />);
+
+    await waitFor(() => {
+      expect(screen.getByRole("alert")).toHaveTextContent(/error 1100/);
+    });
+    expect(screen.queryByText(/no operator-CA node is configured/i)).not.toBeInTheDocument();
   });
 });
