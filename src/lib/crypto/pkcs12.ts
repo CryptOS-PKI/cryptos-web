@@ -256,12 +256,15 @@ const buildMacData = async (
 };
 
 // assemblePkcs12 produces a passphrase-protected PKCS#12 (.p12) carrying the
-// operator's certificate and its PBES2-shrouded private key. It THROWS on a
-// passphrase below the shared floor, matching every other browser export path.
+// operator's certificate, its PBES2-shrouded private key and, when given, the
+// chain certificates (for example the operator CA anchor) after the leaf. It
+// THROWS on a passphrase below the shared floor, matching every other browser
+// export path.
 export const assemblePkcs12 = async (
   certDer: Uint8Array,
   privateKey: CryptoKey,
   passphrase: string,
+  chainDer: Uint8Array[] = [],
 ): Promise<Uint8Array> => {
   if (passphrase.length < MIN_PASSPHRASE_LENGTH) {
     throw new Error(`Passphrase must be at least ${MIN_PASSPHRASE_LENGTH} characters.`);
@@ -272,9 +275,10 @@ export const assemblePkcs12 = async (
   const keyBag = safeBag(OID_PKCS12_PKCS8_SHROUDED_KEY_BAG, shroudedPkcs8);
   const keySafeContents = derSequence(keyBag);
 
-  // Cert SafeContents: one cert bag holding the DER certificate.
-  const certSafeBag = safeBag(OID_PKCS12_CERT_BAG, certBag(certDer));
-  const certSafeContents = derSequence(certSafeBag);
+  // Cert SafeContents: the leaf's cert bag first, then one per chain cert.
+  const certSafeContents = derSequence(
+    ...[certDer, ...chainDer].map((der) => safeBag(OID_PKCS12_CERT_BAG, certBag(der))),
+  );
 
   // AuthenticatedSafe ::= SEQUENCE OF ContentInfo. Both bag groups are carried
   // as plaintext id-data ContentInfos; the private key is already PBES2-sealed
