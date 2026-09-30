@@ -21,6 +21,8 @@ woff2, strict CSP, no runtime CDN) for air-gap use.
   approval link), Audit, 404). The MCP sign-in consent page `/oauth/consent` is routed
   outside the auth gate on purpose: the manager authenticates that request with the browser's
   client certificate, and it talks to `/oauth2/consent/<id>` with plain `fetch`, not Connect.
+  The "Make a credential request" page `/request-credential` is outside the gate too, and makes
+  no network calls at all: it must not import the Fleet Manager client.
 - `src/components/layout/` - app shell: header, sidebar nav, wordmark, theme toggle, auth gate.
 - `src/components/ui/` - shadcn/ui primitives (button, card, badge, separator).
 - `src/context/` - `theme.tsx` (dark/light, persisted) and `auth.tsx` (browser-mTLS gate stub).
@@ -48,8 +50,15 @@ woff2, strict CSP, no runtime CDN) for air-gap use.
 - The manager puts a stable numeric code on every error it returns (metadata key
   `x-cryptos-error-code`; the table is the manager's `docs/error-codes.md`). Branch on it with
   `errorCode()` from `src/lib/fleet/error-code.ts`, never on the message text, and add a code to
-  its `ErrorCode` map when a page handles one. The Operators page does this for 1400 (no
-  `operator_ca_node` configured) and shows a not-configured view instead of the refusal.
+  its `ErrorCode` map when a page handles one. The Operators page does this for 1400 (no operator
+  CA configured) and shows a not-configured view instead of the refusal. The 1600-1611 block
+  (first run, operator CAs, operator credentials) also carries a sub-reason
+  (`x-cryptos-error-reason`, read with `errorReason()`); `src/lib/fleet/error-copy.ts` maps every
+  code and sub-reason to a message, and `fleetErrorMessage()` is what those screens show.
+- Operator private keys never leave the browser. `src/lib/crypto/key-backup.ts` writes the
+  encrypted key backup (PBES2 PKCS#8), reads it back, and builds the PKCS#12 with the backup's
+  own passphrase; the credential wizards hold only the encrypted backup in memory. Tests assert
+  on the request bodies that neither the key nor the passphrase is ever sent.
 - The Approvals nav badge counts pending approvals through `listApprovals`. It recounts on every
   navigation, every 30 seconds, and when `decideApproval` dispatches the `APPROVALS_CHANGED`
   window event (`src/lib/approvals.ts`). A new surface that changes an approval should go through

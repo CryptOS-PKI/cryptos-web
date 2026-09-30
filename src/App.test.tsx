@@ -41,6 +41,15 @@ describe("App routing", () => {
     expect(screen.queryByRole("button", { name: /log in/i })).not.toBeInTheDocument();
   });
 
+  // Someone without a credential yet makes their key and CSR here, so it can't
+  // sit behind the gate that needs one.
+  it("serves the credential request page without logging in first", () => {
+    renderAt("/request-credential");
+
+    expect(screen.getByRole("heading", { name: /make a credential request/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /log in/i })).not.toBeInTheDocument();
+  });
+
   it("keeps the console behind the login gate", () => {
     renderAt("/agent-keys");
 

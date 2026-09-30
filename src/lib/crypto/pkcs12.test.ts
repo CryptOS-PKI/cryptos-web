@@ -226,6 +226,35 @@ describe("assemblePkcs12", () => {
     expect((imported.algorithm as EcKeyAlgorithm).namedCurve).toBe("P-384");
   });
 
+  it("labels the key and the leaf with a friendly name when one is given", async () => {
+    const keys = await crypto.subtle.generateKey(ECDSA_P384, true, ["sign", "verify"]);
+    const { anchorDer, leafDer } = await makeAnchorAndLeaf(keys.publicKey);
+    const name = "FleetOS admin (admin@example.org)";
+
+    const pfx = await assemblePkcs12(leafDer, keys.privateKey, STRONG, [anchorDer], {
+      friendlyName: name,
+    });
+
+    // friendlyName (PKCS#9, 1.2.840.113549.1.9.20) as a BMPString, on the key
+    // bag and the leaf's cert bag only.
+    const oid = new Uint8Array([0x06, 0x09, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x09, 0x14]);
+    const bmp = new Uint8Array(name.length * 2);
+    for (let i = 0; i < name.length; i += 1) bmp[i * 2 + 1] = name.charCodeAt(i);
+    const count = (needle: Uint8Array) => {
+      let n = 0;
+      for (let i = 0; i + needle.length <= pfx.length; i += 1) {
+        if (needle.every((b, k) => pfx[i + k] === b)) n += 1;
+      }
+      return n;
+    };
+    expect(count(oid)).toBe(2);
+    expect(count(bmp)).toBe(2);
+    expect(certBags(pfx)).toEqual([leafDer, anchorDer]);
+    expect(await unshroudKey(pfx, STRONG)).toEqual(
+      new Uint8Array(await crypto.subtle.exportKey("pkcs8", keys.privateKey)),
+    );
+  });
+
   it("is deterministic in structure but not in ciphertext (random salt/iv)", async () => {
     const { privateKey } = await generateLeafKeyAndCSR({ sans: [], subjectCn: "op" });
     const a = await assemblePkcs12(dummyCertDer, privateKey, STRONG);

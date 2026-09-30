@@ -27,6 +27,15 @@ The same bundle adapts at runtime based on the role of the node being viewed:
 - 🔌 **Intermediate / Issuing nodes** — issuance profiles, certificate inventory, CSR review, CRL / OCSP status, adapter health, audit log tail.
 - 👁️ **All nodes** — live status, configuration view (read-only when the node is linked to FM, which is the normal mode).
 
+## 🪪 Operator credentials
+
+Operator certificates come from your own external operator CA (an offline OpenSSL CA or an enterprise CA). The Fleet Manager never signs one; it records them and can deny them.
+
+- 📝 **Request credential** (Operators page, admin) makes a P-384 key and CSR in the browser, with a mandatory encrypted key backup whose passphrase is shown once, or takes a CSR the holder made. It returns the CSR, the OpenSSL extension section for the level and the `openssl ca` command for the CA operator.
+- ✅ **Complete** records the signed certificate against its request and, when this browser can open the key backup, builds the PKCS#12 locally with the same passphrase. **Record certificate** imports one made entirely at the CA.
+- ⛔ **Deny at the Fleet Manager** puts a credential on the Fleet Manager's denylist, with an RFC 5280 reason and a note. It doesn't revoke at the CA, and says so.
+- 🙋 **Make a credential request** at `/request-credential` is an anonymous page where a future operator makes their own key, key backup and CSR, and later builds their PKCS#12. It makes no network calls.
+
 ## 🤖 Agent access (MCP)
 
 The Fleet Manager serves an MCP endpoint so AI agents can manage the fleet. An agent never gets more than the operator who let it in, and this UI is where that consent happens:
