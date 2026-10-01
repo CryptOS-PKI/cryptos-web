@@ -23,6 +23,7 @@ import { AgentKeysPage } from "@/pages/agent-keys";
 import { ApprovalsPage } from "@/pages/approvals";
 import { AuditPage } from "@/pages/audit";
 import { CertificatesPage } from "@/pages/certificates";
+import { CredentialRequestPage } from "@/pages/credential-request";
 import { DashboardPage } from "@/pages/dashboard";
 import { EnrollmentPage } from "@/pages/enrollment";
 import { EnrollmentDetailPage } from "@/pages/enrollment-detail";
@@ -49,6 +50,7 @@ export const App = () => {
   return (
     <Routes>
       <Route element={<OAuthConsentPage />} path="oauth/consent" />
+      <Route element={<CredentialRequestPage />} path="request-credential" />
       <Route
         element={
           <AuthGate>

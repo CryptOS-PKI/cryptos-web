@@ -41,7 +41,7 @@ const bufferOf = (bytes: Uint8Array): ArrayBuffer => {
 };
 
 // This module assembles a passphrase-protected PKCS#12 (RFC 7292) in the
-// browser from a certificate the operator-CA node just signed and the private
+// browser from a certificate the external operator CA signed and the private
 // key the browser minted for the operator credential. The key never leaves the
 // browser in plaintext: it is PBES2-shrouded (the same PBKDF2-HMAC-SHA256 +
 // AES-256-CBC envelope leaf-key already uses for encrypted PKCS#8) before it is
@@ -58,6 +58,7 @@ const OID_DATA = "1.2.840.113549.1.7.1";
 const OID_PKCS12_PKCS8_SHROUDED_KEY_BAG = "1.2.840.113549.1.12.10.1.2";
 const OID_PKCS12_CERT_BAG = "1.2.840.113549.1.12.10.1.3";
 const OID_PKCS9_X509_CERTIFICATE = "1.2.840.113549.1.9.22.1";
+const OID_PKCS9_FRIENDLY_NAME = "1.2.840.113549.1.9.20";
 const OID_SHA256 = "2.16.840.1.101.3.4.2.1";
 
 const MAC_ITERATIONS = 210_000;
@@ -100,9 +101,22 @@ const exportShroudedPkcs8 = async (
 };
 
 // safeBag builds one SafeBag ::= SEQUENCE { bagId OID, bagValue [0] EXPLICIT
-// ANY }. bagAttributes are omitted (they are optional and unnecessary here).
-const safeBag = (bagId: string, bagValue: Uint8Array): Uint8Array =>
-  derSequence(derOid(bagId), derContextExplicit(0, bagValue));
+// ANY, bagAttributes SET OF Attribute OPTIONAL }. The only attribute used is
+// the PKCS#9 friendlyName, which keystores show as the certificate's label.
+const safeBag = (bagId: string, bagValue: Uint8Array, friendlyName?: string): Uint8Array =>
+  friendlyName
+    ? derSequence(
+        derOid(bagId),
+        derContextExplicit(0, bagValue),
+        derElement(
+          0x31,
+          derSequence(
+            derOid(OID_PKCS9_FRIENDLY_NAME),
+            derElement(0x31, derElement(0x1e, bmpString(friendlyName).slice(0, -2))),
+          ),
+        ),
+      )
+    : derSequence(derOid(bagId), derContextExplicit(0, bagValue));
 
 // certBag wraps the DER certificate as a CertBag ::= SEQUENCE { certId OID,
 // certValue [0] EXPLICIT OCTET STRING }.
@@ -265,6 +279,7 @@ export const assemblePkcs12 = async (
   privateKey: CryptoKey,
   passphrase: string,
   chainDer: Uint8Array[] = [],
+  options: { friendlyName?: string } = {},
 ): Promise<Uint8Array> => {
   if (passphrase.length < MIN_PASSPHRASE_LENGTH) {
     throw new Error(`Passphrase must be at least ${MIN_PASSPHRASE_LENGTH} characters.`);
@@ -272,12 +287,13 @@ export const assemblePkcs12 = async (
 
   // Key SafeContents: one shrouded-key bag holding the encrypted PKCS#8.
   const shroudedPkcs8 = await exportShroudedPkcs8(privateKey, passphrase);
-  const keyBag = safeBag(OID_PKCS12_PKCS8_SHROUDED_KEY_BAG, shroudedPkcs8);
+  const keyBag = safeBag(OID_PKCS12_PKCS8_SHROUDED_KEY_BAG, shroudedPkcs8, options.friendlyName);
   const keySafeContents = derSequence(keyBag);
 
   // Cert SafeContents: the leaf's cert bag first, then one per chain cert.
   const certSafeContents = derSequence(
-    ...[certDer, ...chainDer].map((der) => safeBag(OID_PKCS12_CERT_BAG, certBag(der))),
+    safeBag(OID_PKCS12_CERT_BAG, certBag(certDer), options.friendlyName),
+    ...chainDer.map((der) => safeBag(OID_PKCS12_CERT_BAG, certBag(der))),
   );
 
   // AuthenticatedSafe ::= SEQUENCE OF ContentInfo. Both bag groups are carried

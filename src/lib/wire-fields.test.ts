@@ -21,7 +21,10 @@ import {
   ApprovalSchema,
   AuditEventSchema as FleetAuditEventSchema,
   McpKeySchema,
+  OperatorCredentialRequestSchema,
+  OperatorCredentialSchema,
 } from "@/gen/fleet/cryptos/fleet/v1/fleet_pb";
+import { OperatorCASchema } from "@/gen/fleet/cryptos/fleet/v1/operator_ca_pb";
 import { AuditEventSchema } from "@/gen/fleet/cryptos/v1/audit_pb";
 import { MachineConfigSchema } from "@/gen/fleet/cryptos/v1/config_pb";
 import { NodeStatusSchema } from "@/gen/fleet/cryptos/v1/status_pb";
@@ -141,5 +144,71 @@ describe("generated stubs keep every field the node sends", () => {
       },
     };
     expect(roundTrip(NodeStatusSchema, wire)).toEqual(wire);
+  });
+
+  it("keeps every operator credential field", () => {
+    const wire = {
+      commonName: "alice@example.org",
+      crlRevoked: true,
+      denylisted: true,
+      email: "alice@example.org",
+      firstSeenAt: "2026-09-01T00:00:00Z",
+      fullName: "Alice Example",
+      issuerSha256: "ab".repeat(32),
+      kind: "observed",
+      lastSeenAt: "2026-09-02T00:00:00Z",
+      level: "operator",
+      notAfter: "2027-09-01T00:00:00Z",
+      revoked: true,
+      serialHex: "0A:0B",
+    };
+    expect(roundTrip(OperatorCredentialSchema, wire)).toEqual(wire);
+  });
+
+  it("keeps every credential request field", () => {
+    const wire = {
+      completedSerial: "0A",
+      createdAt: "2026-09-01T00:00:00Z",
+      createdByCn: "admin@example.org",
+      csrPem: "-----BEGIN CERTIFICATE REQUEST-----",
+      email: "bob@example.org",
+      expiresAt: "2026-10-01T00:00:00Z",
+      fullName: "Bob Example",
+      id: "req-1",
+      level: "viewer",
+      state: "completed",
+    };
+    expect(roundTrip(OperatorCredentialRequestSchema, wire)).toEqual(wire);
+  });
+
+  it("keeps every operator CA field", () => {
+    const wire = {
+      acknowledgements: ["OPERATOR_CA_ACKNOWLEDGEMENT_NO_CRL"],
+      crl: {
+        crlNumber: "4096",
+        fetchedAt: "2026-09-01T00:00:00Z",
+        lastError: "timeout",
+        nextUpdate: "2026-09-08T00:00:00Z",
+        revokedCount: "3",
+        stale: true,
+        thisUpdate: "2026-09-01T00:00:00Z",
+      },
+      crlLocation: "http://pki.example.org/operator.crl",
+      crlSource: "CRL_SOURCE_URL",
+      issuer: "CN=Example Operator CA",
+      managedByConfig: true,
+      notAfter: "2036-09-01T00:00:00Z",
+      ocspLastError: "unreachable",
+      ocspMode: "OCSP_MODE_URL",
+      ocspUrl: "http://ocsp.example.org/",
+      registeredAt: "2026-09-01T00:00:00Z",
+      retiredAt: "2026-09-10T00:00:00Z",
+      retiredReason: "retired",
+      sha256: "cd".repeat(32),
+      state: "OPERATOR_CA_STATE_RETIRED",
+      subject: "CN=Example Operator CA",
+      warnings: ["issued by a fleet node's CA"],
+    };
+    expect(roundTrip(OperatorCASchema, wire)).toEqual(wire);
   });
 });

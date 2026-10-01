@@ -93,6 +93,9 @@ export const AuthGate = ({ children }: { children: ReactNode }) => {
       <Button onClick={login} type="button">
         Log in
       </Button>
+      <a className="font-mono text-xs text-muted-foreground underline" href="/request-credential">
+        No operator certificate yet? Make a credential request
+      </a>
     </GateShell>
   );
 };

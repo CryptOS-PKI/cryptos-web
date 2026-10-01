@@ -54,6 +54,15 @@ describe("AuthGate", () => {
     expect(screen.queryByText("fleet console")).not.toBeInTheDocument();
   });
 
+  it("points someone with no certificate at the credential request page", () => {
+    renderGate();
+
+    expect(screen.getByRole("link", { name: /make a credential request/i })).toHaveAttribute(
+      "href",
+      "/request-credential",
+    );
+  });
+
   it("calls login when the button is clicked", () => {
     renderGate();
 

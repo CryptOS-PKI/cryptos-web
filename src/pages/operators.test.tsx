@@ -17,137 +17,237 @@ limitations under the License.
 import type { ReactNode } from "react";
 
 import { Code, ConnectError } from "@connectrpc/connect";
-import { render, screen, waitFor } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import type { CredentialRequestRow, OperatorCredentialRow } from "@/lib/operators";
 
 import { OperatorsPage } from "@/pages/operators";
 
 const useAuth = vi.fn();
 vi.mock("@/context/auth", () => ({ useAuth: () => useAuth() }));
 
-vi.mock("@/lib/operators", () => ({
-  listOperatorCredentials: vi.fn().mockResolvedValue([
-    {
-      commonName: "operator@acme.example",
-      level: "admin",
-      notAfter: "2027-01-01T00:00:00Z",
-      revoked: false,
-      serialHex: "3A:7F",
-    },
-    {
-      commonName: "former@acme.example",
-      level: "operator",
-      notAfter: "2026-09-01T00:00:00Z",
-      revoked: true,
-      serialHex: "DE:AD",
-    },
-  ]),
-}));
-
-// The dialogs are covered by their own tests; stub them so the page test stays
-// focused on listing and admin gating.
-vi.mock("@/components/operator-issue-dialog", () => ({
-  OperatorIssueDialog: (): ReactNode => null,
-}));
-vi.mock("@/components/operator-revoke-dialog", () => ({
-  OperatorRevokeDialog: (): ReactNode => null,
-}));
-
-describe("OperatorsPage", () => {
-  it("lists the issued credentials with their level and status", async () => {
-    useAuth.mockReturnValue({ operator: { level: "admin" } });
-    render(<OperatorsPage />);
-    await waitFor(() => expect(screen.getByText("operator@acme.example")).toBeInTheDocument());
-    expect(screen.getByText("former@acme.example")).toBeInTheDocument();
-    expect(screen.getByText("revoked")).toBeInTheDocument();
-    expect(screen.getByText("active")).toBeInTheDocument();
-  });
-
-  it("shows the Issue action to an admin", async () => {
-    useAuth.mockReturnValue({ operator: { level: "admin" } });
-    render(<OperatorsPage />);
-    await waitFor(() => expect(screen.getByText("operator@acme.example")).toBeInTheDocument());
-    expect(screen.getByRole("button", { name: /issue operator/i })).toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: /revoke/i }).length).toBe(1); // only the active row
-  });
-
-  it("hides the Issue and Revoke actions from a non-admin", async () => {
-    useAuth.mockReturnValue({ operator: { level: "operator" } });
-    render(<OperatorsPage />);
-    await waitFor(() => expect(screen.getByText("operator@acme.example")).toBeInTheDocument());
-    expect(screen.queryByRole("button", { name: /issue operator/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /revoke/i })).not.toBeInTheDocument();
-  });
+const row = (over: Partial<OperatorCredentialRow>): OperatorCredentialRow => ({
+  commonName: "a@example.org",
+  crlRevoked: false,
+  denylisted: false,
+  email: "a@example.org",
+  firstSeenAt: "",
+  fullName: "",
+  issuerSha256: "ab".repeat(32),
+  kind: "requested",
+  lastSeenAt: "",
+  level: "operator",
+  notAfter: "2027-01-01T00:00:00Z",
+  revoked: false,
+  serialHex: "01",
+  ...over,
 });
 
-// "No operator credentials" read as "this fleet has no operators" while the
-// reader was signed in as one, on a deployment whose credential was minted
-// outside the manager (#85).
-describe("OperatorsPage empty state", () => {
-  it("explains what it can and cannot list, and shows who you are", async () => {
-    const { listOperatorCredentials } = await import("@/lib/operators");
-    vi.mocked(listOperatorCredentials).mockResolvedValueOnce([]);
-    useAuth.mockReturnValue({
-      operator: { commonName: "operator@example.org", level: "admin", serial: "0A:BC" },
-    });
+const credentials = [
+  row({
+    commonName: "admin@example.org",
+    kind: "first_admin",
+    lastSeenAt: "2026-09-30T09:00:00Z",
+    level: "admin",
+    serialHex: "3A:7F",
+  }),
+  row({
+    commonName: "denied@example.org",
+    denylisted: true,
+    kind: "recorded",
+    revoked: true,
+    serialHex: "DE:AD",
+  }),
+  row({
+    commonName: "crl@example.org",
+    crlRevoked: true,
+    kind: "observed",
+    revoked: true,
+    serialHex: "0B:AD",
+  }),
+  row({ commonName: "legacy@example.org", issuerSha256: "", kind: "legacy_node", serialHex: "99" }),
+];
 
-    render(<OperatorsPage />);
+const pendingRequest: CredentialRequestRow = {
+  completedSerial: "",
+  createdAt: "2026-09-29T14:00:00Z",
+  createdByCn: "admin@example.org",
+  csrPem: "-----BEGIN CERTIFICATE REQUEST-----",
+  email: "new@example.org",
+  expiresAt: "2026-10-29T14:00:00Z",
+  fullName: "New Person",
+  id: "req-1",
+  level: "viewer",
+  state: "pending",
+};
 
-    await waitFor(() => {
-      expect(screen.getByText(/has not issued any operator credentials/i)).toBeInTheDocument();
-    });
-    // The distinction that matters: externally minted credentials cannot be
-    // listed, which is different from there being none.
-    expect(screen.getByText(/minted outside it/i)).toBeInTheDocument();
-    // And the reader is an operator, so saying otherwise is plainly wrong.
-    expect(screen.getByText(/operator@example.org/)).toBeInTheDocument();
-    expect(screen.getByText(/operator_ca_node/)).toBeInTheDocument();
-  });
-});
+const lib = vi.hoisted(() => ({
+  cancelCredentialRequest: vi.fn(),
+  listCredentialRequests: vi.fn(),
+  listOperatorCredentials: vi.fn(),
+}));
+vi.mock("@/lib/operators", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/operators")>()),
+  ...lib,
+}));
 
-// With no operator_ca_node the manager refuses the list with error 1400. That
-// is a deployment state, not a failure, so the page explains it instead of
-// showing the generic refusal.
-describe("OperatorsPage without an operator-CA node", () => {
-  const refusal =
-    "The Fleet Manager refused this request (error 1400). Quote that code when reporting it.";
-
-  it("shows the not-configured view naming operator_ca_node, not the refusal", async () => {
-    const { listOperatorCredentials } = await import("@/lib/operators");
-    vi.mocked(listOperatorCredentials).mockRejectedValueOnce(
-      new ConnectError(refusal, Code.FailedPrecondition, { "x-cryptos-error-code": "1400" }),
+// The dialogs have their own tests. The stubs expose the props the page hands
+// them, so the page test can check the wiring.
+const dialogs = vi.hoisted(() => ({
+  complete: vi.fn(),
+  deny: vi.fn(),
+  request: vi.fn(),
+}));
+vi.mock("@/components/credential-request-wizard", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/components/credential-request-wizard")>()),
+  CredentialRequestWizard: (props: {
+    onCreated: (id: string, backup?: Uint8Array) => void;
+  }): ReactNode => {
+    dialogs.request(props);
+    return (
+      <button onClick={() => props.onCreated("req-1", new Uint8Array([7]))} type="button">
+        stub-create
+      </button>
     );
-    useAuth.mockReturnValue({
-      operator: { commonName: "operator@example.org", level: "admin", serial: "0A:BC" },
-    });
+  },
+}));
+vi.mock("@/components/credential-complete-dialog", () => ({
+  CredentialCompleteDialog: (props: unknown): ReactNode => {
+    dialogs.complete(props);
+    return <p>stub-complete</p>;
+  },
+}));
+vi.mock("@/components/operator-deny-dialog", () => ({
+  OperatorDenyDialog: (props: unknown): ReactNode => {
+    dialogs.deny(props);
+    return <p>stub-deny</p>;
+  },
+}));
 
+const admin = { commonName: "admin@example.org", level: "admin", serial: "3A:7F" };
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  lib.listOperatorCredentials.mockResolvedValue(credentials);
+  lib.listCredentialRequests.mockResolvedValue([pendingRequest]);
+  lib.cancelCredentialRequest.mockImplementation(async () => {});
+});
+
+describe("OperatorsPage credentials", () => {
+  it("shows kind, issuer, denylisted, CRL-revoked and last seen for each credential", async () => {
+    useAuth.mockReturnValue({ operator: admin });
     render(<OperatorsPage />);
+    await screen.findByText("admin@example.org");
+    for (const header of ["Kind", "Issuer", "Denylisted", "CRL", "Last seen"]) {
+      expect(screen.getByRole("columnheader", { name: header })).toBeInTheDocument();
+    }
+    const denied = screen.getByText("denied@example.org").closest("tr") as HTMLElement;
+    expect(within(denied).getByText("recorded")).toBeInTheDocument();
+    expect(within(denied).getByText("denylisted")).toBeInTheDocument();
+    const crl = screen.getByText("crl@example.org").closest("tr") as HTMLElement;
+    expect(within(crl).getByText("CRL-revoked")).toBeInTheDocument();
+    const first = screen.getByText("admin@example.org").closest("tr") as HTMLElement;
+    expect(within(first).getByText("AB:AB:AB:AB:AB:AB:AB:AB…")).toBeInTheDocument();
+    expect(within(first).getByText("2026-09-30T09:00:00Z")).toBeInTheDocument();
+  });
 
-    await waitFor(() => {
-      expect(screen.getByText(/no operator-CA node is configured/i)).toBeInTheDocument();
-    });
-    expect(screen.getByText("operator_ca_node")).toBeInTheDocument();
+  it("lets an admin request, record, and deny live credentials only", async () => {
+    useAuth.mockReturnValue({ operator: admin });
+    render(<OperatorsPage />);
+    await screen.findByText("admin@example.org");
+    expect(screen.getByRole("button", { name: /request credential/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /record certificate/i })).toBeInTheDocument();
+    // Not the denylisted row and not the read-only legacy row.
+    expect(screen.getAllByRole("button", { name: /^deny/i })).toHaveLength(2);
+
+    fireEvent.click(screen.getAllByRole("button", { name: /^deny/i })[0]);
+    expect(await screen.findByText("stub-deny")).toBeInTheDocument();
+    expect(dialogs.deny).toHaveBeenCalledWith(
+      expect.objectContaining({ credential: credentials[0] }),
+    );
+  });
+
+  it("hides every action from a non-admin", async () => {
+    useAuth.mockReturnValue({ operator: { ...admin, level: "operator" } });
+    render(<OperatorsPage />);
+    await screen.findByText("admin@example.org");
+    expect(screen.queryByRole("button", { name: /request credential/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^deny/i })).not.toBeInTheDocument();
+  });
+
+  it("explains an empty list without saying the fleet has no operators", async () => {
+    lib.listOperatorCredentials.mockResolvedValueOnce([]);
+    useAuth.mockReturnValue({ operator: admin });
+    render(<OperatorsPage />);
+    await screen.findByText(/no operator credentials are recorded or seen yet/i);
+    expect(screen.getByText(/admin@example.org/)).toBeInTheDocument();
+  });
+});
+
+// ListOperatorCredentials refuses with 1400 only when the manager has no
+// operator CA at all. That is a deployment state, not a failure.
+describe("OperatorsPage without an operator CA", () => {
+  it("shows the not-configured view instead of the refusal", async () => {
+    lib.listOperatorCredentials.mockRejectedValueOnce(
+      new ConnectError("refused (error 1400)", Code.FailedPrecondition, {
+        "x-cryptos-error-code": "1400",
+      }),
+    );
+    useAuth.mockReturnValue({ operator: admin });
+    render(<OperatorsPage />);
+    await screen.findByText(/no operator CA is configured/i);
+    expect(screen.getByText("operatorCAPath")).toBeInTheDocument();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
-    expect(screen.queryByText(/refused this request/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/has not issued any operator credentials/i)).not.toBeInTheDocument();
-    // Issuing would only be refused with the same code.
-    expect(screen.queryByRole("button", { name: /issue operator/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /request credential/i })).not.toBeInTheDocument();
   });
 
   it("still shows any other refusal as an error", async () => {
-    const { listOperatorCredentials } = await import("@/lib/operators");
-    vi.mocked(listOperatorCredentials).mockRejectedValueOnce(
+    lib.listOperatorCredentials.mockRejectedValueOnce(
       new ConnectError("The Fleet Manager refused this request (error 1100).", Code.Unavailable, {
         "x-cryptos-error-code": "1100",
       }),
     );
-    useAuth.mockReturnValue({ operator: { level: "admin" } });
-
+    useAuth.mockReturnValue({ operator: admin });
     render(<OperatorsPage />);
+    expect(await screen.findByRole("alert")).toHaveTextContent(/error 1100/);
+  });
+});
 
-    await waitFor(() => {
-      expect(screen.getByRole("alert")).toHaveTextContent(/error 1100/);
-    });
-    expect(screen.queryByText(/no operator-CA node is configured/i)).not.toBeInTheDocument();
+describe("OperatorsPage pending requests", () => {
+  it("lists pending requests and cancels one", async () => {
+    useAuth.mockReturnValue({ operator: admin });
+    render(<OperatorsPage />);
+    fireEvent.click(await screen.findByRole("tab", { name: /pending requests/i }));
+    const holder = await screen.findByText("new@example.org");
+    const tr = holder.closest("tr") as HTMLElement;
+    expect(within(tr).getByText("viewer")).toBeInTheDocument();
+    fireEvent.click(within(tr).getByRole("button", { name: /cancel/i }));
+    await waitFor(() => expect(lib.cancelCredentialRequest).toHaveBeenCalledWith("req-1"));
+  });
+
+  it("hands the key backup kept from the wizard to Complete", async () => {
+    useAuth.mockReturnValue({ operator: admin });
+    render(<OperatorsPage />);
+    fireEvent.click(await screen.findByRole("button", { name: /request credential/i }));
+    fireEvent.click(screen.getByRole("button", { name: "stub-create" }));
+
+    fireEvent.click(screen.getByRole("tab", { name: /pending requests/i }));
+    const holder = await screen.findByText("new@example.org");
+    const tr = holder.closest("tr") as HTMLElement;
+    fireEvent.click(within(tr).getByRole("button", { name: /complete/i }));
+    await screen.findByText("stub-complete");
+    expect(dialogs.complete).toHaveBeenCalledWith(
+      expect.objectContaining({ heldBackup: new Uint8Array([7]), request: pendingRequest }),
+    );
+  });
+
+  it("gives no cancel or complete to a non-admin", async () => {
+    useAuth.mockReturnValue({ operator: { ...admin, level: "viewer" } });
+    render(<OperatorsPage />);
+    fireEvent.click(await screen.findByRole("tab", { name: /pending requests/i }));
+    await screen.findByText("new@example.org");
+    expect(screen.queryByRole("button", { name: /cancel/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /complete/i })).not.toBeInTheDocument();
   });
 });
