@@ -17,7 +17,8 @@ limitations under the License.
 import { errorCode, errorReason } from "@/lib/fleet/error-code";
 
 // What to tell the operator for each first-run, operator-CA and operator
-// credential refusal (codes 1600-1611). Branch on the code and sub-reason the
+// credential refusal (codes 1600-1611), and for the refusals a LINK
+// enrollment can meet (1100, 1102, 1106, 1107). Branch on the code and sub-reason the
 // manager attaches, never on its message text. A sub-reason name can appear
 // under more than one code (KEY_TYPE, EXPIRING, SUBJECT_MISMATCH,
 // DATABASE_REQUIRED), so reason copy is keyed by "<code>/<REASON>".
@@ -30,6 +31,26 @@ export interface FleetErrorCopy {
 }
 
 const CODE_COPY: Record<number, { detail: string; title: string }> = {
+  1100: {
+    detail:
+      "The Fleet Manager could not reach the node at that endpoint. Check the address and port, and that the node is running.",
+    title: "Node unreachable",
+  },
+  1102: {
+    detail:
+      "Another node in the inventory already has the name this node would get. Rename that node, then approve again.",
+    title: "Node name taken",
+  },
+  1106: {
+    detail:
+      "The node's management certificate did not verify against the CA you gave. Paste the CA certificate that signed the node's management certificate (cryptosctl identity show -o pem prints the chain), or the node's exact management certificate, and check the endpoint is the node's.",
+    title: "Node certificate not verified",
+  },
+  1107: {
+    detail:
+      "A link needs the CA certificate that signed the node's management certificate, or the node's exact management certificate, so the Fleet Manager can check it is talking to the node.",
+    title: "CA certificate required",
+  },
   1600: {
     detail:
       "The bootstrap token is wrong, expired or already used. Each token works once: take the newest one from the Fleet Manager's log and try again.",
@@ -167,7 +188,7 @@ const plainMessage = (error: unknown, fallback: string): string =>
   error instanceof Error && error.message !== "" ? error.message : fallback;
 
 // describeFleetError turns a refusal into a title and a detail. Anything
-// without a 16xx code keeps its own message.
+// without a code listed above keeps its own message.
 export const describeFleetError = (
   error: unknown,
   fallback = "The request failed.",

@@ -29,9 +29,11 @@ import {
   type EnrollmentKind,
   type EnrollmentRequest,
   type EnrollmentStatus,
+  LINK_CA_HINT,
   requestEnrollment,
   useEnrollments,
 } from "@/lib/enrollment";
+import { fleetErrorMessage } from "@/lib/fleet/error-copy";
 import { roleLabels } from "@/lib/mock";
 
 const STATUS_TONE: Record<EnrollmentStatus, string> = {
@@ -189,10 +191,14 @@ const CreateEnrollmentForm = ({
                 CA (PEM)
               </span>
               <textarea
+                aria-describedby="link-ca-hint"
                 className="h-16 w-full rounded-md border bg-card px-3 py-2 font-mono text-xs focus:outline-none focus:ring-2 focus:ring-ring"
                 {...linkField("caPem")}
               />
             </label>
+            <p className="text-xs text-muted-foreground" id="link-ca-hint">
+              {LINK_CA_HINT}
+            </p>
           </>
         ) : (
           <>
@@ -256,7 +262,7 @@ export const EnrollmentPage = () => {
       await createEnrollment(draft);
       setCreating(false);
     } catch (error_) {
-      setError(error_ instanceof Error ? error_.message : "Create failed.");
+      setError(fleetErrorMessage(error_, "Create failed."));
     } finally {
       setSubmitting(false);
     }
