@@ -172,7 +172,7 @@ export const OperatorCARegisterForm = ({
   onRegistered,
   submit,
 }: {
-  onRegistered: (result: RegisterResult) => void;
+  onRegistered: (result: RegisterResult, form: RegisterForm) => void;
   submit: (form: RegisterForm) => Promise<RegisterResult>;
 }) => {
   const [caText, setCaText] = useState("");
@@ -207,9 +207,10 @@ export const OperatorCARegisterForm = ({
     setPending(true);
     setError(null);
     try {
-      const result = await submit(form(confirmSha256));
+      const sent = form(confirmSha256);
+      const result = await submit(sent);
       if (result.confirmed) {
-        onRegistered(result);
+        onRegistered(result, sent);
       } else {
         setPreview(result);
       }

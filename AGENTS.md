@@ -59,6 +59,12 @@ woff2, strict CSP, no runtime CDN) for air-gap use.
   encrypted key backup (PBES2 PKCS#8), reads it back, and builds the PKCS#12 with the backup's
   own passphrase; the credential wizards hold only the encrypted backup in memory. Tests assert
   on the request bodies that neither the key nor the passphrase is ever sent.
+- First run: `BootstrapGate` (`src/components/layout/bootstrap-gate.tsx`) wraps the auth gate and
+  asks `GetBootstrapState` before anything else. Open first run tries WhoAmI, then shows the
+  `FirstRunWizard` (`src/components/first-run/`). `src/lib/bootstrap.ts` keeps the session secret
+  in module memory only and sends it as the `Fleetos-Bootstrap-Session` header; never put it in
+  web storage, a cookie or a URL. Mock mode keeps first run closed; set
+  `VITE_BOOTSTRAP_MOCK_STATE=open` to try the wizard offline.
 - Operator CA registration is a preview then a confirm with `confirm_sha256`.
   `OperatorCARegisterForm` takes the submit call as a prop, so the admin page and first run share
   it; `registerRequestFields()` builds the body both RegisterOperatorCA RPCs take.

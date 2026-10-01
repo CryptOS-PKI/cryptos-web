@@ -68,6 +68,7 @@ const REASONS_BY_CODE: Record<number, string[]> = {
     "REVOKED_OCSP",
     "OCSP_UNKNOWN",
     "DUPLICATE",
+    "FULL_NAME",
   ],
   1611: ["NOT_FOUND", "EXPIRED", "NOT_PENDING"],
 };

@@ -360,7 +360,7 @@ const refusal = (code: number, reason: string, message: string): ConnectError =>
 const hex = (buf: ArrayBuffer): string =>
   Array.from(new Uint8Array(buf), (b) => b.toString(16).padStart(2, "0")).join("");
 
-const mockPreview = async (form: RegisterForm): Promise<OperatorCARow> => {
+export const mockPreview = async (form: RegisterForm): Promise<OperatorCARow> => {
   const cert = new X509Certificate(new Uint8Array(form.caCertDer));
   const sha256 = hex(await crypto.subtle.digest("SHA-256", new Uint8Array(cert.rawData)));
   return toCARow({
@@ -382,7 +382,7 @@ const mockPreview = async (form: RegisterForm): Promise<OperatorCARow> => {
   });
 };
 
-const mockProbe = (mode: OcspChoice): OcspProbeRow | undefined =>
+export const mockProbe = (mode: OcspChoice): OcspProbeRow | undefined =>
   mode === "url"
     ? {
         certStatus: "unknown",

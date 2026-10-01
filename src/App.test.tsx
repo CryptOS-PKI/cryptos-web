@@ -50,9 +50,11 @@ describe("App routing", () => {
     expect(screen.queryByRole("button", { name: /log in/i })).not.toBeInTheDocument();
   });
 
-  it("keeps the console behind the login gate", () => {
+  // The gate asks the Fleet Manager whether first run is open before it shows
+  // the sign-in, so the Log in button appears once that answer is in.
+  it("keeps the console behind the login gate", async () => {
     renderAt("/agent-keys");
 
-    expect(screen.getByRole("button", { name: /log in/i })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: /log in/i })).toBeInTheDocument();
   });
 });

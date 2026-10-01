@@ -157,6 +157,7 @@ const REASON_COPY: Record<string, string> = {
   "1610/OCSP_UNKNOWN":
     "The operator CA's OCSP responder doesn't know this certificate, which counts as revoked.",
   "1610/DUPLICATE": "This certificate is already recorded.",
+  "1610/FULL_NAME": "The full name must be 1 to 128 characters, with no control characters.",
 
   "1611/NOT_FOUND": "No credential request has that id.",
   "1611/EXPIRED": "The credential request has expired (after 30 days). Make a new request.",
