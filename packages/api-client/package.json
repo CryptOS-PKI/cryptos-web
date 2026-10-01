@@ -1,0 +1,20 @@
+{
+  "name": "@cryptos-pki/api-client",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    "./*": "./src/gen/*.ts"
+  },
+  "scripts": {
+    "generate": "bash scripts/generate.sh",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@bufbuild/protobuf": "^2.12.1"
+  },
+  "devDependencies": {
+    "@bufbuild/protoc-gen-es": "2.12.1",
+    "vitest": "^3.0.0"
+  }
+}

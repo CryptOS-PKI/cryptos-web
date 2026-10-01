@@ -1,0 +1,9 @@
+# protoc-gen-es comes from this package's devDependencies (pinned in
+# package.json and package-lock.json); run `npm run generate`, which puts it on
+# PATH. Connect-ES v2's protoc-gen-es also emits the service definitions.
+version: v2
+plugins:
+  - local: protoc-gen-es
+    out: src/gen
+    opt:
+      - target=ts

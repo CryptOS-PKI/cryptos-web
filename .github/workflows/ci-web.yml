@@ -59,6 +59,23 @@ jobs:
         # quietly pass against a dependency tree no one else has.
         run: npm ci
 
+      - name: Install buf
+        # The generated-stubs check below regenerates packages/api-client with
+        # buf. The release binary is checked against the SHA-256 its release
+        # publishes (sha256.txt); bump both together.
+        env:
+          BUF_VERSION: 1.73.0
+          BUF_SHA256: 8f2986298ad08f0cc1bf999b9797b7c383adf32d7edf0f73d6f1e1a701baeac1
+        run: |
+          set -euo pipefail
+          bin="$RUNNER_TEMP/bin"
+          mkdir -p "$bin"
+          curl -sSfL -o "$bin/buf" \
+            "https://github.com/bufbuild/buf/releases/download/v${BUF_VERSION}/buf-Linux-x86_64"
+          echo "${BUF_SHA256}  $bin/buf" | sha256sum -c -
+          chmod +x "$bin/buf"
+          echo "$bin" >> "$GITHUB_PATH"
+
       - name: Lint
         run: npm run lint
 
@@ -68,6 +85,18 @@ jobs:
       - name: Build
         # tsc -b then vite build. This is the step that #99 was about.
         run: npm run build
+
+      - name: Generated stubs match the pinned protos
+        # git status rather than git diff, so a newly generated file counts as
+        # stale too instead of passing as untracked.
+        run: |
+          npm run generate
+          stale="$(git status --porcelain packages/api-client/src/gen)"
+          if [ -n "$stale" ]; then
+            echo "packages/api-client/src/gen is out of date. Run 'npm run generate' and commit the result." >&2
+            echo "$stale" >&2
+            exit 1
+          fi
 
       - name: Check tree is clean
         # A formatter or a generated file that rewrites something in place

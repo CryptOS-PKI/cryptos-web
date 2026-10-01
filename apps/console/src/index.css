@@ -1,0 +1,214 @@
+/*
+Copyright The CryptOS Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+@import "@fontsource-variable/inter/index.css";
+@import "@fontsource/jetbrains-mono/400.css";
+@import "@fontsource/jetbrains-mono/500.css";
+@import "@fontsource/jetbrains-mono/700.css";
+@import "@cryptos-pki/ui/tokens.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-sans);
+    font-feature-settings:
+      "rlig" 1,
+      "calt" 1;
+  }
+  .font-mono {
+    font-family: var(--font-mono);
+  }
+}
+
+@layer components {
+  /* Fleet topology feeder edges. A faint rail carries a colored feeder that
+     flows toward the child in the child's identity-state color. `.hit` is a fat
+     transparent stroke that widens the hover target for the thin visible line.
+     Keyframe speeds were tuned with Shane 2026-07-06 — do not change them. */
+  .rail {
+    stroke: hsl(var(--border));
+    stroke-width: 2;
+    fill: none;
+  }
+  .feed {
+    fill: none;
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-dasharray: 5 13;
+  }
+  .feed.feed-established {
+    stroke: hsl(var(--success));
+    animation: flow 3s linear infinite;
+  }
+  .feed.feed-awaiting {
+    stroke: hsl(var(--warning));
+    animation: flow 3s linear infinite;
+  }
+  .feed.feed-revoked {
+    stroke: hsl(var(--destructive));
+    stroke-dasharray: none;
+    stroke-width: 2.5;
+    animation: flash 1.7s ease-in-out infinite;
+  }
+  @keyframes flow {
+    to {
+      stroke-dashoffset: -180;
+    }
+  }
+  @keyframes flash {
+    0%,
+    100% {
+      opacity: 0.18;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .feed {
+      animation: none;
+      opacity: 0.85;
+    }
+  }
+  .hit {
+    stroke: transparent;
+    stroke-width: 18;
+    fill: none;
+    cursor: help;
+  }
+
+  /* Pan/zoom topology canvas. The whole graph lives in one transformed group so
+     nodes and their connectors move together (connectors stay attached). Direct
+     dragging/zooming is immediate; programmatic moves (Fit, center-on-focus) get
+     the eased transition for a smooth "glide", never a jerk. */
+  .topo-canvas {
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+    display: block;
+    width: 100%;
+    /* Fix the display box to the viewBox aspect and clip, so the camera
+       (fit/pan/zoom) is the sole framing mechanism — the graph can be taller
+       than the box without spilling down the page. */
+    aspect-ratio: 960 / 600;
+    overflow: hidden;
+    border-bottom-left-radius: 0.75rem;
+    border-bottom-right-radius: 0.75rem;
+  }
+  .topo-canvas.dragging {
+    cursor: grabbing;
+  }
+  /* Node positions/opacities are driven per-frame by the spring simulation, so
+     they carry no CSS transition (it would fight the rAF updates). Only the
+     camera group eases. */
+  .topo-view.eased {
+    transition: transform 560ms cubic-bezier(0.22, 0.61, 0.36, 1);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .topo-view.eased {
+      transition: none;
+    }
+  }
+
+  /* Collapsed group box (foreignObject) that stands in for a wide fan-out of
+     child CAs. Header toggles a scrollable member list. Colors reuse the theme
+     tokens so the box tracks light/dark and palette edits. */
+  .grp {
+    border: 1px solid hsl(var(--border));
+    border-radius: 12px;
+    background: hsl(var(--secondary));
+    overflow: hidden;
+  }
+  .grp-hd {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.625rem 0.75rem;
+    text-align: left;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: inherit;
+  }
+  .grp-hd:hover {
+    background: hsl(var(--muted));
+  }
+  .grp-list {
+    max-height: 150px;
+    overflow: auto;
+    border-top: 1px solid hsl(var(--border));
+  }
+  .grp-mem {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.4375rem 0.75rem;
+    text-align: left;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid hsl(var(--border));
+    cursor: pointer;
+    color: inherit;
+  }
+  .grp-mem:last-child {
+    border-bottom: none;
+  }
+  .grp-mem:hover,
+  .grp-mem.sel {
+    background: hsl(var(--muted));
+  }
+
+  /* Focus view: pinned-root rail, off-path chips, and the redraw morph. */
+  .pin-rail {
+    fill: hsl(var(--secondary) / 0.35);
+    stroke: hsl(var(--primary) / 0.5);
+    stroke-width: 1;
+    stroke-dasharray: 3 3;
+  }
+  .node-g {
+    transition: transform 300ms ease;
+  }
+  .chip {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    width: 100%;
+    padding: 0.3rem 0.55rem;
+    border: 1px solid hsl(var(--border));
+    border-radius: 0.5rem;
+    background: hsl(var(--card));
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: 11px;
+    color: hsl(var(--muted-foreground));
+    cursor: pointer;
+  }
+  .chip:hover {
+    background: hsl(var(--secondary));
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .node-g {
+      transition: none;
+    }
+  }
+}

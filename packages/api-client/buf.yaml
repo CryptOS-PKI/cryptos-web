@@ -1,0 +1,6 @@
+# The node and fleet protos are fetched into .protos/ by scripts/generate.sh;
+# they are owned by cryptos-node and cryptos-manager, never edited here.
+version: v2
+modules:
+  - path: .protos/cryptos-node
+  - path: .protos/cryptos-manager
