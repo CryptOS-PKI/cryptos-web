@@ -25,6 +25,10 @@ const METADATA_KEY = "x-cryptos-error-code";
 // value name without its ERROR_REASON_ prefix, for example "IS_NODE_CA".
 const REASON_METADATA_KEY = "x-cryptos-error-reason";
 
+// When a node refused the request (1108, 1500), the node's own reason,
+// sanitised by the manager, rides under this key.
+const NODE_REASON_METADATA_KEY = "x-cryptos-node-reason";
+
 export const ErrorCode = {
   OperatorCAUnconfigured: 1400,
   BootstrapTokenInvalid: 1600,
@@ -55,5 +59,11 @@ export const errorCode = (error: unknown): number | undefined => {
 // errorReason returns the sub-reason carried with a 16xx code, or undefined.
 export const errorReason = (error: unknown): string | undefined => {
   const raw = ConnectError.from(error).metadata.get(REASON_METADATA_KEY);
+  return raw === null || raw === "" ? undefined : raw;
+};
+
+// errorNodeReason returns the reason a node gave for refusing, or undefined.
+export const errorNodeReason = (error: unknown): string | undefined => {
+  const raw = ConnectError.from(error).metadata.get(NODE_REASON_METADATA_KEY);
   return raw === null || raw === "" ? undefined : raw;
 };

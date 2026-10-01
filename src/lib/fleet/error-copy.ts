@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { errorCode, errorReason } from "@/lib/fleet/error-code";
+import { errorCode, errorNodeReason, errorReason } from "@/lib/fleet/error-code";
 
 // What to tell the operator for each first-run, operator-CA and operator
 // credential refusal (codes 1600-1611). Branch on the code and sub-reason the
@@ -25,6 +25,7 @@ import { errorCode, errorReason } from "@/lib/fleet/error-code";
 export interface FleetErrorCopy {
   code?: number;
   detail: string;
+  nodeReason?: string;
   reason?: string;
   title: string;
 }
@@ -82,6 +83,16 @@ const CODE_COPY: Record<number, { detail: string; title: string }> = {
   1611: {
     detail: "The credential request can't be used.",
     title: "Credential request unusable",
+  },
+  // A node's own refusal. The node's reason, when it gave one, is added to
+  // the detail.
+  1108: {
+    detail: "The node refused the request.",
+    title: "Node refused",
+  },
+  1500: {
+    detail: "The node rejected the configuration as invalid.",
+    title: "Configuration rejected",
   },
 };
 
@@ -178,8 +189,12 @@ export const describeFleetError = (
     return { detail: plainMessage(error, fallback), title: "Request failed" };
   }
   const reason = errorReason(error);
-  const detail = (reason && REASON_COPY[`${code}/${reason}`]) || copy.detail;
-  return { code, detail, reason, title: copy.title };
+  const nodeReason = errorNodeReason(error);
+  let detail = (reason && REASON_COPY[`${code}/${reason}`]) || copy.detail;
+  if (nodeReason) {
+    detail = `${detail} The node said: ${nodeReason}`;
+  }
+  return { code, detail, nodeReason, reason, title: copy.title };
 };
 
 // fleetErrorMessage is describeFleetError as one line, with the code to quote.

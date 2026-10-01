@@ -130,3 +130,27 @@ describe("describeFleetError", () => {
     expect(line).toContain(describeFleetError(refusal(1610)).title);
   });
 });
+
+describe("describeFleetError for a node's refusal", () => {
+  const nodeRefusal = (code: number, nodeReason?: string): ConnectError =>
+    new ConnectError("refused", Code.InvalidArgument, {
+      "x-cryptos-error-code": String(code),
+      ...(nodeReason ? { "x-cryptos-node-reason": nodeReason } : {}),
+    });
+
+  it.each([1108, 1500])("gives code %i its own title", (code) => {
+    expect(describeFleetError(nodeRefusal(code)).title).not.toBe("Request failed");
+  });
+
+  it("carries the node's reason in the detail and the one-line message", () => {
+    const err = nodeRefusal(1500, "pki.est: must not be set on a root node");
+    const copy = describeFleetError(err);
+    expect(copy.nodeReason).toBe("pki.est: must not be set on a root node");
+    expect(copy.detail).toContain("pki.est: must not be set on a root node");
+    expect(fleetErrorMessage(err)).toMatch(/must not be set on a root node.*\(error 1500\)/);
+  });
+
+  it("keeps the code's own detail when the node gave no reason", () => {
+    expect(describeFleetError(nodeRefusal(1108)).nodeReason).toBeUndefined();
+  });
+});

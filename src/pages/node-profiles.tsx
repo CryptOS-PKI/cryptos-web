@@ -20,6 +20,7 @@ import { Link, Navigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/auth";
 import { getNodeConfig } from "@/lib/config";
+import { fleetErrorMessage } from "@/lib/fleet/error-copy";
 import { fleetMode } from "@/lib/fleet/mode";
 import { useNode } from "@/lib/nodes";
 import { computeDrift, type DriftRow, type DriftStatus } from "@/lib/profile-drift";
@@ -61,7 +62,7 @@ const DriftView = ({ nodeName }: { nodeName: string }) => {
       const nodeProfiles = (config.pki?.profiles ?? []).map((p) => fromProtoProfile(p));
       setRows(computeDrift(catalog, nodeProfiles));
     } catch (error) {
-      setLoadError(error instanceof Error ? error.message : "Failed to load node config");
+      setLoadError(fleetErrorMessage(error, "Failed to load node config"));
     }
   }, [catalog, nodeName]);
 
@@ -76,7 +77,7 @@ const DriftView = ({ nodeName }: { nodeName: string }) => {
       await applyProfileToNode(nodeName, name);
       await load();
     } catch (error) {
-      setApplyError(error instanceof Error ? error.message : "Apply failed");
+      setApplyError(fleetErrorMessage(error, "Apply failed"));
     } finally {
       setPending("");
     }

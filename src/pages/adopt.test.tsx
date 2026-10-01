@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import { Code, ConnectError } from "@connectrpc/connect";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -72,6 +73,28 @@ describe("AdoptPage", () => {
     fireEvent.click(screen.getByRole("button", { name: /confirm fingerprint/i }));
     expect(screen.getByText(/pinned for this adoption/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/node name/i)).toBeInTheDocument();
+  });
+
+  it("says why disk discovery failed when the node refuses", async () => {
+    useAuth.mockReturnValue({ operator: { level: "admin" } });
+    previewAdoption.mockResolvedValue({ certSha256: "AB:CD:EF", subject: "CN=maintenance" });
+    listInstallDisks.mockRejectedValue(
+      new ConnectError("refused", Code.FailedPrecondition, {
+        "x-cryptos-error-code": "1108",
+        "x-cryptos-node-reason": "maintenance mode is closed",
+      }),
+    );
+    render(<AdoptPage />);
+
+    fireEvent.change(screen.getByLabelText(/endpoint/i), { target: { value: "host:9000" } });
+    fireEvent.click(screen.getByRole("button", { name: /preview/i }));
+    await waitFor(() => screen.getByRole("button", { name: /confirm fingerprint/i }));
+    fireEvent.click(screen.getByRole("button", { name: /confirm fingerprint/i }));
+
+    expect(await screen.findByText(/maintenance mode is closed/)).toBeInTheDocument();
+    expect(screen.getByText(/error 1108/)).toBeInTheDocument();
+    // Manual entry stays available.
+    expect(screen.getByLabelText(/install disk/i)).toBeInTheDocument();
   });
 
   it("streams phase progress and shows the node established", async () => {

@@ -35,6 +35,7 @@ import {
   previewAdoption,
 } from "@/lib/adopt";
 import { parseList } from "@/lib/config";
+import { fleetErrorMessage } from "@/lib/fleet/error-copy";
 import { useNodes } from "@/lib/nodes";
 
 const field = "w-full rounded-md border bg-card px-3 py-2 font-mono text-sm";
@@ -144,6 +145,7 @@ export const AdoptPage = () => {
   // confirm), so the operator picks a real device instead of guessing a path.
   const [disks, setDisks] = useState<InstallDisk[]>([]);
   const [disksBusy, setDisksBusy] = useState(false);
+  const [disksError, setDisksError] = useState("");
 
   // Subordinate (intermediate/issuing) adoption: the operator picks a parent
   // node and we embed its CA certificate as the trust anchor. Established nodes
@@ -186,14 +188,16 @@ export const AdoptPage = () => {
   const confirmPin = async (pin: string) => {
     setConfirmedPin(pin);
     setDisksBusy(true);
+    setDisksError("");
     try {
       const found = await listInstallDisks(endpoint, pin);
       setDisks(found);
       if (found.length > 0) {
         setDisk(found[0].path);
       }
-    } catch {
+    } catch (error_: unknown) {
       setDisks([]);
+      setDisksError(fleetErrorMessage(error_, "Disk discovery failed."));
     } finally {
       setDisksBusy(false);
     }
@@ -516,6 +520,11 @@ export const AdoptPage = () => {
               />
             )}
           </label>
+          {disksError ? (
+            <p className="text-xs text-warning" role="status">
+              Could not list the node&apos;s disks: {disksError} Enter the install disk by hand.
+            </p>
+          ) : null}
           {/* Revocation is a CA responsibility, so it is offered only for a root
               at adopt time. A subordinate is not a CA until its enrollment is
               signed; its revocation base URL is set afterward via apply-config. */}
