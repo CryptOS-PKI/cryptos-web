@@ -103,6 +103,8 @@ task license     # check the Apache 2.0 headers (task license:fix adds them)
 
 The pre-push hook runs `npm run lint` and `npm test`. CI runs lint, test and build on every pull request, and checks the license headers with `task license`.
 
+After a stacked pull request is retargeted onto `main`, CI starts on its next push, or when it is toggled to draft and back to ready.
+
 ## 📄 License
 
 [Apache License 2.0](LICENSE). Copyright The CryptOS Authors.
