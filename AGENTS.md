@@ -1,4 +1,4 @@
-# AGENTS.md - web
+# AGENTS.md - cryptos-web
 
 Guide for AI agents working in this repository. Pair with `CLAUDE.md` (the working agreement and
 hook-enforced rules). Keep this file current when the build, layout, or public API changes.
@@ -8,12 +8,16 @@ hook-enforced rules). Keep this file current when the build, layout, or public A
 Fleet Manager web frontend for CryptOS-PKI. React + TypeScript, built with Vite, served by manager/.
 
 This is a leaf application (a static bundle). Live mode (the default) is wired to the manager: live
-surfaces talk to it through Connect-Web using the TypeScript stubs in `src/gen/fleet/`. Mock mode
+surfaces talk to it through Connect-Web using the TypeScript stubs in `packages/api-client`. Mock mode
 (`VITE_FLEET_MODE=mock`, which the test suite pins) reads typed fixtures from `src/lib/mock.ts` that
 stand in for the manager's gRPC responses. The whole bundle is self-contained (fonts bundled as
 woff2, strict CSP, no runtime CDN) for air-gap use.
 
 ## Layout
+
+An npm workspaces monorepo: `apps/console` (the Fleet Manager UI; the `src/` paths below are
+under it), `packages/ui` (the UI kit; the design tokens in `tokens.css` today) and
+`packages/api-client` (the generated node and fleet API stubs).
 
 - `src/main.tsx` - entry; mounts the theme + auth providers and the router.
 - `src/App.tsx` - route table (Fleet `/`, Nodes `/nodes`, node detail `/nodes/:name`, Operator CAs `/operator-cas`, Operators,
@@ -31,8 +35,10 @@ woff2, strict CSP, no runtime CDN) for air-gap use.
 
 ## Build, test, lint
 
-- Build: `npm run build` (`tsc -b` then `vite build`)
-- Test: `npm test` (vitest; no external service required)
+- Build: `npm run build` (every workspace; the console runs `tsc -b` then `vite build`)
+- Test: `npm test` (vitest in every workspace; no external service required)
+- Generated stubs: `npm run generate` (needs `buf`; fetches the protos at the refs in
+  `packages/api-client/proto-refs.env`)
 - Lint: `npm run lint` (eslint + `prettier --check`); `npm run format` to fix
 - License headers: `task license` (golic; `.golic.yaml` adds the .ts/.tsx rules)
 
@@ -42,8 +48,9 @@ woff2, strict CSP, no runtime CDN) for air-gap use.
   `.claude/hooks` (run `bash .claude/hooks/install.sh` once per clone).
 - Open every PR as a draft. CI skips drafts, so run the full checks locally, push once they pass,
   and mark the PR ready when the work is finished; see CLAUDE.md "CI and Actions minutes".
-- `src/gen/fleet/` is a copy of the api repo's `gen/ts/cryptos/` at its current `main`; never edit
-  it by hand. Refresh it whenever an api change adds a field. Connect-Web decodes JSON with unknown
+- `packages/api-client/src/gen/` is generated from the node and fleet protos at the refs in
+  `packages/api-client/proto-refs.env`; never edit it by hand. Bump the refs and run
+  `npm run generate` whenever either API adds a field. Connect-Web decodes JSON with unknown
   fields ignored, so a stale stub drops a new field without an error, and a config read, edited and
   applied through the UI then clears that field on the node. `src/lib/wire-fields.test.ts` pins
   the newer fields; extend it when you refresh.

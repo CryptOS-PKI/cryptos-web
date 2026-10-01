@@ -1,21 +1,29 @@
-# web 🎨
+# cryptos-web 🎨
 
-> 🖥️ The web frontend for the [CryptOS-PKI](https://github.com/CryptOS-PKI) Fleet Manager. React + TypeScript, built with Vite to a static bundle that [`manager`](https://github.com/CryptOS-PKI/manager) embeds and serves on its own TLS listener.
+> 🖥️ The web frontend for the [CryptOS-PKI](https://github.com/CryptOS-PKI) Fleet Manager. React + TypeScript, built with Vite to a static bundle that [`cryptos-manager`](https://github.com/CryptOS-PKI/cryptos-manager) embeds and serves on its own TLS listener.
 
 > [!WARNING]
-> 🚧 **Pre-1.0: any release can change fundamentally.** CryptOS is pre-1.0. Until v1.0.0, any release may change configuration, APIs, on-disk and state formats, trust setup, and upgrade paths, sometimes with no migration path. If you run it in production, you accept that risk. Read [each release's upgrade notes](https://github.com/CryptOS-PKI/web/releases) before you upgrade.
+> 🚧 **Pre-1.0: any release can change fundamentally.** CryptOS is pre-1.0. Until v1.0.0, any release may change configuration, APIs, on-disk and state formats, trust setup, and upgrade paths, sometimes with no migration path. If you run it in production, you accept that risk. Read [each release's upgrade notes](https://github.com/CryptOS-PKI/cryptos-web/releases) before you upgrade.
 
 ## ✨ What it is
 
-This is the **only** web UI in the project, by design. CryptOS CA nodes ([`cryptos`](https://github.com/CryptOS-PKI/cryptos)) do not ship a web frontend in the OS image — they expose mTLS gRPC and that's it. When a fleet operator wants a web UI, they stand up the Fleet Manager (`manager/` backend + this frontend), link nodes to it, and use this UI for day-to-day operations.
+This is the **only** web UI in the project, by design. CryptOS CA nodes ([`cryptos-node`](https://github.com/CryptOS-PKI/cryptos-node)) do not ship a web frontend in the OS image — they expose mTLS gRPC and that's it. When a fleet operator wants a web UI, they stand up the Fleet Manager (`manager/` backend + this frontend), link nodes to it, and use this UI for day-to-day operations.
 
 Conceptually `manager/` and `web/` are one application split across two repos. The split exists so the backend and frontend can be built, tested, and released on their own cadences while still ending up in a single deployable container image (the frontend bundle is pinned to a specific commit and embedded into `manager/` via `embed.FS`).
+
+## 📂 Layout
+
+An npm workspaces monorepo. Each app builds on its own; the packages are shared source, not published.
+
+- 🖥️ **`apps/console`** — the Fleet Manager UI (`@cryptos-pki/console`), the bundle the manager embeds.
+- 🎨 **`packages/ui`** — the CryptOS UI kit (`@cryptos-pki/ui`). Today it holds the design tokens (`tokens.css`, the light and dark palettes); the shared components move in with the redesign.
+- 📡 **`packages/api-client`** — the generated TypeScript stubs for both APIs (`@cryptos-pki/api-client`), imported as `@cryptos-pki/api-client/cryptos/node/v1/<file>_pb` and `@cryptos-pki/api-client/cryptos/fleet/v1/<file>_pb`.
 
 ## 🧱 Stack
 
 - ⚛️ **React + TypeScript**
 - ⚡ **Vite** (bundler)
-- 🔌 **Talks to `manager/` via Connect-Web** (gRPC-over-HTTP/2), using TS stubs generated from [`api/`](https://github.com/CryptOS-PKI/api). The stubs are checked in under `src/gen/fleet/` and copied from the api repo's `gen/ts/` whenever its protos change, so a config edited here keeps every field the node sends
+- 🔌 **Talks to `manager/` via Connect-Web** (gRPC-over-HTTP/2), using the TS stubs in `packages/api-client`. protoc-gen-es builds them from the node API ([`cryptos-node/proto`](https://github.com/CryptOS-PKI/cryptos-node/tree/main/proto)) and the fleet API ([`cryptos-manager/proto`](https://github.com/CryptOS-PKI/cryptos-manager/tree/main/proto)) at the commits pinned in `packages/api-client/proto-refs.env`, and checked in, so a config edited here keeps every field the node sends
 - 🔐 **Browser-side mTLS** for operator authentication (smart-card or YubiKey-backed client cert in the OS cert store; no passwords)
 - 🛡️ **Strict CSP**, no third-party JS, no CDN fetches at runtime — the bundle is fully self-contained so the project stays air-gap-friendly
 
@@ -59,7 +67,7 @@ A key is bound to the operator certificate that created it. It stops working whe
 It has two data sources, chosen at build time with `VITE_FLEET_MODE`:
 
 - 📡 **`live`** (the default) reads everything from the manager over Connect. `VITE_FLEET_API` is the manager's address (default `http://localhost:8080`).
-- 🧪 **`mock`** keeps every page on the in-memory fixtures in `src/lib/mock.ts`, for UI work without a manager or a client certificate. The test suite runs in this mode.
+- 🧪 **`mock`** keeps every page on the in-memory fixtures in `apps/console/src/lib/mock.ts`, for UI work without a manager or a client certificate. The test suite runs in this mode.
 
 To run it locally:
 
@@ -87,26 +95,25 @@ The build phases (project-wide):
 
 ## 🧭 Companion repos
 
-- 🛰️ [`manager`](https://github.com/CryptOS-PKI/manager) — the Fleet Manager backend. Serves this bundle.
-- 📡 [`api`](https://github.com/CryptOS-PKI/api) — shared `.proto` definitions; this repo consumes its generated TypeScript stubs.
-- 🧠 [`cryptos`](https://github.com/CryptOS-PKI/cryptos) — the OS / engine that runs the CAs this UI manages (indirectly, via `manager/`).
+- 🛰️ [`cryptos-manager`](https://github.com/CryptOS-PKI/cryptos-manager) — the Fleet Manager backend, and the home of the fleet API. Serves this bundle.
+- 🧠 [`cryptos-node`](https://github.com/CryptOS-PKI/cryptos-node) — the OS / engine that runs the CAs this UI manages (indirectly, via `manager/`), and the home of the node API.
 
 ## 🛠️ Build
 
-Requires Node 22 LTS (the version CI builds on) and npm. All dependencies are self-hosted (fonts bundled as woff2, no runtime CDN).
+Requires Node 22 LTS (the version CI builds on) and npm, plus [`buf`](https://buf.build) to regenerate the stubs. Bump a ref in `packages/api-client/proto-refs.env`, run `npm run generate`, and commit `packages/api-client/src/gen` in the same change. All dependencies are self-hosted (fonts bundled as woff2, no runtime CDN).
 
 ```bash
-npm ci           # install dependencies from the lockfile
-npm run dev      # start the Vite dev server
-npm run build    # type-check and produce the static bundle in dist/
-npm run preview  # serve the built dist/ locally
-npm run lint     # eslint (typescript-eslint) + prettier --check
-npm run format   # prettier --write
-npm test         # vitest
-task license     # check the Apache 2.0 headers (task license:fix adds them)
+npm ci            # install every workspace from the one lockfile
+npm run dev       # start the console's Vite dev server
+npm run build     # type-check and build every app (the console bundle lands in apps/console/dist/)
+npm run lint      # eslint (typescript-eslint) + prettier --check, across the repo
+npm run format    # prettier --write
+npm test          # vitest, in every workspace
+npm run generate  # regenerate packages/api-client from the pinned node and fleet protos (needs buf)
+task license      # check the Apache 2.0 headers (task license:fix adds them)
 ```
 
-The pre-push hook runs `npm run lint` and `npm test`. CI runs lint, test and build on every pull request, and checks the license headers with `task license`.
+The pre-push hook runs `npm run lint` and `npm test`. CI runs lint, test, build and a check that the generated stubs match the pinned protos on every pull request, and checks the license headers with `task license`.
 
 After a stacked pull request is retargeted onto `main`, CI starts on its next push, or when it is toggled to draft and back to ready.
 
