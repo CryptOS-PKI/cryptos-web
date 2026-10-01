@@ -21,11 +21,13 @@ import { type InstallDisk, InstallDiskSchema } from "@/gen/fleet/cryptos/v1/node
 import { fleetClient } from "@/lib/fleet/client";
 import { fleetMode } from "@/lib/fleet/mode";
 
-// Adopt-a-new-node (S10). The web drives two manager RPCs: PreviewAdoption
-// (unary, trust-on-first-use fingerprint) and AdoptNode (server-streaming,
-// live phase progress). The web never contacts the maintenance node directly
-// and never sends any secret to an unpinned endpoint -- the manager holds the
-// pin and orchestrates the whole apply -> install -> reboot -> ceremony flow.
+// Adopt-a-new-node (S10). The web drives three manager RPCs: PreviewAdoption
+// (unary, trust-on-first-use fingerprint), AdoptNode (server-streaming, live
+// phase progress) and ConfirmAdoptionFingerprint (unary, confirms the
+// installed node's certificate while the stream waits). The web never contacts
+// the maintenance node directly and never sends any secret to an unpinned
+// endpoint -- the manager holds the pin and orchestrates the whole apply ->
+// install -> reboot -> confirm -> ceremony flow.
 
 // AdoptionPreview is the maintenance node's presented identity the operator
 // confirms before adoption proceeds.
@@ -36,13 +38,70 @@ export interface AdoptionPreview {
 
 // AdoptPhase is one streamed step of the orchestration. `done` marks the final
 // message; the phase string is one of the manager's documented phases
-// (applying-config, installing, awaiting-reboot, ceremony, established) or an
-// error phase when a step fails.
+// (applying-config, installing, awaiting-reboot,
+// awaiting-fingerprint-confirmation, ceremony, established,
+// awaiting-certificate) or an error phase when a step fails. adoptionId names
+// the run; presentedCertSha256 is set only while the manager waits for the
+// installed node's fingerprint to be confirmed.
 export interface AdoptPhase {
+  adoptionId: string;
   detail: string;
   done: boolean;
   phase: string;
+  presentedCertSha256: string;
 }
+
+export const AWAITING_FINGERPRINT = "awaiting-fingerprint-confirmation";
+
+const normalizeFingerprint = (fp: string): string => fp.replaceAll(/[\s:]/g, "").toLowerCase();
+
+// fingerprintsMatch compares two SHA-256 fingerprints the way the manager
+// does: case, colons and whitespace are ignored.
+export const fingerprintsMatch = (a: string, b: string): boolean => {
+  const na = normalizeFingerprint(a);
+  return na !== "" && na === normalizeFingerprint(b);
+};
+
+// formatFingerprint renders a fingerprint as colon-separated uppercase pairs,
+// easier to read against the node console than one long hex run.
+export const formatFingerprint = (fp: string): string =>
+  (normalizeFingerprint(fp).match(/.{1,2}/g) ?? []).join(":").toUpperCase();
+
+// The mock adoption's installed-node fingerprint, and the confirmations it is
+// waiting for, keyed by adoption ID.
+const MOCK_INSTALLED_SHA256 = "5f".repeat(32);
+const mockWaiting = new Map<string, { reject: (e: Error) => void; resolve: () => void }>();
+let mockAdoptions = 0;
+
+// confirmAdoptionFingerprint tells the manager the operator checked the
+// installed node's fingerprint against its console, so the paused adoption
+// continues on the AdoptNode stream. A mismatch is refused by the manager and
+// the adoption fails; the error propagates to the caller.
+export const confirmAdoptionFingerprint = async (
+  adoptionId: string,
+  certSha256: string,
+): Promise<void> => {
+  if (!adoptionId || !certSha256) {
+    throw new Error("An adoption and a fingerprint are required.");
+  }
+  if (fleetMode() === "mock") {
+    const waiting = mockWaiting.get(adoptionId);
+    if (!waiting) {
+      throw new Error(`No adoption ${adoptionId} is waiting for a fingerprint.`);
+    }
+    mockWaiting.delete(adoptionId);
+    if (!fingerprintsMatch(certSha256, MOCK_INSTALLED_SHA256)) {
+      const mismatch = new Error(
+        "The confirmed fingerprint does not match the node's certificate.",
+      );
+      waiting.reject(mismatch);
+      throw mismatch;
+    }
+    waiting.resolve();
+    return;
+  }
+  await fleetClient().confirmAdoptionFingerprint({ adoptionId, certSha256 });
+};
 
 // previewAdoption fetches the maintenance node's certificate fingerprint and
 // subject so the operator can confirm it (TOFU). `mock` returns a stable
@@ -140,6 +199,7 @@ export async function* adoptNode(
   endpoint: string,
   pinnedCertSha256: string,
   config: MachineConfig,
+  signal?: AbortSignal,
 ): AsyncGenerator<AdoptPhase> {
   const trimmed = endpoint.trim();
   if (!trimmed) {
@@ -155,35 +215,65 @@ export async function* adoptNode(
     // script coherent with the role so the offline demo matches the live flow.
     const kind = config.role?.kind ?? "";
     const subordinate = kind !== "" && kind !== "root";
+    mockAdoptions += 1;
+    const adoptionId = `mock-adoption-${mockAdoptions}`;
+    const step = (phase: string, detail: string, done = false): AdoptPhase => ({
+      adoptionId,
+      detail,
+      done,
+      phase,
+      presentedCertSha256: phase === AWAITING_FINGERPRINT ? MOCK_INSTALLED_SHA256 : "",
+    });
     const common: AdoptPhase[] = [
-      { detail: "Applying the initial machine config.", done: false, phase: "applying-config" },
-      { detail: "Installing the CryptOS runtime.", done: false, phase: "installing" },
-      { detail: "Waiting for the node to reboot.", done: false, phase: "awaiting-reboot" },
+      step("applying-config", "Applying the initial machine config."),
+      step("installing", "Installing the CryptOS runtime."),
+      step("awaiting-reboot", "Waiting for the node to reboot."),
+      step(AWAITING_FINGERPRINT, "Confirm the node's Mgmt SHA-256 from its console."),
     ];
     const scripted: AdoptPhase[] = subordinate
       ? [
           ...common,
-          {
-            detail: "Subordinate provisioned; awaiting a parent-signed certificate.",
-            done: true,
-            phase: "awaiting-certificate",
-          },
+          step(
+            "awaiting-certificate",
+            "Subordinate provisioned; awaiting a parent-signed certificate.",
+            true,
+          ),
         ]
       : [
           ...common,
-          { detail: "Running the enrollment ceremony.", done: false, phase: "ceremony" },
-          { detail: "Node established and linked to the fleet.", done: true, phase: "established" },
+          step("ceremony", "Running the enrollment ceremony."),
+          step("established", "Node established and linked to the fleet.", true),
         ];
-    for (const step of scripted) {
+    for (const s of scripted) {
       // A short delay makes the mock progress visibly step through phases.
       await new Promise((resolve) => setTimeout(resolve, 150));
-      yield step;
+      if (s.phase === AWAITING_FINGERPRINT) {
+        const confirmed = new Promise<void>((resolve, reject) => {
+          mockWaiting.set(adoptionId, { reject, resolve });
+        });
+        // Keep a mismatch that nobody is awaiting yet from surfacing as an
+        // unhandled rejection; it still rejects the await below.
+        confirmed.catch(() => undefined);
+        yield s;
+        await confirmed;
+        continue;
+      }
+      yield s;
     }
     return;
   }
 
-  const stream = fleetClient().adoptNode({ config, endpoint: trimmed, pinnedCertSha256 });
+  const request = { config, endpoint: trimmed, pinnedCertSha256 };
+  const stream = signal
+    ? fleetClient().adoptNode(request, { signal })
+    : fleetClient().adoptNode(request);
   for await (const message of stream) {
-    yield { detail: message.detail, done: message.done, phase: message.phase };
+    yield {
+      adoptionId: message.adoptionId,
+      detail: message.detail,
+      done: message.done,
+      phase: message.phase,
+      presentedCertSha256: message.presentedCertSha256,
+    };
   }
 }
