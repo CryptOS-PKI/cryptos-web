@@ -27,6 +27,10 @@ The same bundle adapts at runtime based on the role of the node being viewed:
 - 🔌 **Intermediate / Issuing nodes** — issuance profiles, certificate inventory, CSR review, CRL / OCSP status, adapter health, audit log tail.
 - 👁️ **All nodes** — live status, configuration view (read-only when the node is linked to FM, which is the normal mode).
 
+## 🚀 First run
+
+A new Fleet Manager with no operator CA configured starts in first run. Before sign-in the web UI asks the manager for its first-run state. While it is open, a wizard takes the single-use bootstrap token from the manager's log (after a check of the server certificate's fingerprint), registers your external operator CA with its CRL source and OCSP mode once you confirm its fingerprint, and gets the first admin certificate. Path A makes the key in the browser, with a mandatory encrypted key backup, then builds the PKCS#12 once your CA signs the CSR. Path B gives the OpenSSL recipe and an optional pre-flight. It ends with install steps for each OS. The session secret stays in memory only.
+
 ## 🪪 Operator credentials
 
 Operator certificates come from your own external operator CA (an offline OpenSSL CA or an enterprise CA). The Fleet Manager never signs one; it records them and can deny them.

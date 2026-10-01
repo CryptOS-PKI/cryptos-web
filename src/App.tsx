@@ -18,6 +18,7 @@ import { Route, Routes } from "react-router-dom";
 
 import { AppShell } from "@/components/layout/app-shell";
 import { AuthGate } from "@/components/layout/auth-gate";
+import { BootstrapGate } from "@/components/layout/bootstrap-gate";
 import { AdoptPage } from "@/pages/adopt";
 import { AgentKeysPage } from "@/pages/agent-keys";
 import { ApprovalsPage } from "@/pages/approvals";
@@ -54,9 +55,11 @@ export const App = () => {
       <Route element={<CredentialRequestPage />} path="request-credential" />
       <Route
         element={
-          <AuthGate>
-            <AppShell />
-          </AuthGate>
+          <BootstrapGate>
+            <AuthGate>
+              <AppShell />
+            </AuthGate>
+          </BootstrapGate>
         }
       >
         <Route element={<DashboardPage />} index />

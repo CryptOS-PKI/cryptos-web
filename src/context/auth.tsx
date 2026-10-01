@@ -162,6 +162,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setReason(null);
 
     if (fleetMode() === "mock") {
+      // With mock first run open, act like a browser holding no certificate,
+      // so the first-run wizard can be tried offline.
+      if (import.meta.env.VITE_BOOTSTRAP_MOCK_STATE === "open") {
+        setOperator(null);
+        setReason("no-certificate");
+        setStatus("denied");
+
+        return;
+      }
       setOperator(DEV_OPERATOR);
       setStatus("authenticated");
 

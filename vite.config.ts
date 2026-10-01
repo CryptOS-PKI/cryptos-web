@@ -30,6 +30,10 @@ export default defineConfig({
   // via VITE_MANAGER_PROXY for the local ESXi E2E.
   server: {
     proxy: {
+      "/cryptos.fleet.v1.BootstrapService": {
+        changeOrigin: true,
+        target: process.env.VITE_MANAGER_PROXY ?? "http://127.0.0.1:18099",
+      },
       "/cryptos.fleet.v1.FleetService": {
         changeOrigin: true,
         target: process.env.VITE_MANAGER_PROXY ?? "http://127.0.0.1:18099",
