@@ -16,7 +16,7 @@ woff2, strict CSP, no runtime CDN) for air-gap use.
 ## Layout
 
 - `src/main.tsx` - entry; mounts the theme + auth providers and the router.
-- `src/App.tsx` - route table (Fleet `/`, Nodes `/nodes`, node detail `/nodes/:name`, Operators,
+- `src/App.tsx` - route table (Fleet `/`, Nodes `/nodes`, node detail `/nodes/:name`, Operator CAs `/operator-cas`, Operators,
   Agent keys `/agent-keys`, Approvals `/approvals` (accepts `?id=<approval>` from the manager's
   approval link), Audit, 404). The MCP sign-in consent page `/oauth/consent` is routed
   outside the auth gate on purpose: the manager authenticates that request with the browser's
@@ -59,6 +59,10 @@ woff2, strict CSP, no runtime CDN) for air-gap use.
   encrypted key backup (PBES2 PKCS#8), reads it back, and builds the PKCS#12 with the backup's
   own passphrase; the credential wizards hold only the encrypted backup in memory. Tests assert
   on the request bodies that neither the key nor the passphrase is ever sent.
+- Operator CA registration is a preview then a confirm with `confirm_sha256`.
+  `OperatorCARegisterForm` takes the submit call as a prop, so the admin page and first run share
+  it; `registerRequestFields()` builds the body both RegisterOperatorCA RPCs take.
+  `operatorCABanners()` decides the CRL and OCSP banners from `ListOperatorCAs`.
 - The Approvals nav badge counts pending approvals through `listApprovals`. It recounts on every
   navigation, every 30 seconds, and when `decideApproval` dispatches the `APPROVALS_CHANGED`
   window event (`src/lib/approvals.ts`). A new surface that changes an approval should go through

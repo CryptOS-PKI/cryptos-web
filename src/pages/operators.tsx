@@ -18,12 +18,14 @@ import { useCallback, useEffect, useState } from "react";
 
 import { CredentialCompleteDialog } from "@/components/credential-complete-dialog";
 import { CredentialRequestWizard } from "@/components/credential-request-wizard";
+import { OperatorCABanners } from "@/components/operator-ca-banners";
 import { OperatorDenyDialog } from "@/components/operator-deny-dialog";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/auth";
 import { shortFingerprint } from "@/lib/fingerprint";
 import { ErrorCode, errorCode } from "@/lib/fleet/error-code";
 import { fleetErrorMessage } from "@/lib/fleet/error-copy";
+import { listOperatorCAs, type OperatorCABanner, operatorCABanners } from "@/lib/operator-cas";
 import {
   cancelCredentialRequest,
   type CredentialRequestRow,
@@ -89,6 +91,18 @@ export const OperatorsPage = () => {
     void load();
   }, [load]);
 
+  // Admins see the operator CA banners here too: a CA whose revocations the
+  // Fleet Manager can't see matters most where credentials are denied.
+  const [banners, setBanners] = useState<OperatorCABanner[]>([]);
+  useEffect(() => {
+    if (!isAdmin) return;
+    listOperatorCAs()
+      .then((cas) => setBanners(operatorCABanners(cas)))
+      .catch((error_: unknown) =>
+        console.info("fleet: ListOperatorCAs for banners failed", error_),
+      );
+  }, [isAdmin]);
+
   const cancel = (request: CredentialRequestRow) => {
     setActionError("");
     cancelCredentialRequest(request.id)
@@ -136,6 +150,8 @@ export const OperatorsPage = () => {
           </div>
         ) : null}
       </div>
+
+      <OperatorCABanners banners={banners} />
 
       <p
         className="max-w-3xl rounded-md border border-warning/40 bg-warning/5 p-3 text-sm text-muted-foreground"

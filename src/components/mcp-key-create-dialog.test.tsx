@@ -36,6 +36,11 @@ describe("McpKeyCreateDialog", () => {
     });
   });
 
+  it("says MCP needs a current CRL from the operator CA", () => {
+    render(<McpKeyCreateDialog level="operator" onClose={vi.fn()} onCreated={vi.fn()} />);
+    expect(screen.getByText(/MCP needs a current CRL/)).toBeInTheDocument();
+  });
+
   it("offers ceilings up to the operator's own level, defaulting to it", () => {
     render(<McpKeyCreateDialog level="operator" onClose={vi.fn()} onCreated={vi.fn()} />);
     const ceiling = screen.getByLabelText(/level ceiling/i) as HTMLSelectElement;

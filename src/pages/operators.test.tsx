@@ -168,6 +168,13 @@ describe("OperatorsPage credentials", () => {
     );
   });
 
+  it("shows the operator CA banners to an admin", async () => {
+    useAuth.mockReturnValue({ operator: admin });
+    render(<OperatorsPage />);
+    const banners = await screen.findByRole("region", { name: /needs attention/i });
+    expect(within(banners).getByText("CA revocations not observed")).toBeInTheDocument();
+  });
+
   it("hides every action from a non-admin", async () => {
     useAuth.mockReturnValue({ operator: { ...admin, level: "operator" } });
     render(<OperatorsPage />);

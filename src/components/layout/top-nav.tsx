@@ -63,6 +63,7 @@ const items: { end?: boolean; label: string; to: string }[] = [
   { label: "Enrollment", to: "/enrollment" },
   { label: "Profiles", to: "/profiles" },
   { label: "Protocols", to: "/protocols" },
+  { label: "Operator CAs", to: "/operator-cas" },
   { label: "Operators", to: "/operators" },
   { label: "Agent keys", to: "/agent-keys" },
   { label: "Approvals", to: "/approvals" },
