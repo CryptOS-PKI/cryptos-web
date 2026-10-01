@@ -18,3 +18,15 @@ limitations under the License.
 // colon form operators compare against OpenSSL output.
 export const shortFingerprint = (sha256: string): string =>
   sha256 === "" ? "-" : `${(sha256.slice(0, 16).match(/../g) ?? []).join(":").toUpperCase()}…`;
+
+// colonFingerprint is the full fingerprint in openssl's form: AB:CD:...
+export const colonFingerprint = (sha256: string): string =>
+  (sha256.match(/../g) ?? []).join(":").toUpperCase();
+
+// normalizeFingerprint drops everything but the hex digits, so a pasted
+// "sha256 Fingerprint=AB:CD:..." line compares with a bare lowercase hex one.
+export const normalizeFingerprint = (input: string): string =>
+  input
+    .replace(/^.*=/, "")
+    .replaceAll(/[^0-9a-f]/gi, "")
+    .toLowerCase();

@@ -82,6 +82,16 @@ describe("TopNav", () => {
     expect(hrefs.indexOf("/agent-keys")).toBe(hrefs.indexOf("/operators") + 1);
   });
 
+  it("places Operator CAs right before Operators", () => {
+    render(
+      <MemoryRouter>
+        <TopNav />
+      </MemoryRouter>,
+    );
+    const hrefs = screen.getAllByRole("link").map((a) => a.getAttribute("href"));
+    expect(hrefs.indexOf("/operator-cas")).toBe(hrefs.indexOf("/operators") - 1);
+  });
+
   it("places Approvals right after Agent keys", () => {
     render(
       <MemoryRouter>

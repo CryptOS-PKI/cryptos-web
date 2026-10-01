@@ -93,6 +93,10 @@ export const McpKeyCreateDialog = ({
             For an MCP client that cannot open the browser sign-in. The key acts as you, up to its
             ceiling, until it is revoked or your certificate is revoked or renewed.
           </p>
+          <p className="text-xs text-muted-foreground">
+            MCP needs a current CRL from your certificate&apos;s operator CA. Under a CA with no CRL
+            source, or a CRL past its next update, the key is refused (error 1608).
+          </p>
         </div>
 
         {plaintext ? (

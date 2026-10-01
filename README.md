@@ -34,6 +34,7 @@ Operator certificates come from your own external operator CA (an offline OpenSS
 - 📝 **Request credential** (Operators page, admin) makes a P-384 key and CSR in the browser, with a mandatory encrypted key backup whose passphrase is shown once, or takes a CSR the holder made. It returns the CSR, the OpenSSL extension section for the level and the `openssl ca` command for the CA operator.
 - ✅ **Complete** records the signed certificate against its request and, when this browser can open the key backup, builds the PKCS#12 locally with the same passphrase. **Record certificate** imports one made entirely at the CA.
 - ⛔ **Deny at the Fleet Manager** puts a credential on the Fleet Manager's denylist, with an RFC 5280 reason and a note. It doesn't revoke at the CA, and says so.
+- 🏛️ **Operator CAs** (admin) lists the trusted CAs with their CRL and OCSP state, registers a new one after you confirm its SHA-256 fingerprint against the CA machine, retires one (the manager refuses the last active CA, and asks before locking you out), and changes the CRL source, uploads a CRL or sets the OCSP mode. Banners flag a CA whose revocations aren't observed, a CRL expiring or expired, and an OCSP responder that isn't answering.
 - 🙋 **Make a credential request** at `/request-credential` is an anonymous page where a future operator makes their own key, key backup and CSR, and later builds their PKCS#12. It makes no network calls.
 
 ## 🤖 Agent access (MCP)
