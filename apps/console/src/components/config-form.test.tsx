@@ -16,6 +16,7 @@ limitations under the License.
 
 import type { MachineConfig } from "@cryptos-pki/api-client/cryptos/node/v1/config_pb";
 
+import { Code, ConnectError } from "@connectrpc/connect";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -111,6 +112,32 @@ describe("ConfigForm (live) whole-config-replace safety", () => {
     fireEvent.click(screen.getByRole("button", { name: /apply/i }));
 
     expect(await screen.findByText(/node unreachable/i)).toBeInTheDocument();
+  });
+
+  it("shows the node's reason when the node refuses the config", async () => {
+    applyNodeConfig.mockRejectedValue(
+      new ConnectError("refused", Code.InvalidArgument, {
+        "x-cryptos-error-code": "1500",
+        "x-cryptos-node-reason": "pki.est: must not be set on a root node",
+      }),
+    );
+    render(<ConfigForm node={issuingNode()} />);
+    await screen.findByLabelText(/revocation base url/i);
+    fireEvent.click(screen.getByRole("button", { name: /apply/i }));
+    expect(await screen.findByText(/must not be set on a root node/)).toBeInTheDocument();
+    expect(screen.getByText(/error 1500/)).toBeInTheDocument();
+  });
+
+  it("shows the node's reason when loading the config is refused", async () => {
+    getNodeConfig.mockReset().mockRejectedValue(
+      new ConnectError("refused", Code.PermissionDenied, {
+        "x-cryptos-error-code": "1108",
+        "x-cryptos-node-reason": "operator surface is read-only",
+      }),
+    );
+    render(<ConfigForm node={issuingNode()} />);
+    expect(await screen.findByText(/operator surface is read-only/)).toBeInTheDocument();
+    expect(screen.getByText(/error 1108/)).toBeInTheDocument();
   });
 
   it("does not offer Apply to a non-admin and makes no apply RPC", async () => {
