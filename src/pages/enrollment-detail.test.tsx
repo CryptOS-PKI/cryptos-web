@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import { Code, ConnectError } from "@connectrpc/connect";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -147,6 +148,26 @@ describe("EnrollmentDetailPage", () => {
       expect(screen.getByText("LINK")).toBeInTheDocument();
       expect(screen.getByText("sha256:deadbeef")).toBeInTheDocument();
       expect(screen.getByText(/tofu-pinned/i)).toBeInTheDocument();
+    });
+
+    it("explains a refused LINK approval by its code", async () => {
+      vi.mocked(approveEnrollment).mockRejectedValueOnce(
+        new ConnectError("refused", Code.InvalidArgument, { "x-cryptos-error-code": "1107" }),
+      );
+      renderAt("/enrollment/enr-link-01");
+      fireEvent.click(screen.getByRole("button", { name: /^approve$/i }));
+      expect(
+        screen.getByText(/CA certificate that signed the node's management certificate/i),
+      ).toBeInTheDocument();
+      fireEvent.change(screen.getByLabelText(/node endpoint/i), {
+        target: { value: "192.0.2.10:443" },
+      });
+      fireEvent.change(screen.getByLabelText(/admin cert/i), { target: { value: "cert-pem" } });
+      fireEvent.change(screen.getByLabelText(/admin key/i), { target: { value: "key-pem" } });
+      fireEvent.change(screen.getByLabelText(/^ca \(pem\)$/i), { target: { value: "ca-pem" } });
+      fireEvent.click(screen.getByRole("button", { name: /submit & approve/i }));
+
+      expect(await screen.findByText(/error 1107/)).toBeInTheDocument();
     });
 
     it("submits the approval material to approveEnrollment", async () => {

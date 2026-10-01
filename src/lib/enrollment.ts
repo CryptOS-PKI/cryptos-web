@@ -70,6 +70,11 @@ export interface LinkApprovalMaterial {
   nodeEndpoint: string;
 }
 
+// LINK_CA_HINT says what goes in a LINK's CA field: the manager verifies the
+// node's management certificate against it before sending anything.
+export const LINK_CA_HINT =
+  "The CA certificate that signed the node's management certificate (cryptosctl identity show -o pem prints the chain), or the node's exact management certificate. The Fleet Manager refuses a node that doesn't verify against it.";
+
 // The two enrollment shapes CreateEnrollment accepts: LINK carries the node
 // connection + trust material, SUBORDINATE carries the child/parent/profile
 // for a CSR-ferried provision.

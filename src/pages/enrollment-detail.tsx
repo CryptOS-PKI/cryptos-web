@@ -25,10 +25,12 @@ import {
   canApprove,
   type EnrollmentRequest,
   getEnrollment,
+  LINK_CA_HINT,
   type LinkApprovalMaterial,
   rejectEnrollment,
   useEnrollments,
 } from "@/lib/enrollment";
+import { fleetErrorMessage } from "@/lib/fleet/error-copy";
 import { roleLabels } from "@/lib/mock";
 
 const Field = ({ children, label }: { children: React.ReactNode; label: string }) => (
@@ -147,10 +149,14 @@ const LinkMaterialForm = ({
           CA (PEM)
         </span>
         <textarea
+          aria-describedby="link-approve-ca-hint"
           className="h-20 w-full rounded-md border bg-card px-3 py-2 font-mono text-xs focus:outline-none focus:ring-2 focus:ring-ring"
           {...field("caPem")}
         />
       </label>
+      <p className="text-xs text-muted-foreground" id="link-approve-ca-hint">
+        {LINK_CA_HINT}
+      </p>
       <div className="flex justify-end gap-2">
         <Button disabled={busy} onClick={onCancel} size="sm" variant="outline">
           Cancel
@@ -190,7 +196,7 @@ export const EnrollmentDetailPage = () => {
       await approveEnrollment(req.id, link);
       setShowLinkForm(false);
     } catch (error_) {
-      setError(error_ instanceof Error ? error_.message : "Approve failed.");
+      setError(fleetErrorMessage(error_, "Approve failed."));
     } finally {
       setPending(false);
     }

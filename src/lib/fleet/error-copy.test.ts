@@ -131,3 +131,17 @@ describe("describeFleetError", () => {
     expect(line).toContain(describeFleetError(refusal(1610)).title);
   });
 });
+
+describe("describeFleetError for LINK refusals", () => {
+  it.each([1100, 1102, 1106, 1107])("gives code %i its own title and detail", (code) => {
+    const copy = describeFleetError(refusal(code));
+    expect(copy.code).toBe(code);
+    expect(copy.title).not.toBe("Request failed");
+    expect(copy.detail).not.toBe("");
+  });
+
+  it("tells the operator what ca_pem must hold when the node is refused", () => {
+    expect(describeFleetError(refusal(1106)).detail).toMatch(/CA certificate/);
+    expect(fleetErrorMessage(refusal(1106))).toContain("(error 1106)");
+  });
+});
