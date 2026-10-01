@@ -23,7 +23,7 @@ An npm workspaces monorepo. Each app builds on its own; the packages are shared 
 
 - ⚛️ **React + TypeScript**
 - ⚡ **Vite** (bundler)
-- 🔌 **Talks to `manager/` via Connect-Web** (gRPC-over-HTTP/2), using the TS stubs in `packages/api-client`. They are generated with protoc-gen-es from the node API ([`cryptos-node/proto`](https://github.com/CryptOS-PKI/cryptos-node/tree/main/proto)) and the fleet API ([`cryptos-manager/proto`](https://github.com/CryptOS-PKI/cryptos-manager/tree/main/proto)) at the commits pinned in `packages/api-client/proto-refs.env`, and checked in, so a config edited here keeps every field the node sends
+- 🔌 **Talks to `manager/` via Connect-Web** (gRPC-over-HTTP/2), using the TS stubs in `packages/api-client`. protoc-gen-es builds them from the node API ([`cryptos-node/proto`](https://github.com/CryptOS-PKI/cryptos-node/tree/main/proto)) and the fleet API ([`cryptos-manager/proto`](https://github.com/CryptOS-PKI/cryptos-manager/tree/main/proto)) at the commits pinned in `packages/api-client/proto-refs.env`, and checked in, so a config edited here keeps every field the node sends
 - 🔐 **Browser-side mTLS** for operator authentication (smart-card or YubiKey-backed client cert in the OS cert store; no passwords)
 - 🛡️ **Strict CSP**, no third-party JS, no CDN fetches at runtime — the bundle is fully self-contained so the project stays air-gap-friendly
 
