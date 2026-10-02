@@ -13,12 +13,15 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import { cryptosPreset, uiContent } from "@cryptos-pki/ui/tailwind-preset";
 
-// The theme (the token colours, radius, fonts and motion) lives in the kit's
-// shared preset, so the console and @cryptos-pki/ui resolve the same classes.
-/** @type {import('tailwindcss').Config} */
-export default {
-  content: ["./index.html", "./src/**/*.{ts,tsx}", ...uiContent],
-  presets: [cryptosPreset],
-};
+import react from "@vitejs/plugin-react";
+import { defineConfig } from "vitest/config";
+
+export default defineConfig({
+  plugins: [react()],
+  test: {
+    environment: "jsdom",
+    globals: true,
+    setupFiles: ["./src/test/setup.ts"],
+  },
+});

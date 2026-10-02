@@ -16,7 +16,8 @@ woff2, strict CSP, no runtime CDN) for air-gap use.
 ## Layout
 
 An npm workspaces monorepo: `apps/console` (the Fleet Manager UI; the `src/` paths below are
-under it), `packages/ui` (the UI kit; the design tokens in `tokens.css` today) and
+under it), `packages/ui` (the UI kit: the tokens in `tokens.css`, the Tailwind preset and the
+components, named exports from `src/index.ts`) and
 `packages/api-client` (the generated node and fleet API stubs).
 
 - `src/main.tsx` - entry; mounts the theme + auth providers and the router.
@@ -44,6 +45,12 @@ under it), `packages/ui` (the UI kit; the design tokens in `tokens.css` today) a
 
 ## Conventions and gotchas
 
+- The kit (`packages/ui`) is imported as `@cryptos-pki/ui` straight from its TypeScript source;
+  there is no compile step, and its `build` script only typechecks. Its classes reach the console's CSS because the console's
+  `tailwind.config.js` extends the kit's preset and scans `uiContent`. Inside the kit use relative
+  imports (the console's `@/` alias does not apply there). Layouts that differ on phones (the shell's
+  drawer, the table's stacked cards) switch on `useIsDesktop()` rather than hiding a second copy with
+  CSS; the console's test setup stubs `matchMedia` to match, so tests see the desktop layout.
 - See `CLAUDE.md` for the branch/commit/PR rules; they are enforced by the git hooks in
   `.claude/hooks` (run `bash .claude/hooks/install.sh` once per clone).
 - Open every PR as a draft. CI skips drafts, so run the full checks locally, push once they pass,
