@@ -1,0 +1,131 @@
+/*
+Copyright The CryptOS Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+import { fireEvent, render, screen } from "@testing-library/react";
+import { useState } from "react";
+import { describe, expect, it, vi } from "vitest";
+
+import { Dialog } from "./dialog";
+
+const Harness = ({ variant }: { variant?: "destructive" | "standard" | "wide" }) => {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button onClick={() => setOpen(true)} type="button">
+        Open
+      </button>
+      <Dialog
+        footer={
+          <>
+            <button onClick={() => setOpen(false)} type="button">
+              Cancel
+            </button>
+            <button type="button">Revoke</button>
+          </>
+        }
+        onClose={() => setOpen(false)}
+        open={open}
+        title="Revoke certificate"
+        variant={variant}
+      >
+        <input aria-label="Reason" />
+      </Dialog>
+    </>
+  );
+};
+
+describe("Dialog", () => {
+  it("renders nothing while closed", () => {
+    render(<Dialog onClose={() => {}} open={false} title="T" />);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("is a labelled, described modal", () => {
+    render(
+      <Dialog description="web-01.example.org" onClose={() => {}} open title="Revoke certificate">
+        body
+      </Dialog>,
+    );
+    const dialog = screen.getByRole("dialog", { name: "Revoke certificate" });
+    expect(dialog).toHaveAttribute("aria-modal", "true");
+    expect(dialog).toHaveAccessibleDescription("web-01.example.org");
+  });
+
+  it("moves focus to the first field and returns it to the trigger on close", () => {
+    render(<Harness />);
+    const trigger = screen.getByRole("button", { name: "Open" });
+    trigger.focus();
+    fireEvent.click(trigger);
+    expect(screen.getByLabelText("Reason")).toHaveFocus();
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(trigger).toHaveFocus();
+  });
+
+  it("keeps Tab inside the dialog", () => {
+    render(<Harness />);
+    fireEvent.click(screen.getByRole("button", { name: "Open" }));
+    const revoke = screen.getByRole("button", { name: "Revoke" });
+    revoke.focus();
+    fireEvent.keyDown(revoke, { key: "Tab" });
+    expect(screen.getByLabelText("Reason")).toHaveFocus();
+    fireEvent.keyDown(screen.getByLabelText("Reason"), { key: "Tab", shiftKey: true });
+    expect(revoke).toHaveFocus();
+  });
+
+  it("closes on Escape", () => {
+    render(<Harness />);
+    fireEvent.click(screen.getByRole("button", { name: "Open" }));
+    fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("hands Escape to onEscape instead when given", () => {
+    const onClose = vi.fn();
+    const onEscape = vi.fn();
+    render(<Dialog onClose={onClose} onEscape={onEscape} open title="Agent key" />);
+    fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
+    expect(onEscape).toHaveBeenCalledOnce();
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it("closes on a backdrop click only when it allows it", () => {
+    const onClose = vi.fn();
+    const { rerender } = render(<Dialog closeOnBackdrop onClose={onClose} open title="T" />);
+    fireEvent.click(screen.getByTestId("dialog-backdrop"));
+    expect(onClose).toHaveBeenCalledOnce();
+    rerender(<Dialog onClose={onClose} open title="T" variant="destructive" />);
+    fireEvent.click(screen.getByTestId("dialog-backdrop"));
+    expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  it("does not close when the panel itself is clicked", () => {
+    const onClose = vi.fn();
+    render(<Dialog closeOnBackdrop onClose={onClose} open title="T" />);
+    fireEvent.click(screen.getByRole("dialog"));
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it("shows the danger disc on destructive dialogs", () => {
+    render(<Dialog onClose={() => {}} open title="Decommission node-02" variant="destructive" />);
+    expect(screen.getByRole("dialog")).toHaveAttribute("data-variant", "destructive");
+    expect(screen.getByTestId("dialog-danger-icon")).toBeInTheDocument();
+  });
+
+  it("uses the wide panel", () => {
+    render(<Dialog onClose={() => {}} open title="Wide" variant="wide" />);
+    expect(screen.getByRole("dialog")).toHaveClass("sm:max-w-[720px]");
+  });
+});

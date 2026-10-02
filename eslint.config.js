@@ -66,10 +66,15 @@ export default [
     },
   },
   {
-    // shadcn/ui primitives export a cva variants helper next to the component,
-    // and the context modules export a provider next to its hook. Both are
-    // intentional co-exports, so the Fast Refresh heuristic does not apply.
-    files: ["apps/console/src/components/ui/**/*.tsx", "apps/console/src/context/**/*.tsx"],
+    // shadcn/ui primitives and the kit export a cva variants helper or a hook
+    // next to the component, and the context modules export a provider next to
+    // its hook. These are intentional co-exports, so the Fast Refresh heuristic
+    // does not apply.
+    files: [
+      "apps/console/src/components/ui/**/*.tsx",
+      "apps/console/src/context/**/*.tsx",
+      "packages/ui/src/**/*.tsx",
+    ],
     rules: {
       "react-refresh/only-export-components": "off",
     },

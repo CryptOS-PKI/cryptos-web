@@ -13,12 +13,25 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import { cryptosPreset, uiContent } from "@cryptos-pki/ui/tailwind-preset";
 
-// The theme (the token colours, radius, fonts and motion) lives in the kit's
-// shared preset, so the console and @cryptos-pki/ui resolve the same classes.
-/** @type {import('tailwindcss').Config} */
-export default {
-  content: ["./index.html", "./src/**/*.{ts,tsx}", ...uiContent],
-  presets: [cryptosPreset],
-};
+import { cn } from "../lib/cn";
+
+export const Separator = ({
+  className,
+  decorative = false,
+  orientation = "horizontal",
+}: {
+  className?: string;
+  decorative?: boolean;
+  orientation?: "horizontal" | "vertical";
+}) => (
+  <div
+    aria-orientation={decorative ? undefined : orientation}
+    className={cn(
+      "shrink-0 bg-border",
+      orientation === "horizontal" ? "h-px w-full" : "h-full w-px",
+      className,
+    )}
+    role={decorative ? "none" : "separator"}
+  />
+);
