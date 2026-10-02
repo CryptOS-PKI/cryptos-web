@@ -16,7 +16,7 @@ Conceptually `manager/` and `web/` are one application split across two repos. T
 An npm workspaces monorepo. Each app builds on its own; the packages are shared source, not published.
 
 - 🖥️ **`apps/console`** — the Fleet Manager UI (`@cryptos-pki/console`), the bundle the manager embeds.
-- 🎨 **`packages/ui`** — the CryptOS UI kit (`@cryptos-pki/ui`). Today it holds the design tokens (`tokens.css`, the light and dark palettes); the shared components move in with the redesign.
+- 🎨 **`packages/ui`** — the CryptOS UI kit (`@cryptos-pki/ui`). It holds the design tokens (`tokens.css`, the light and dark palettes), the shared Tailwind preset and the console's components (buttons, fields, badges, tables, dialogs, the app shell and the confirm steps), each tested in the package.
 - 📡 **`packages/api-client`** — the generated TypeScript stubs for both APIs (`@cryptos-pki/api-client`), imported as `@cryptos-pki/api-client/cryptos/node/v1/<file>_pb` and `@cryptos-pki/api-client/cryptos/fleet/v1/<file>_pb`.
 
 ## 🧱 Stack
