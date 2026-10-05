@@ -117,6 +117,10 @@ The pre-push hook runs `npm run lint` and `npm test`. CI runs lint, test, build 
 
 After a stacked pull request is retargeted onto `main`, CI starts on its next push, or when it is toggled to draft and back to ready.
 
+## 🙏 Acknowledgements
+
+CryptOS was originally written by [@Bugs5382](https://github.com/Bugs5382).
+
 ## 📄 License
 
 [Apache License 2.0](LICENSE). Copyright The CryptOS Authors.
