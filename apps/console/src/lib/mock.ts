@@ -47,8 +47,14 @@ export interface RootConnection {
 }
 
 export interface Node {
-  /** Operator-facing node name (also the route param). */
+  /** Operator-facing node name (also the route param). Renameable (#87). */
   name: string;
+  /**
+   * Stable fleet inventory identifier (NodeSummary.id): what RenameNode
+   * addresses the node by, so the name can change without losing the node.
+   * Undefined in the mock fixtures, which stay keyed by name only.
+   */
+  id?: string;
   /** mTLS gRPC address the manager reaches the node on. */
   address: string;
   role: NodeRole;

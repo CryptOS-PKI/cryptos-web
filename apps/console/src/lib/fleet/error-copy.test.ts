@@ -146,6 +146,23 @@ describe("describeFleetError for LINK refusals", () => {
   });
 });
 
+describe("describeFleetError for a RenameNode refusal", () => {
+  it.each([1101, 1102, 1103])("gives code %i its own title and detail", (code) => {
+    const copy = describeFleetError(refusal(code));
+    expect(copy.code).toBe(code);
+    expect(copy.title).not.toBe("Request failed");
+    expect(copy.detail).not.toBe("");
+  });
+
+  it("tells the operator the name constraint for 1103", () => {
+    expect(describeFleetError(refusal(1103)).detail).toMatch(/lowercase/i);
+  });
+
+  it("tells the operator to pick another name for 1102", () => {
+    expect(describeFleetError(refusal(1102)).detail).toMatch(/already has that name/i);
+  });
+});
+
 describe("describeFleetError for a node's refusal", () => {
   const nodeRefusal = (code: number, nodeReason?: string): ConnectError =>
     new ConnectError("refused", Code.InvalidArgument, {

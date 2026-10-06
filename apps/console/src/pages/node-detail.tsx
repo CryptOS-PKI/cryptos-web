@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { Link, Navigate, useParams } from "react-router-dom";
+import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 
 import { CertInventory } from "@/components/cert-inventory";
 import { NodeDetailPanel } from "@/components/node-detail-panel";
@@ -32,6 +32,7 @@ const stateTone: Record<IdentityState, string> = {
 export const NodeDetailPage = () => {
   const { name } = useParams<{ name: string }>();
   const node = useNode(name);
+  const navigate = useNavigate();
 
   // /nodes excludes roots, so a root's detail lives at /root/<name>. Landing
   // here from a hand-built link, a shared URL or an audit targetPath used to
@@ -61,7 +62,10 @@ export const NodeDetailPage = () => {
         <p className="font-mono text-sm text-muted-foreground">{roleLabels[node.role]}</p>
       </div>
       <div className="w-full rounded-xl border bg-card">
-        <NodeDetailPanel node={node} />
+        <NodeDetailPanel
+          node={node}
+          onRenamed={(newName) => navigate(`/nodes/${newName}`, { replace: true })}
+        />
       </div>
       <div className="w-full rounded-xl border bg-card">
         <div className="border-b px-4 py-3 font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">

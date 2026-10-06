@@ -14,12 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { NodeDetailPanel } from "@/components/node-detail-panel";
-import { mockNodes } from "@/lib/mock";
+import { __resetNodes, getNode } from "@/lib/nodes";
 
 let level: "admin" | "operator" | "viewer" = "admin";
 vi.mock("@/context/auth", () => ({
@@ -29,32 +29,59 @@ vi.mock("@/context/auth", () => ({
   }),
 }));
 
-const rootNode = () => mockNodes.find((n) => n.role === "root")!;
+const rootNode = () => getNode("acme-root-01")!;
 
-const renderPanel = () =>
+const renderPanel = (onRenamed = vi.fn()) => {
   render(
     <MemoryRouter>
-      <NodeDetailPanel node={rootNode()} />
+      <NodeDetailPanel node={rootNode()} onRenamed={onRenamed} />
     </MemoryRouter>,
   );
+  return { onRenamed };
+};
 
 describe("NodeDetailPanel escrow actions", () => {
   beforeEach(() => {
     level = "admin";
+    __resetNodes();
   });
 
-  it("shows Export/Import key and Decommission actions to an admin", () => {
+  it("shows Rename, Export/Import key and Decommission actions to an admin", () => {
     renderPanel();
+    expect(screen.getByRole("button", { name: /^rename/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /export key/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /import key/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /decommission/i })).toBeInTheDocument();
   });
 
-  it("hides escrow and decommission actions from a non-admin operator", () => {
+  it("hides rename, escrow and decommission actions from a non-admin operator", () => {
     level = "operator";
     renderPanel();
+    expect(screen.queryByRole("button", { name: /^rename/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /export key/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /import key/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /decommission/i })).not.toBeInTheDocument();
+  });
+});
+
+describe("NodeDetailPanel rename action", () => {
+  beforeEach(() => {
+    level = "admin";
+    __resetNodes();
+  });
+
+  it("opens the rename dialog and reports the new name on success", async () => {
+    const { onRenamed } = renderPanel();
+    fireEvent.click(screen.getByRole("button", { name: /^rename/i }));
+
+    const dialog = screen.getByRole("dialog", { name: /rename node/i });
+    fireEvent.change(within(dialog).getByLabelText(/new name/i), {
+      target: { value: "acme-root-99" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: /^rename$/i }));
+
+    await waitFor(() => expect(onRenamed).toHaveBeenCalledWith("acme-root-99"));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(getNode("acme-root-99")).toBeDefined();
   });
 });

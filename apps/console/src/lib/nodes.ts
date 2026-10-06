@@ -18,6 +18,7 @@ import { useEffect, useSyncExternalStore } from "react";
 
 import { fleetClient } from "@/lib/fleet/client";
 import { fleetMode } from "@/lib/fleet/mode";
+import { validateNodeName } from "@/lib/fleet/node-name";
 import { mockNodes, type IdentityState, type Node } from "@/lib/mock";
 
 import type { NodeSummary } from "@cryptos-pki/api-client/cryptos/fleet/v1/fleet_pb";
@@ -72,6 +73,7 @@ export const fromSummary = (summary: NodeSummary): Node => ({
   bootCount: 0,
   cn: summary.cn,
   fleetManager: { linked: summary.health === 1 },
+  id: summary.id,
   identityState: knownIdentityStates.has(summary.identityState as IdentityState)
     ? (summary.identityState as IdentityState)
     : "AWAITING_CERT",
@@ -130,6 +132,41 @@ export const useNodes = (): Node[] => {
 export const useNode = (name: string | undefined): Node | undefined => {
   const all = useNodes();
   return name ? all.find((n) => n.name === name) : undefined;
+};
+
+// renameNode changes a node's display name (#87), which is an inventory-key
+// edit, never a certificate edit: the signed subject CN is untouched, and
+// there is no rename path for it anywhere in the console. It validates the
+// way the manager's RenameNode does before any round trip, and no-ops when
+// the name is unchanged (mirroring the manager, which records nothing for
+// that case). Mock mode renames the fixture node in place so the fleet
+// view, trust chain and topology selection all follow it; live mode routes
+// through the manager and refetches, so every other view picks up the new
+// name on its next render. The one view that does NOT follow on its own is
+// the page the operator is looking at: its URL still names the node by its
+// old name, so the caller must move it with the name this returns.
+export const renameNode = async (node: Node, newName: string): Promise<string> => {
+  const trimmed = newName.trim();
+  const reason = validateNodeName(trimmed);
+  if (reason) {
+    throw new Error(reason);
+  }
+  if (trimmed === node.name) {
+    return node.name;
+  }
+
+  if (fleetMode() === "mock") {
+    if (nodes.some((n) => n.name === trimmed)) {
+      throw new Error(`Another node already has the name "${trimmed}".`);
+    }
+    nodes = nodes.map((n) => (n.name === node.name ? { ...n, name: trimmed } : n));
+    emit();
+    return trimmed;
+  }
+
+  const response = await fleetClient().renameNode({ newName: trimmed, nodeId: node.id ?? "" });
+  await refreshLiveNodes();
+  return response.node?.name ?? trimmed;
 };
 
 // The trust chain from the root down to this node, following parentCn. Guards a

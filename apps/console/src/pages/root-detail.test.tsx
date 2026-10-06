@@ -14,11 +14,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { __resetNodes, getNode } from "@/lib/nodes";
 import { RootDetailPage } from "@/pages/root-detail";
+
+let level: "admin" | "operator" | "viewer" = "admin";
+vi.mock("@/context/auth", () => ({
+  useOptionalAuth: () => ({
+    operator: { commonName: "op@acme.example", level, serial: "AA" },
+    status: "authenticated",
+  }),
+}));
 
 const renderAt = (path: string) =>
   render(
@@ -31,6 +40,11 @@ const renderAt = (path: string) =>
   );
 
 describe("RootDetailPage", () => {
+  beforeEach(() => {
+    level = "admin";
+    __resetNodes();
+  });
+
   it("shows a root's connection, config, and ceremony", () => {
     renderAt("/root/acme-root-01");
     expect(screen.getByText("acme-root-01")).toBeInTheDocument();
@@ -43,5 +57,26 @@ describe("RootDetailPage", () => {
   it("redirects a non-root node to the roots list", () => {
     renderAt("/root/acme-issuing-01"); // an issuing node, not a root
     expect(screen.getByText("roots list")).toBeInTheDocument();
+  });
+
+  it("hides the rename action from a non-admin operator", () => {
+    level = "operator";
+    renderAt("/root/acme-root-01");
+    expect(screen.queryByRole("button", { name: /^rename/i })).not.toBeInTheDocument();
+  });
+
+  it("renames a root and moves to its new URL", async () => {
+    renderAt("/root/acme-root-01");
+    fireEvent.click(screen.getByRole("button", { name: /^rename/i }));
+
+    const dialog = screen.getByRole("dialog", { name: /rename node/i });
+    fireEvent.change(within(dialog).getByLabelText(/new name/i), {
+      target: { value: "acme-root-99" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: /^rename$/i }));
+
+    await waitFor(() => expect(screen.getByText("acme-root-99")).toBeInTheDocument());
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(getNode("acme-root-01")).toBeUndefined();
   });
 });
