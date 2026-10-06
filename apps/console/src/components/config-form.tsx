@@ -27,6 +27,7 @@ import {
   getNodeConfig,
   parseList,
 } from "@/lib/config";
+import { fleetErrorMessage } from "@/lib/fleet/error-copy";
 import { fleetMode } from "@/lib/fleet/mode";
 import { type Node } from "@/lib/mock";
 
@@ -125,7 +126,7 @@ const LiveConfigForm = ({ node }: { node: Node }) => {
       setNameservers(formatList(config.network?.nameservers));
       setSearch(formatList(config.network?.search));
     } catch (error_: unknown) {
-      setLoadError(error_ instanceof Error ? error_.message : "Failed to load config");
+      setLoadError(fleetErrorMessage(error_, "Failed to load config"));
     }
   }, [node.name]);
 
@@ -177,7 +178,7 @@ const LiveConfigForm = ({ node }: { node: Node }) => {
       // Refetch so the form reflects the node's committed config.
       await load();
     } catch (error_: unknown) {
-      setApplyError(error_ instanceof Error ? error_.message : "Apply failed");
+      setApplyError(fleetErrorMessage(error_, "Apply failed"));
     } finally {
       setPending(false);
     }
