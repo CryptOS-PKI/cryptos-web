@@ -14,10 +14,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { mockNodes } from "@/lib/mock";
-import { __resetNodes, addNode, chainToRoot, fromSummary, getNode, nodesList } from "@/lib/nodes";
+import {
+  __resetNodes,
+  addNode,
+  chainToRoot,
+  fromSummary,
+  getNode,
+  nodesList,
+  renameNode,
+} from "@/lib/nodes";
 
 import type { NodeSummary } from "@cryptos-pki/api-client/cryptos/fleet/v1/fleet_pb";
 
@@ -86,6 +94,12 @@ describe("fromSummary", () => {
     expect(node.parentCn).toBeUndefined();
   });
 
+  it("passes through the stable id", () => {
+    expect(fromSummary(summary({ id: "0198c2ac-6e3f-7e3e-9b2b-9f6a7a9d2c31", name: "a" })).id).toBe(
+      "0198c2ac-6e3f-7e3e-9b2b-9f6a7a9d2c31",
+    );
+  });
+
   it("marks the node linked only when health is UP (1)", () => {
     expect(fromSummary(summary({ name: "up", health: 1 })).fleetManager.linked).toBe(true);
     expect(fromSummary(summary({ name: "down", health: 2 })).fleetManager.linked).toBe(false);
@@ -98,6 +112,92 @@ describe("fromSummary", () => {
     expect(fromSummary(summary({ name: "b", identityState: "BOGUS" })).identityState).toBe(
       "AWAITING_CERT",
     );
+  });
+});
+
+describe("renameNode", () => {
+  beforeEach(() => __resetNodes());
+
+  afterEach(() => {
+    __resetNodes();
+    vi.restoreAllMocks();
+  });
+
+  it("refuses an invalid name before any store change or round trip", async () => {
+    const before = getNode("acme-root-01")!;
+    await expect(renameNode(before, "Not Valid")).rejects.toThrow(/RFC 1123|lowercase/i);
+    expect(getNode("acme-root-01")).toBeDefined();
+  });
+
+  it("no-ops when the new name is the current name", async () => {
+    const node = getNode("acme-root-01")!;
+    await expect(renameNode(node, "acme-root-01")).resolves.toBe("acme-root-01");
+  });
+
+  it("renames the fixture node in mock mode so every view follows it", async () => {
+    const node = getNode("acme-root-01")!;
+    await expect(renameNode(node, "acme-root-99")).resolves.toBe("acme-root-99");
+    expect(getNode("acme-root-01")).toBeUndefined();
+    expect(getNode("acme-root-99")?.cn).toBe(node.cn);
+  });
+
+  it("refuses a name another node already has, in mock mode", async () => {
+    const node = getNode("acme-root-01")!;
+    const other = getNode("acme-intermediate-01")!;
+    await expect(renameNode(node, other.name)).rejects.toThrow(/already has the name/i);
+  });
+
+  it("routes through the manager with the node's id and refetches the fleet in live mode", async () => {
+    // Captured while still in the default mock mode, before the spy below
+    // switches the seam: the live store starts empty, so a lookup after the
+    // switch would find nothing.
+    const node = { ...getNode("acme-root-01")!, id: "0198c2ac-6e3f-7e3e-9b2b-9f6a7a9d2c31" };
+
+    const modeMod = await import("@/lib/fleet/mode");
+    const clientMod = await import("@/lib/fleet/client");
+    vi.spyOn(modeMod, "fleetMode").mockReturnValue("live");
+    const renameNodeRpc = vi.fn().mockResolvedValue({ node: { name: "acme-root-99" } });
+    const listNodesRpc = vi.fn().mockResolvedValue({
+      nodes: [
+        {
+          address: node.address,
+          cn: node.cn,
+          health: 1,
+          healthDetail: "",
+          id: node.id,
+          identityState: node.identityState,
+          issuer: node.issuer,
+          name: "acme-root-99",
+          role: node.role,
+        },
+      ],
+    });
+    vi.spyOn(clientMod, "fleetClient").mockReturnValue({
+      listNodes: listNodesRpc,
+      renameNode: renameNodeRpc,
+    } as unknown as ReturnType<typeof clientMod.fleetClient>);
+
+    await expect(renameNode(node, "acme-root-99")).resolves.toBe("acme-root-99");
+    expect(renameNodeRpc).toHaveBeenCalledWith({
+      newName: "acme-root-99",
+      nodeId: "0198c2ac-6e3f-7e3e-9b2b-9f6a7a9d2c31",
+    });
+    // The fleet was refetched: the live store now has the renamed node.
+    expect(listNodesRpc).toHaveBeenCalled();
+    expect(getNode("acme-root-99")?.id).toBe("0198c2ac-6e3f-7e3e-9b2b-9f6a7a9d2c31");
+  });
+
+  it("surfaces a name-taken refusal from the manager in live mode", async () => {
+    const node = { ...getNode("acme-root-01")!, id: "0198c2ac-6e3f-7e3e-9b2b-9f6a7a9d2c31" };
+
+    const modeMod = await import("@/lib/fleet/mode");
+    const clientMod = await import("@/lib/fleet/client");
+    vi.spyOn(modeMod, "fleetMode").mockReturnValue("live");
+    vi.spyOn(clientMod, "fleetClient").mockReturnValue({
+      renameNode: vi.fn().mockRejectedValue(new Error("another node is already named")),
+    } as unknown as ReturnType<typeof clientMod.fleetClient>);
+
+    await expect(renameNode(node, "acme-root-99")).rejects.toThrow(/already named/);
   });
 });
 

@@ -145,7 +145,16 @@ export const TopologyExplorer = ({
           {node ? (
             <>
               <PanelHeader label={`Node · ${node.name}`} />
-              <NodeDetailPanel node={node} />
+              <NodeDetailPanel
+                node={node}
+                onRenamed={(newName) => {
+                  // selected and focus are keyed by name (#87): without this,
+                  // the panel and the topology's focus ring would go looking
+                  // for a node that no longer exists under its old name.
+                  setSelected(newName);
+                  setFocus((f) => (f === node.name ? newName : f));
+                }}
+              />
             </>
           ) : (
             <>

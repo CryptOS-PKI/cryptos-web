@@ -21,6 +21,7 @@ import { DecommissionDialog } from "@/components/decommission-dialog";
 import { EscrowExportDialog } from "@/components/escrow-export-dialog";
 import { EscrowImportDialog } from "@/components/escrow-import-dialog";
 import { IdentityBadge } from "@/components/identity-badge";
+import { RenameNodeDialog } from "@/components/rename-node-dialog";
 import { Button } from "@/components/ui/button";
 import { useOptionalAuth } from "@/context/auth";
 import { canIssue } from "@/lib/certs";
@@ -66,9 +67,20 @@ const fleetManagerText = (node: Node): string => {
 // property, so the panel never changes shape between nodes.
 const DASH = "—";
 
-export const NodeDetailPanel = ({ node }: { node: Node }) => {
+export const NodeDetailPanel = ({
+  node,
+  onRenamed,
+}: {
+  node: Node;
+  /** Called with the name after a successful rename (#87), so the caller can
+   * move its own URL and any other name-keyed state -- the fleet store
+   * updates itself, but nothing else does. */
+  onRenamed: (newName: string) => void;
+}) => {
   const isAdmin = useOptionalAuth()?.operator?.level === "admin";
-  const [dialog, setDialog] = useState<"decommission" | "export" | "import" | null>(null);
+  const [dialog, setDialog] = useState<"decommission" | "export" | "import" | "rename" | null>(
+    null,
+  );
 
   return (
     <div className="p-4">
@@ -125,6 +137,11 @@ export const NodeDetailPanel = ({ node }: { node: Node }) => {
           </Button>
         )}
         {isAdmin ? (
+          <Button onClick={() => setDialog("rename")} size="sm" variant="outline">
+            {"Rename\u2026"}
+          </Button>
+        ) : null}
+        {isAdmin ? (
           <Button onClick={() => setDialog("export")} size="sm" variant="outline">
             {"Export key\u2026"}
           </Button>
@@ -141,6 +158,9 @@ export const NodeDetailPanel = ({ node }: { node: Node }) => {
         ) : null}
       </div>
 
+      {dialog === "rename" ? (
+        <RenameNodeDialog node={node} onClose={() => setDialog(null)} onRenamed={onRenamed} />
+      ) : null}
       {dialog === "export" ? (
         <EscrowExportDialog nodeName={node.name} onClose={() => setDialog(null)} />
       ) : null}

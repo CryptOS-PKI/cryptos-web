@@ -37,10 +37,19 @@ const CODE_COPY: Record<number, { detail: string; title: string }> = {
       "The Fleet Manager could not reach the node at that endpoint. Check the address and port, and that the node is running.",
     title: "Node unreachable",
   },
+  1101: {
+    detail: "No node with that name or ID is in the fleet inventory.",
+    title: "Node not found",
+  },
   1102: {
     detail:
-      "Another node in the inventory already has the name this node would get. Rename that node, then approve again.",
+      "Another node already has that name. Rename that node first, or choose a different one.",
     title: "Node name taken",
+  },
+  1103: {
+    detail:
+      "Node names are 1 to 63 lowercase letters, digits and hyphens, starting and ending with a letter or digit, and can't have the form of a node ID.",
+    title: "Invalid node name",
   },
   1106: {
     detail:
