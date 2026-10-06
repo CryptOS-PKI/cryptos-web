@@ -84,6 +84,7 @@ export const fromSummary = (summary: NodeSummary): Node => ({
   // topology links it under the root; a self-signed root (issuer === cn) has no
   // parent.
   parentCn: summary.issuer && summary.issuer !== summary.cn ? summary.issuer : undefined,
+  rebootRequired: summary.rebootRequired,
   revoked: 0,
   role: (summary.role || "issuing") as Node["role"],
   tpm: summary.healthDetail || "UNKNOWN",

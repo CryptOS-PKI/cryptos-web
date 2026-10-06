@@ -46,21 +46,51 @@ describe("NodeDetailPanel escrow actions", () => {
     __resetNodes();
   });
 
-  it("shows Rename, Export/Import key and Decommission actions to an admin", () => {
+  it("shows Rename, Export/Import key, Decommission and Reboot actions to an admin", () => {
     renderPanel();
     expect(screen.getByRole("button", { name: /^rename/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /export key/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /import key/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /decommission/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^reboot/i })).toBeInTheDocument();
   });
 
-  it("hides rename, escrow and decommission actions from a non-admin operator", () => {
+  it("hides rename, escrow, decommission and reboot actions from a non-admin operator", () => {
     level = "operator";
     renderPanel();
     expect(screen.queryByRole("button", { name: /^rename/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /export key/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /import key/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /decommission/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^reboot/i })).not.toBeInTheDocument();
+  });
+
+  it("labels the reboot action plainly when no reboot is pending", () => {
+    renderPanel();
+    expect(screen.getByRole("button", { name: /^reboot…$/i })).toBeInTheDocument();
+  });
+
+  it("calls out a pending reboot on the action label when reboot_required is set", () => {
+    render(
+      <MemoryRouter>
+        <NodeDetailPanel node={{ ...rootNode(), rebootRequired: true }} onRenamed={vi.fn()} />
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole("button", { name: /reboot needed…/i })).toBeInTheDocument();
+  });
+});
+
+describe("NodeDetailPanel reboot action", () => {
+  beforeEach(() => {
+    level = "admin";
+    __resetNodes();
+  });
+
+  it("opens the reboot dialog naming the node's CA CN", () => {
+    renderPanel();
+    fireEvent.click(screen.getByRole("button", { name: /^reboot/i }));
+    const dialog = screen.getByRole("dialog", { name: /reboot node/i });
+    expect(within(dialog).getByText(rootNode().cn)).toBeInTheDocument();
   });
 });
 
