@@ -14,15 +14,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { __resetAdapters, getAdapter } from "@/lib/adapters";
+import { __resetNodes } from "@/lib/nodes";
 import { ProtocolsPage } from "@/pages/protocols";
 
-// mock mode keeps the in-memory catalog; the auth gate is mocked to an admin so
-// the toggle controls render without an AuthProvider.
+// The auth gate is mocked to an admin so the page's admin-only affordances
+// would render if the list page offered any (the switch itself lives on the
+// detail page).
 vi.mock("@/context/auth", () => ({
   useAuth: () => ({
     operator: { commonName: "admin@acme.example", level: "admin", serial: "AA" },
@@ -30,57 +31,62 @@ vi.mock("@/context/auth", () => ({
   }),
 }));
 
-describe("ProtocolsPage", () => {
-  beforeEach(() => __resetAdapters());
+const rowFor = (name: RegExp) => screen.getByRole("link", { name }).closest("tr") as HTMLElement;
 
-  it("lists adapters linking to their detail", () => {
+describe("ProtocolsPage", () => {
+  beforeEach(() => __resetNodes());
+
+  it("lists every protocol, linking to its detail page", () => {
     render(
       <MemoryRouter>
         <ProtocolsPage />
       </MemoryRouter>,
     );
     expect(screen.getByRole("link", { name: /ACME/ })).toHaveAttribute("href", "/protocols/acme");
+    expect(screen.getByRole("link", { name: /EST/ })).toHaveAttribute("href", "/protocols/est");
+    expect(screen.getByRole("link", { name: /SCEP/ })).toHaveAttribute("href", "/protocols/scep");
+    expect(screen.getByRole("link", { name: /Windows autoenrollment/ })).toHaveAttribute(
+      "href",
+      "/protocols/ms-autoenroll",
+    );
   });
 
-  // The note used to say ACME and EST ship "in a later release", which stopped
-  // being true once the nodes shipped RFC 8555 and RFC 7030 -- it told operators
-  // the protocols they had configured did not exist (#84).
-  it("credits the protocols the nodes actually serve", () => {
+  // The fixture has 4 eligible (ESTABLISHED issuing) nodes; 2 report ACME
+  // running and 1 reports EST running with the other reboot-pending (#84: the
+  // page now reads this from the nodes themselves, not a fleet-wide catalog).
+  it("counts nodes actually serving each implemented protocol", () => {
     render(
       <MemoryRouter>
         <ProtocolsPage />
       </MemoryRouter>,
     );
-
-    const note = screen.getByRole("note");
-    expect(note).toHaveTextContent(/served by the\s+nodes themselves/i);
-    expect(note).not.toHaveTextContent(
-      /ACME, EST, SCEP, and Windows autoenrollment services ship/i,
-    );
+    expect(within(rowFor(/^ACME/)).getByText(/2 of 4/)).toBeInTheDocument();
+    expect(within(rowFor(/^EST/)).getByText(/1 of 4/)).toBeInTheDocument();
+    expect(within(rowFor(/^EST/)).getByText(/1 reboot pending/i)).toBeInTheDocument();
   });
 
-  // SCEP and Windows autoenrollment genuinely are not implemented, and saying
-  // so is the half of the old note that was correct.
-  it("still says SCEP and Windows autoenrollment are not implemented", () => {
+  // SCEP and Windows autoenrollment have no node contract (cryptos#185, #108):
+  // the page says so instead of a zero count that reads as "the fleet serves
+  // nothing" (#84 acceptance: honest about what isn't wired up).
+  it("marks SCEP and Windows autoenrollment as not wired up, with no count", () => {
     render(
       <MemoryRouter>
         <ProtocolsPage />
       </MemoryRouter>,
     );
-
-    expect(screen.getByRole("note")).toHaveTextContent(
-      /SCEP and Windows autoenrollment are not implemented/i,
-    );
+    expect(within(rowFor(/^SCEP/)).getByText(/not wired up/i)).toBeInTheDocument();
+    expect(
+      within(rowFor(/^Windows autoenrollment/)).getByText(/not wired up/i),
+    ).toBeInTheDocument();
   });
 
-  it("toggles an adapter from the row", async () => {
+  it("does not claim a protocol ships in a later release when it already shipped", () => {
     render(
       <MemoryRouter>
         <ProtocolsPage />
       </MemoryRouter>,
     );
-    expect(getAdapter("scep")?.enabled).toBe(false);
-    fireEvent.click(screen.getByRole("button", { name: /enable scep/i }));
-    await waitFor(() => expect(getAdapter("scep")?.enabled).toBe(true));
+    expect(screen.queryByText(/ships in a later release/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/services ship/i)).not.toBeInTheDocument();
   });
 });

@@ -25,9 +25,14 @@ import {
   getNode,
   nodesList,
   renameNode,
+  setMockNodeProtocol,
 } from "@/lib/nodes";
 
 import type { NodeSummary } from "@cryptos-pki/api-client/cryptos/fleet/v1/fleet_pb";
+import {
+  ServiceProtocol,
+  type ProtocolStatus,
+} from "@cryptos-pki/api-client/cryptos/node/v1/status_pb";
 
 // A NodeSummary carries only the fields the manager's read-through view sets;
 // the mapper defaults the rest. Cast a partial rather than build the full
@@ -117,6 +122,89 @@ describe("fromSummary", () => {
   it("passes through rebootRequired", () => {
     expect(fromSummary(summary({ name: "a", rebootRequired: true })).rebootRequired).toBe(true);
     expect(fromSummary(summary({ name: "b", rebootRequired: false })).rebootRequired).toBe(false);
+  });
+
+  it("maps reported ACME and EST status and drops a protocol with no Pki block yet", () => {
+    const protocols: ProtocolStatus[] = [
+      {
+        configured: true,
+        protocol: ServiceProtocol.ACME,
+        rebootPending: false,
+        running: true,
+      } as ProtocolStatus,
+      {
+        configured: true,
+        protocol: ServiceProtocol.EST,
+        rebootPending: true,
+        running: false,
+      } as ProtocolStatus,
+      {
+        configured: true,
+        protocol: ServiceProtocol.SCEP,
+        rebootPending: false,
+        running: false,
+      } as ProtocolStatus,
+    ];
+    const node = fromSummary(summary({ name: "a", protocols }));
+    expect(node.protocols).toEqual([
+      { configured: true, protocol: "acme", rebootPending: false, running: true },
+      { configured: true, protocol: "est", rebootPending: true, running: false },
+    ]);
+  });
+
+  it("defaults protocols to an empty list when the node reports none", () => {
+    expect(fromSummary(summary({ name: "a" })).protocols).toEqual([]);
+  });
+});
+
+describe("setMockNodeProtocol", () => {
+  beforeEach(() => __resetNodes());
+
+  it("sets configured and marks reboot pending when running disagrees", () => {
+    setMockNodeProtocol("acme-issuing-01", "acme", false);
+    expect(getNode("acme-issuing-01")?.protocols).toContainEqual({
+      configured: false,
+      protocol: "acme",
+      rebootPending: true,
+      running: true,
+    });
+  });
+
+  it("clears reboot pending once configured matches the carried-over running state", () => {
+    setMockNodeProtocol("acme-issuing-01", "acme", false);
+    setMockNodeProtocol("acme-issuing-01", "acme", true);
+    expect(getNode("acme-issuing-01")?.protocols).toContainEqual({
+      configured: true,
+      protocol: "acme",
+      rebootPending: false,
+      running: true,
+    });
+  });
+
+  it("creates an entry (running false) for a node that never reported the protocol", () => {
+    setMockNodeProtocol("acme-root-01", "est", true);
+    expect(getNode("acme-root-01")?.protocols).toContainEqual({
+      configured: true,
+      protocol: "est",
+      rebootPending: true,
+      running: false,
+    });
+  });
+
+  it("leaves other nodes and other protocols on the same node untouched", () => {
+    setMockNodeProtocol("acme-issuing-01", "acme", false);
+    expect(getNode("acme-issuing-01")?.protocols).toContainEqual({
+      configured: true,
+      protocol: "est",
+      rebootPending: false,
+      running: true,
+    });
+    expect(getNode("acme-issuing-02")?.protocols).toContainEqual({
+      configured: true,
+      protocol: "acme",
+      rebootPending: false,
+      running: true,
+    });
   });
 });
 

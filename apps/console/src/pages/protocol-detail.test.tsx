@@ -14,19 +14,26 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { __resetAdapters, getAdapter } from "@/lib/adapters";
-import { __resetProfiles } from "@/lib/profiles";
+import { __resetNodes, getNode } from "@/lib/nodes";
+import * as protocolsMod from "@/lib/protocols";
 import { ProtocolDetailPage } from "@/pages/protocol-detail";
 
-// mock mode keeps the in-memory catalog; the auth gate is mocked to an admin so
-// the toggle control renders without an AuthProvider.
+// switchNodeProtocol is exercised directly in lib/protocols.test.ts (mock and
+// live paths); here it is spied on so this page's error rendering can be
+// tested without disturbing the mock node list the rest of these tests read.
+vi.mock("@/lib/protocols", async () => {
+  const actual = await vi.importActual<typeof protocolsMod>("@/lib/protocols");
+  return { ...actual, switchNodeProtocol: vi.fn(actual.switchNodeProtocol) };
+});
+
+let operatorLevel: "admin" | "viewer" = "admin";
 vi.mock("@/context/auth", () => ({
   useAuth: () => ({
-    operator: { commonName: "admin@acme.example", level: "admin", serial: "AA" },
+    operator: { commonName: "op@acme.example", level: operatorLevel, serial: "AA" },
     status: "authenticated",
   }),
 }));
@@ -41,30 +48,72 @@ const renderAt = (path: string) =>
     </MemoryRouter>,
   );
 
+const rowFor = (name: RegExp) => screen.getByRole("link", { name }).closest("tr") as HTMLElement;
+
 describe("ProtocolDetailPage", () => {
   beforeEach(() => {
-    __resetAdapters();
-    __resetProfiles();
+    operatorLevel = "admin";
+    __resetNodes();
   });
-
-  it("edits an adapter's bound profile", () => {
-    renderAt("/protocols/acme");
-    fireEvent.change(screen.getByLabelText(/bound profile/i), {
-      target: { value: "Domain Controller" },
-    });
-    expect(getAdapter("acme")?.profile).toBe("Domain Controller");
-  });
-
-  it("toggles the adapter and shows the honest engine-pending note", async () => {
-    renderAt("/protocols/scep");
-    expect(screen.getByRole("note")).toHaveTextContent(/does not yet serve enrollment requests/i);
-    expect(getAdapter("scep")?.enabled).toBe(false);
-    fireEvent.click(screen.getByLabelText(/enabled/i));
-    await waitFor(() => expect(getAdapter("scep")?.enabled).toBe(true));
-  });
+  afterEach(() => vi.restoreAllMocks());
 
   it("redirects an unknown protocol to the list", () => {
     renderAt("/protocols/nope");
     expect(screen.getByText("protocols list")).toBeInTheDocument();
+  });
+
+  it("explains a not-implemented protocol instead of showing a table", () => {
+    renderAt("/protocols/scep");
+    expect(screen.getByRole("note")).toHaveTextContent(/not implemented/i);
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+  });
+
+  it("lists every node for an implemented protocol, with role/state for the ineligible", () => {
+    renderAt("/protocols/acme");
+    expect(within(rowFor(/^acme-issuing-01/)).getByText(/running/i)).toBeInTheDocument();
+    expect(within(rowFor(/^acme-root-01/)).getByText(/don't serve/i)).toBeInTheDocument();
+  });
+
+  it("shows a reboot-pending node as configured but not yet running", () => {
+    renderAt("/protocols/est");
+    const row = rowFor(/^acme-issuing-02/);
+    expect(within(row).getByText(/reboot/i)).toBeInTheDocument();
+  });
+
+  it("switches the protocol on an eligible node and reflects the change", async () => {
+    renderAt("/protocols/acme");
+    const row = rowFor(/^acme-issuing-r01/);
+    fireEvent.click(within(row).getByRole("button", { name: /enable/i }));
+    await waitFor(() =>
+      expect(getNode("acme-issuing-r01")?.protocols).toContainEqual(
+        expect.objectContaining({ configured: true, protocol: "acme" }),
+      ),
+    );
+  });
+
+  it("offers no switch for an ineligible node", () => {
+    renderAt("/protocols/acme");
+    const row = rowFor(/^acme-root-01/);
+    expect(within(row).queryByRole("button")).not.toBeInTheDocument();
+  });
+
+  it("hides the switch for a non-admin", () => {
+    operatorLevel = "viewer";
+    renderAt("/protocols/acme");
+    const row = rowFor(/^acme-issuing-01/);
+    expect(within(row).queryByRole("button")).not.toBeInTheDocument();
+    expect(within(row).getByText(/admin only/i)).toBeInTheDocument();
+  });
+
+  it("shows the manager's refusal reason inline on a failed switch", async () => {
+    vi.mocked(protocolsMod.switchNodeProtocol).mockRejectedValueOnce(
+      new Error("fleet: node refused: context deadline"),
+    );
+
+    renderAt("/protocols/acme");
+    const row = rowFor(/^acme-issuing-01/);
+    fireEvent.click(within(row).getByRole("button", { name: /disable/i }));
+
+    await waitFor(() => expect(within(row).getByRole("alert")).toHaveTextContent(/node refused/i));
   });
 });
