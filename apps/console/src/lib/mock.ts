@@ -28,6 +28,23 @@ export type NodeRole = "root" | "intermediate" | "issuing";
 
 export type IdentityState = "ESTABLISHED" | "AWAITING_CERT" | "REVOKED";
 
+// The enrolment protocols a node can report switch state for (ProtocolStatus).
+// SCEP and Windows autoenrollment have no Pki block yet (cryptos#185, #108), so
+// a node never reports them and they are not part of this union.
+export type ProtocolKind = "acme" | "est";
+
+/**
+ * A node's reported switch state for one enrolment protocol, mirroring
+ * cryptos.node.v1.ProtocolStatus. `configured` and `running` can differ until
+ * the node's next boot.
+ */
+export interface NodeProtocolStatus {
+  protocol: ProtocolKind;
+  configured: boolean;
+  running: boolean;
+  rebootPending: boolean;
+}
+
 /** Fleet Manager peer-cert linkage for a node. */
 export interface FleetManagerLink {
   /** Whether the node currently holds a valid peer certificate. */
@@ -87,6 +104,12 @@ export interface Node {
    * which treat it as false.
    */
   rebootRequired?: boolean;
+  /**
+   * The node's reported enrolment protocol state (NodeSummary.protocols).
+   * Undefined for a node that has never reported status, or that only reports
+   * protocols this fixture leaves unset.
+   */
+  protocols?: NodeProtocolStatus[];
   /** Present on root nodes: the FM's dedicated connection context for this root. */
   connection?: RootConnection;
 }
@@ -103,6 +126,7 @@ const issuingFanOut = (options: {
   namePrefix: string;
   parentCn: string;
   pendingIndex?: number;
+  protocolsByIndex?: Record<number, NodeProtocolStatus[]>;
   revokedIndex?: number;
   subnet: number;
 }): Node[] => {
@@ -113,6 +137,7 @@ const issuingFanOut = (options: {
     namePrefix,
     parentCn,
     pendingIndex = -1,
+    protocolsByIndex,
     revokedIndex = -1,
     subnet,
   } = options;
@@ -150,6 +175,7 @@ const issuingFanOut = (options: {
         identityState === "ESTABLISHED"
           ? `http://pki.acme.example/${namePrefix}${n}/ocsp`
           : undefined,
+      protocols: protocolsByIndex?.[i],
     };
   });
 };
@@ -213,6 +239,19 @@ export const mockNodes: Node[] = [
     namePrefix: "acme-issuing-",
     parentCn: "ACME Intermediate CA G1",
     pendingIndex: 2,
+    // acme-issuing-01 serves both, settled. acme-issuing-02 has EST switched
+    // on but not yet running -- it is waiting on a reboot. acme-issuing-03 is
+    // AWAITING_CERT (pendingIndex) and reports nothing.
+    protocolsByIndex: {
+      0: [
+        { configured: true, protocol: "acme", rebootPending: false, running: true },
+        { configured: true, protocol: "est", rebootPending: false, running: true },
+      ],
+      1: [
+        { configured: true, protocol: "acme", rebootPending: false, running: true },
+        { configured: true, protocol: "est", rebootPending: true, running: false },
+      ],
+    },
     subnet: 1,
   }),
   ...issuingFanOut({

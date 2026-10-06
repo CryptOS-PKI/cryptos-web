@@ -14,149 +14,176 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import type { ColumnDef } from "@tanstack/react-table";
+
 import { useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 
+import { DataTable } from "@/components/data-table/data-table";
+import { IdentityBadge } from "@/components/identity-badge";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/auth";
-import { setEnabled, updateAdapter, useAdapters } from "@/lib/adapters";
-import { useProfiles } from "@/lib/profiles";
+import { fleetErrorMessage } from "@/lib/fleet/error-copy";
+import { type IdentityState, identityStateLabels, roleLabels } from "@/lib/mock";
+import { useNodes } from "@/lib/nodes";
+import {
+  ineligibleReason,
+  type NodeProtocolRow,
+  nodeProtocolRows,
+  protocolInfo,
+  switchNodeProtocol,
+} from "@/lib/protocols";
 
-const field = "w-full rounded-md border bg-card px-3 py-2 font-mono text-sm";
+// ToggleCell owns the per-row pending/error state for one node's switch. Only
+// an admin sees the control; an ineligible node (role or state) shows why
+// instead, never a toggle that looks live but binds to nothing (#84).
+const ToggleCell = ({
+  isAdmin,
+  kind,
+  row,
+}: {
+  isAdmin: boolean;
+  kind: "acme" | "est";
+  row: NodeProtocolRow;
+}) => {
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState("");
 
-// protocolLabels give a human name for the engine that will eventually serve
-// each adapter's requests, used in the honest engine-pending note.
-const protocolLabels: Record<string, string> = {
-  acme: "ACME",
-  est: "EST",
-  "ms-autoenroll": "Windows autoenrollment",
-  scep: "SCEP",
-};
-
-export const ProtocolDetailPage = () => {
-  const { kind } = useParams<{ kind: string }>();
-  const adapters = useAdapters();
-  const profiles = useProfiles();
-  const { operator } = useAuth();
-  const isAdmin = operator?.level === "admin";
-  const adapter = adapters.find((a) => a.kind === kind);
-
-  const [togglePending, setTogglePending] = useState(false);
-  const [toggleError, setToggleError] = useState("");
-
-  if (!adapter) {
-    return <Navigate replace to="/protocols" />;
+  if (!row.eligible) {
+    return (
+      <span className="font-mono text-[11px] text-muted-foreground">
+        {ineligibleReason(row.node)}
+      </span>
+    );
   }
 
-  const onToggle = async (on: boolean) => {
-    setToggleError("");
-    setTogglePending(true);
+  if (!isAdmin) {
+    return <span className="font-mono text-[11px] text-muted-foreground">admin only</span>;
+  }
+
+  const toggle = async () => {
+    setError("");
+    setPending(true);
     try {
-      const res = await setEnabled(adapter.kind, on);
-      if (!res.ok) setToggleError(res.reason ?? "Could not update the adapter.");
+      await switchNodeProtocol(row.node, kind, !row.configured);
+    } catch (error_) {
+      setError(fleetErrorMessage(error_, "Could not switch the protocol."));
     } finally {
-      setTogglePending(false);
+      setPending(false);
     }
   };
 
-  const engine = protocolLabels[adapter.kind] ?? "enrollment";
+  return (
+    <div className="space-y-1">
+      <button
+        className="rounded-md border px-2.5 py-1 text-xs hover:bg-secondary disabled:opacity-50"
+        disabled={pending}
+        onClick={() => void toggle()}
+        type="button"
+      >
+        {pending ? "Saving…" : `${row.configured ? "Disable" : "Enable"} on ${row.node.name}`}
+      </button>
+      {error ? (
+        <p className="font-mono text-[11px] text-destructive" role="alert">
+          {error}
+        </p>
+      ) : null}
+    </div>
+  );
+};
+
+// stateCell renders what the node reports for this protocol: running, waiting
+// on a reboot (configured differs from running), or not configured. A node
+// that cannot serve the protocol at all shows nothing here -- its row already
+// explains why in the action column.
+const stateCell = (row: NodeProtocolRow) => {
+  if (!row.eligible) return <span className="text-muted-foreground">—</span>;
+  if (row.rebootPending) {
+    return (
+      <span className="text-warning">
+        {row.configured ? "enabled" : "disabled"}, reboot pending
+      </span>
+    );
+  }
+  if (row.running) return <span className="text-success">running</span>;
+  return <span className="text-muted-foreground">not configured</span>;
+};
+
+const buildColumns = (
+  isAdmin: boolean,
+  kind: "acme" | "est",
+): ColumnDef<NodeProtocolRow, unknown>[] => [
+  {
+    accessorFn: (r) => r.node.name,
+    cell: ({ row }) => (
+      <Link className="text-primary hover:underline" to={`/nodes/${row.original.node.name}`}>
+        {row.original.node.name}
+      </Link>
+    ),
+    header: "Node",
+    id: "name",
+  },
+  { accessorFn: (r) => roleLabels[r.node.role], header: "Role", id: "role" },
+  {
+    accessorFn: (r) => r.node.identityState,
+    cell: ({ row }) => <IdentityBadge state={row.original.node.identityState} />,
+    header: "Identity",
+    id: "identity",
+  },
+  { cell: ({ row }) => stateCell(row.original), header: "Served", id: "served" },
+  {
+    cell: ({ row }) => <ToggleCell isAdmin={isAdmin} kind={kind} row={row.original} />,
+    enableSorting: false,
+    header: "",
+    id: "actions",
+  },
+];
+
+export const ProtocolDetailPage = () => {
+  const { kind } = useParams<{ kind: string }>();
+  const nodes = useNodes();
+  const { operator } = useAuth();
+  const isAdmin = operator?.level === "admin";
+  const info = kind ? protocolInfo(kind) : undefined;
+
+  if (!info) {
+    return <Navigate replace to="/protocols" />;
+  }
 
   return (
     <section className="space-y-5">
       <div className="space-y-1">
-        <h1 className="text-2xl font-bold tracking-tight">{adapter.name}</h1>
-        <p className="font-mono text-sm text-muted-foreground">Enrollment protocol adapter</p>
+        <h1 className="text-2xl font-bold tracking-tight">
+          {info.name} ({info.rfc})
+        </h1>
+        <p className="font-mono text-sm text-muted-foreground">Enrollment protocol</p>
       </div>
 
-      <p
-        className="max-w-md rounded-md border border-warning/40 bg-warning/5 p-3 text-sm text-muted-foreground"
-        role="note"
-      >
-        Enabling records intent. The {engine} service ships in a later release; an enabled adapter
-        does not yet serve enrollment requests.
-      </p>
-
-      <label className="flex items-center gap-2 font-mono text-sm">
-        <input
-          checked={adapter.enabled}
-          disabled={!isAdmin || togglePending}
-          onChange={(e) => void onToggle(e.target.checked)}
-          type="checkbox"
+      {info.implemented ? (
+        <DataTable
+          columns={buildColumns(isAdmin, info.kind as "acme" | "est")}
+          data={nodeProtocolRows(nodes, info.kind)}
+          facets={[
+            { columnId: "role", title: "Role" },
+            {
+              columnId: "identity",
+              optionLabel: (value) => identityStateLabels[value as IdentityState],
+              title: "Identity",
+            },
+          ]}
+          initialSort={[{ desc: false, id: "name" }]}
+          pageSize={50}
+          searchKeys={["name"]}
         />
-        Enabled
-        {isAdmin ? null : <span className="text-[11px] text-muted-foreground">(admin only)</span>}
-      </label>
-      {toggleError ? (
-        <p className="max-w-md font-mono text-xs text-destructive" role="alert">
-          {toggleError}
-        </p>
-      ) : null}
-
-      <label className="block max-w-md space-y-1">
-        <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-          Bound profile
-        </span>
-        <select
-          className={field}
-          onChange={(e) => updateAdapter(adapter.kind, { profile: e.target.value })}
-          value={adapter.profile}
+      ) : (
+        <p
+          className="max-w-md rounded-md border border-warning/40 bg-warning/5 p-3 text-sm text-muted-foreground"
+          role="note"
         >
-          {profiles.map((p) => (
-            <option key={p.name} value={p.name}>
-              {p.name}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <label className="block max-w-md space-y-1">
-        <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-          Endpoint
-        </span>
-        <input
-          className={field}
-          onChange={(e) => updateAdapter(adapter.kind, { endpoint: e.target.value })}
-          value={adapter.endpoint}
-        />
-      </label>
-
-      {adapter.kind === "acme" ? (
-        <div className="max-w-md space-y-1">
-          <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-            ACME challenges
-          </span>
-          <div className="flex gap-2">
-            {["http-01", "dns-01"].map((c) => (
-              <label className="flex items-center gap-1.5 font-mono text-xs" key={c}>
-                <input
-                  checked={(adapter.challenges ?? []).includes(c)}
-                  onChange={(e) => {
-                    const cur = adapter.challenges ?? [];
-                    updateAdapter(adapter.kind, {
-                      challenges: e.target.checked ? [...cur, c] : cur.filter((x) => x !== c),
-                    });
-                  }}
-                  type="checkbox"
-                />
-                {c}
-              </label>
-            ))}
-          </div>
-        </div>
-      ) : null}
-
-      {adapter.kind === "ms-autoenroll" ? (
-        <label className="block max-w-md space-y-1">
-          <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-            GPO template
-          </span>
-          <input
-            className={field}
-            onChange={(e) => updateAdapter(adapter.kind, { gpoTemplate: e.target.value })}
-            value={adapter.gpoTemplate ?? ""}
-          />
-        </label>
-      ) : null}
+          {info.name} is not implemented. No CryptOS node has a config block for it yet, so there is
+          nothing here to switch or report.
+        </p>
+      )}
 
       <Button asChild variant="outline">
         <Link to="/protocols">Back to protocols</Link>

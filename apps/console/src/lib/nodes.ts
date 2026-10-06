@@ -19,9 +19,19 @@ import { useEffect, useSyncExternalStore } from "react";
 import { fleetClient } from "@/lib/fleet/client";
 import { fleetMode } from "@/lib/fleet/mode";
 import { validateNodeName } from "@/lib/fleet/node-name";
-import { mockNodes, type IdentityState, type Node } from "@/lib/mock";
+import {
+  mockNodes,
+  type IdentityState,
+  type Node,
+  type NodeProtocolStatus,
+  type ProtocolKind,
+} from "@/lib/mock";
 
 import type { NodeSummary } from "@cryptos-pki/api-client/cryptos/fleet/v1/fleet_pb";
+import {
+  ServiceProtocol,
+  type ProtocolStatus,
+} from "@cryptos-pki/api-client/cryptos/node/v1/status_pb";
 
 // The mock fleet. Seeded from the mock fixture; mutated by enrollment approval
 // (addNode). useSyncExternalStore lets the topology, nodes table, and root list
@@ -62,6 +72,28 @@ const subscribeLive = (l: () => void): (() => void) => {
 
 const knownIdentityStates = new Set<IdentityState>(["ESTABLISHED", "AWAITING_CERT", "REVOKED"]);
 
+// ServiceProtocol -> the web's ProtocolKind. SCEP, TSA and Windows
+// autoenrollment have no Pki block yet (cryptos#185, #108), so a node never
+// reports them; an entry for one of those is dropped rather than widening the
+// union.
+const protocolKindByServiceProtocol: Partial<Record<ServiceProtocol, ProtocolKind>> = {
+  [ServiceProtocol.ACME]: "acme",
+  [ServiceProtocol.EST]: "est",
+};
+
+// fromProtocolStatus narrows one reported ProtocolStatus to the web shape, or
+// undefined for a protocol the web doesn't recognize yet.
+const fromProtocolStatus = (status: ProtocolStatus): NodeProtocolStatus | undefined => {
+  const protocol = protocolKindByServiceProtocol[status.protocol];
+  if (!protocol) return undefined;
+  return {
+    configured: status.configured,
+    protocol,
+    rebootPending: status.rebootPending,
+    running: status.running,
+  };
+};
+
 // NodeSummary -> the web Node shape. The manager's read-through view only
 // carries what a node reports over its status/identity RPCs, so every field
 // the summary lacks (issued/revoked counts, tpm, crl/ocsp, parentCn, ...) gets
@@ -84,6 +116,9 @@ export const fromSummary = (summary: NodeSummary): Node => ({
   // topology links it under the root; a self-signed root (issuer === cn) has no
   // parent.
   parentCn: summary.issuer && summary.issuer !== summary.cn ? summary.issuer : undefined,
+  protocols: (summary.protocols ?? [])
+    .map(fromProtocolStatus)
+    .filter((p): p is NodeProtocolStatus => p !== undefined),
   rebootRequired: summary.rebootRequired,
   revoked: 0,
   role: (summary.role || "issuing") as Node["role"],
@@ -168,6 +203,33 @@ export const renameNode = async (node: Node, newName: string): Promise<string> =
   const response = await fleetClient().renameNode({ newName: trimmed, nodeId: node.id ?? "" });
   await refreshLiveNodes();
   return response.node?.name ?? trimmed;
+};
+
+// setMockNodeProtocol is the mock-mode write side of switchNodeProtocol
+// (lib/protocols.ts): it updates the named node's reported protocol entry in
+// place, mirroring the real node's behaviour that a switch changes `configured`
+// immediately but `running` only after the next boot. `running` carries over
+// from any existing entry (default false for a node that never reported one),
+// so rebootPending is true exactly when the new configured state disagrees
+// with it.
+export const setMockNodeProtocol = (
+  nodeName: string,
+  protocol: ProtocolKind,
+  enabled: boolean,
+): void => {
+  nodes = nodes.map((n) => {
+    if (n.name !== nodeName) return n;
+    const existing = n.protocols ?? [];
+    const running = existing.find((p) => p.protocol === protocol)?.running ?? false;
+    const next: NodeProtocolStatus = {
+      configured: enabled,
+      protocol,
+      rebootPending: enabled !== running,
+      running,
+    };
+    return { ...n, protocols: [...existing.filter((p) => p.protocol !== protocol), next] };
+  });
+  emit();
 };
 
 // The trust chain from the root down to this node, following parentCn. Guards a
