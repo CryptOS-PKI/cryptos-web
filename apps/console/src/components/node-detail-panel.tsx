@@ -21,6 +21,7 @@ import { DecommissionDialog } from "@/components/decommission-dialog";
 import { EscrowExportDialog } from "@/components/escrow-export-dialog";
 import { EscrowImportDialog } from "@/components/escrow-import-dialog";
 import { IdentityBadge } from "@/components/identity-badge";
+import { RebootDialog } from "@/components/reboot-dialog";
 import { RenameNodeDialog } from "@/components/rename-node-dialog";
 import { Button } from "@/components/ui/button";
 import { useOptionalAuth } from "@/context/auth";
@@ -78,9 +79,9 @@ export const NodeDetailPanel = ({
   onRenamed: (newName: string) => void;
 }) => {
   const isAdmin = useOptionalAuth()?.operator?.level === "admin";
-  const [dialog, setDialog] = useState<"decommission" | "export" | "import" | "rename" | null>(
-    null,
-  );
+  const [dialog, setDialog] = useState<
+    "decommission" | "export" | "import" | "reboot" | "rename" | null
+  >(null);
 
   return (
     <div className="p-4">
@@ -156,6 +157,15 @@ export const NodeDetailPanel = ({
             {"Decommission\u2026"}
           </Button>
         ) : null}
+        {isAdmin ? (
+          <Button
+            onClick={() => setDialog("reboot")}
+            size="sm"
+            variant={node.rebootRequired ? "default" : "outline"}
+          >
+            {node.rebootRequired ? "Reboot needed\u2026" : "Reboot\u2026"}
+          </Button>
+        ) : null}
       </div>
 
       {dialog === "rename" ? (
@@ -173,6 +183,15 @@ export const NodeDetailPanel = ({
           onClose={() => setDialog(null)}
           onDone={() => {}}
           rootCaCn={node.cn}
+        />
+      ) : null}
+      {dialog === "reboot" ? (
+        <RebootDialog
+          caCn={node.cn}
+          nodeName={node.name}
+          onClose={() => setDialog(null)}
+          onDone={() => {}}
+          rebootRequired={Boolean(node.rebootRequired)}
         />
       ) : null}
     </div>

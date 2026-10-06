@@ -81,6 +81,12 @@ export interface Node {
   crl?: string;
   /** OCSP responder endpoint; present only once the CA is established and issuing. */
   ocsp?: string;
+  /**
+   * True when the node holds a staged change that only takes effect on
+   * reboot (NodeSummary.reboot_required). Undefined in the mock fixtures,
+   * which treat it as false.
+   */
+  rebootRequired?: boolean;
   /** Present on root nodes: the FM's dedicated connection context for this root. */
   connection?: RootConnection;
 }

@@ -113,6 +113,11 @@ describe("fromSummary", () => {
       "AWAITING_CERT",
     );
   });
+
+  it("passes through rebootRequired", () => {
+    expect(fromSummary(summary({ name: "a", rebootRequired: true })).rebootRequired).toBe(true);
+    expect(fromSummary(summary({ name: "b", rebootRequired: false })).rebootRequired).toBe(false);
+  });
 });
 
 describe("renameNode", () => {
