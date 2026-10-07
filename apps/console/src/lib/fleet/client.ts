@@ -14,10 +14,24 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { createClient } from "@connectrpc/connect";
+import { type Interceptor, createClient } from "@connectrpc/connect";
 import { createConnectTransport } from "@connectrpc/connect-web";
 
 import { FleetService } from "@cryptos-pki/api-client/cryptos/fleet/v1/fleet_pb";
+
+import { errorCode, errorReason } from "@/lib/fleet/error-code";
+import { reportApiError } from "@/lib/fleet/error-reporter";
+
+// Reports every refusal to error-reporter's listeners, then rethrows
+// unchanged: callers still see exactly the error they would without this.
+const reportErrors: Interceptor = (next) => async (req) => {
+  try {
+    return await next(req);
+  } catch (error) {
+    reportApiError({ code: errorCode(error), reason: errorReason(error) });
+    throw error;
+  }
+};
 
 // A single Connect client for the manager's FleetService, used by every live
 // surface's data hook. `VITE_FLEET_API` points at the manager; unset falls
@@ -29,5 +43,6 @@ export const fleetClient = () =>
     createConnectTransport({
       baseUrl: import.meta.env.VITE_FLEET_API ?? "http://localhost:8080",
       fetch: (input, init) => fetch(input, { ...init, credentials: "include" }),
+      interceptors: [reportErrors],
     }),
   );

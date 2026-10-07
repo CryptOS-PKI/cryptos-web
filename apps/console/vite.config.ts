@@ -19,6 +19,11 @@ import path from "node:path";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
+  // Dev-only: compiled out when unset, so the "Copy for UI issue" button's
+  // code is absent from a build that doesn't ask for it.
+  define: {
+    "import.meta.env.DEV_UI_ISSUE_COPY": JSON.stringify(process.env.DEV_UI_ISSUE_COPY ?? "false"),
+  },
   plugins: [react()],
   resolve: {
     alias: {
