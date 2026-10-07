@@ -22,6 +22,7 @@ import {
   BootstrapState,
 } from "@cryptos-pki/api-client/cryptos/fleet/v1/bootstrap_pb";
 import { ErrorReason } from "@cryptos-pki/api-client/cryptos/fleet/v1/errors_pb";
+import { reportApiErrors } from "@/lib/fleet/error-reporter";
 import { fleetMode } from "@/lib/fleet/mode";
 import { normalizeFingerprint } from "@/lib/fingerprint";
 import {
@@ -55,7 +56,7 @@ const bootstrapClient = () =>
     BootstrapService,
     createConnectTransport({
       baseUrl: import.meta.env.VITE_FLEET_API ?? "http://localhost:8080",
-      interceptors: [sessionHeader],
+      interceptors: [sessionHeader, reportApiErrors],
     }),
   );
 

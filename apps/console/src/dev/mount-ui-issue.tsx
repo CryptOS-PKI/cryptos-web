@@ -17,6 +17,7 @@ limitations under the License.
 import {
   createErrorRing,
   type RingError,
+  UI_ISSUE_MARKER,
   UiIssueCopy,
   type UiIssueInput,
 } from "@cryptos-pki/ui/dev";
@@ -61,14 +62,17 @@ const ROUTE_PATTERNS = [
   "/protocols",
 ];
 
-const matchRoute = (pathname: string): { params: Record<string, string>; route: string } => {
+// Exported for its own direct test: an unmatched path is never echoed back
+// raw (it could carry a serial or another identifier in it), so it collapses
+// to the same "*" every unknown route uses.
+export const matchRoute = (pathname: string): { params: Record<string, string>; route: string } => {
   for (const pattern of ROUTE_PATTERNS) {
     const match = matchPath(pattern, pathname);
     if (match) {
       return { params: match.params as Record<string, string>, route: pattern };
     }
   }
-  return { params: {}, route: pathname };
+  return { params: {}, route: "*" };
 };
 
 // The selector for an element with no data-testid: tag plus classes only,
@@ -110,6 +114,14 @@ export const mountUiIssue = (): void => {
   const ring = createErrorRing();
   let clicked: string | undefined;
 
+  // Created before the click listener below, so the listener can tell the
+  // copy button's own click apart from a click on the app underneath it.
+  const container = document.createElement("div");
+  // A positive control for Task 9's bundle check: a flag-on build must
+  // contain this string somewhere, which only holds if something besides
+  // the marker's own declaration actually uses it.
+  container.dataset.cryptosDevUiIssue = UI_ISSUE_MARKER;
+
   const record = (e: Omit<RingError, "at">) => ring.push({ ...e, at: new Date().toISOString() });
 
   globalThis.addEventListener("error", (event) => {
@@ -126,6 +138,12 @@ export const mountUiIssue = (): void => {
   document.addEventListener(
     "click",
     (event) => {
+      // A capture listener on document runs before the button's own handler,
+      // including for clicks on the button itself: without this guard, every
+      // copy would report itself as the last clicked element.
+      if (event.target instanceof Node && container.contains(event.target)) {
+        return;
+      }
       clicked = clickedSelector(event.target) ?? clicked;
     },
     true,
@@ -154,7 +172,6 @@ export const mountUiIssue = (): void => {
     };
   };
 
-  const container = document.createElement("div");
   document.body.append(container);
   createRoot(container).render(<UiIssueCopy collect={collect} />);
 };

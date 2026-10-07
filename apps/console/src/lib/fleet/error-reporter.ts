@@ -14,8 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// A tiny broadcast point for every FleetService/BootstrapService call that
-// fails, independent of whether the caller handles the rejection. The
+import type { Interceptor } from "@connectrpc/connect";
+
+import { errorCode, errorReason } from "@/lib/fleet/error-code";
+
+// A tiny broadcast point for every FleetService and BootstrapService call
+// that fails, independent of whether the caller handles the rejection. The
 // dev-only UI-issue button (apps/console/src/dev/mount-ui-issue.tsx)
 // subscribes to this so an API refusal shows up in its error ring even when
 // the page that triggered it caught the error and never threw an
@@ -36,6 +40,22 @@ export const onApiError = (listener: Listener): (() => void) => {
 
 export const reportApiError = (event: ApiErrorEvent): void => {
   for (const listener of listeners) {
-    listener(event);
+    try {
+      listener(event);
+    } catch {
+      // A broken listener must not replace, or hide, the caller's own error.
+    }
+  }
+};
+
+// Installed on both FleetService's (client.ts) and BootstrapService's
+// (lib/bootstrap.ts) transports. Reports every refusal, then rethrows the
+// identical error: callers see exactly what they would without this.
+export const reportApiErrors: Interceptor = (next) => async (req) => {
+  try {
+    return await next(req);
+  } catch (error) {
+    reportApiError({ code: errorCode(error), reason: errorReason(error) });
+    throw error;
   }
 };

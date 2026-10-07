@@ -23,6 +23,11 @@ export default defineConfig({
   // code is absent from a build that doesn't ask for it.
   define: {
     "import.meta.env.DEV_UI_ISSUE_COPY": JSON.stringify(process.env.DEV_UI_ISSUE_COPY ?? "false"),
+    // Vite only auto-exposes process.env vars already prefixed VITE_; GITHUB_SHA
+    // (set by Actions) is not, so this needs an explicit define to fall back to it.
+    "import.meta.env.VITE_GIT_SHA": JSON.stringify(
+      process.env.VITE_GIT_SHA ?? process.env.GITHUB_SHA ?? "",
+    ),
   },
   plugins: [react()],
   resolve: {

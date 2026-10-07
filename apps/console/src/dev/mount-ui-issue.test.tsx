@@ -14,10 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { act, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { act, fireEvent, screen, waitFor } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { mountUiIssue } from "./mount-ui-issue";
+import { matchRoute, mountUiIssue } from "./mount-ui-issue";
 
 const setMetaTag = (content: null | string) => {
   document.querySelector('meta[name="cryptos-dev-ui-issue-copy"]')?.remove();
@@ -30,9 +30,12 @@ const setMetaTag = (content: null | string) => {
   document.head.append(meta);
 };
 
+const originalSha = import.meta.env.VITE_GIT_SHA;
+
 afterEach(() => {
   setMetaTag(null);
   document.body.innerHTML = "";
+  import.meta.env.VITE_GIT_SHA = originalSha;
 });
 
 describe("mountUiIssue", () => {
@@ -56,5 +59,71 @@ describe("mountUiIssue", () => {
     setMetaTag("1");
     mountUiIssue();
     expect(screen.queryByTestId("dev-ui-issue-copy")).not.toBeInTheDocument();
+  });
+
+  it("marks its container with the UI-issue marker, for Task 9's bundle check", () => {
+    setMetaTag("true");
+    act(() => {
+      mountUiIssue();
+    });
+    const button = screen.getByTestId("dev-ui-issue-copy");
+    expect(button.closest("[data-cryptos-dev-ui-issue]")).toBeInTheDocument();
+  });
+
+  it("tracks the last clicked app element, not the copy button's own click", async () => {
+    const appButton = document.createElement("button");
+    appButton.dataset.testid = "app-thing";
+    document.body.append(appButton);
+
+    const writeText = vi.fn<(text: string) => Promise<void>>(async () => {});
+    vi.stubGlobal("navigator", { clipboard: { writeText }, language: "en-US", userAgent: "UA" });
+
+    setMetaTag("true");
+    act(() => {
+      mountUiIssue();
+    });
+
+    fireEvent.click(appButton);
+    fireEvent.click(screen.getByTestId("dev-ui-issue-copy"));
+
+    await waitFor(() => expect(writeText).toHaveBeenCalled());
+    const bundle = JSON.parse(writeText.mock.calls[0]?.[0] ?? "{}");
+    expect(bundle.clicked).toBe("app-thing");
+
+    vi.unstubAllGlobals();
+  });
+
+  it("includes sha in the bundle when VITE_GIT_SHA is defined", async () => {
+    import.meta.env.VITE_GIT_SHA = "deadbeef";
+
+    const writeText = vi.fn<(text: string) => Promise<void>>(async () => {});
+    vi.stubGlobal("navigator", { clipboard: { writeText }, language: "en-US", userAgent: "UA" });
+
+    setMetaTag("true");
+    act(() => {
+      mountUiIssue();
+    });
+    fireEvent.click(screen.getByTestId("dev-ui-issue-copy"));
+
+    await waitFor(() => expect(writeText).toHaveBeenCalled());
+    const bundle = JSON.parse(writeText.mock.calls[0]?.[0] ?? "{}");
+    expect(bundle.sha).toBe("deadbeef");
+
+    vi.unstubAllGlobals();
+  });
+});
+
+describe("matchRoute", () => {
+  it("matches a known route pattern", () => {
+    expect(matchRoute("/nodes/n1/certs/abc")).toEqual({
+      params: { name: "n1", serial: "abc" },
+      route: "/nodes/:name/certs/:serial",
+    });
+  });
+
+  // An unmatched path must never be echoed back raw: it could carry a serial
+  // or another identifier (as it does here).
+  it("collapses an unmatched path, even one carrying a serial, to *", () => {
+    expect(matchRoute("/debug/certs/4F:9A:11:02")).toEqual({ params: {}, route: "*" });
   });
 });
