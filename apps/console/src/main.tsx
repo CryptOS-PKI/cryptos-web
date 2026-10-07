@@ -29,6 +29,17 @@ if (!container) {
   throw new Error("Root element #root not found");
 }
 
+if (import.meta.env.DEV_UI_ISSUE_COPY === "true") {
+  // Not a real top-level await: this app's build target (vite.config.ts)
+  // predates it, and esbuild's transpile step refuses one. An IIFE compiles
+  // down fine and still doesn't delay the render below when the flag is off.
+  // eslint-disable-next-line unicorn/prefer-top-level-await
+  void (async () => {
+    const { mountUiIssue } = await import("./dev/mount-ui-issue");
+    mountUiIssue();
+  })();
+}
+
 createRoot(container).render(
   <StrictMode>
     <ThemeProvider>

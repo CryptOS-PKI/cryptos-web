@@ -5,6 +5,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./dev": "./src/dev/index.ts",
     "./tailwind-preset": "./tailwind-preset.js",
     "./tokens.css": "./tokens.css"
   },

@@ -19,6 +19,8 @@ import { createConnectTransport } from "@connectrpc/connect-web";
 
 import { FleetService } from "@cryptos-pki/api-client/cryptos/fleet/v1/fleet_pb";
 
+import { reportApiErrors } from "@/lib/fleet/error-reporter";
+
 // A single Connect client for the manager's FleetService, used by every live
 // surface's data hook. `VITE_FLEET_API` points at the manager; unset falls
 // back to the manager's default local dev port. Auth (live-auth) attaches the
@@ -29,5 +31,6 @@ export const fleetClient = () =>
     createConnectTransport({
       baseUrl: import.meta.env.VITE_FLEET_API ?? "http://localhost:8080",
       fetch: (input, init) => fetch(input, { ...init, credentials: "include" }),
+      interceptors: [reportApiErrors],
     }),
   );
