@@ -17,8 +17,10 @@ limitations under the License.
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import type { Node } from "@/lib/mock";
+
 import { RekeyWizard } from "@/components/rekey-wizard";
-import { mockNodes, type Node } from "@/lib/mock";
+import { mockNodes } from "@/lib/mock-fixtures";
 
 const issuingNode = (): Node => mockNodes.find((n) => n.name === "acme-issuing-01")!;
 const rootNode = (): Node => mockNodes.find((n) => n.name === "acme-root-01")!;

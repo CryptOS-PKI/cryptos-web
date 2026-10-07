@@ -20,7 +20,7 @@ import { recordAudit } from "@/lib/audit";
 import { canIssue, type CertKind } from "@/lib/certs";
 import { fleetClient } from "@/lib/fleet/client";
 import { fleetMode } from "@/lib/fleet/mode";
-import { type Node, type NodeRole } from "@/lib/mock";
+import type { Node, NodeRole } from "@/lib/mock";
 import { addNode, getNodeByCn } from "@/lib/nodes";
 
 import type { EnrollmentRequest as ProtoEnrollmentRequest } from "@cryptos-pki/api-client/cryptos/fleet/v1/fleet_pb";

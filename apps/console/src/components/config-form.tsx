@@ -18,6 +18,8 @@ import type { MachineConfig } from "@cryptos-pki/api-client/cryptos/node/v1/conf
 
 import { useCallback, useEffect, useState } from "react";
 
+import type { Node } from "@/lib/mock";
+
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/auth";
 import {
@@ -29,7 +31,6 @@ import {
 } from "@/lib/config";
 import { fleetErrorMessage } from "@/lib/fleet/error-copy";
 import { fleetMode } from "@/lib/fleet/mode";
-import { type Node } from "@/lib/mock";
 
 const tiers = ["nodeID (dev)", "TPM-sealed", "HSM"];
 const field = "w-full rounded-md border bg-card px-3 py-2 font-mono text-sm";

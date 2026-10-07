@@ -19,8 +19,7 @@ import { useEffect, useState } from "react";
 import { FleetTopology } from "@/components/fleet-topology";
 import { NodeDetailPanel } from "@/components/node-detail-panel";
 import { NodeSelect } from "@/components/node-select";
-import { mockNodes } from "@/lib/mock";
-import { getNode, useNodes } from "@/lib/nodes";
+import { getNode, nodesList, useNodes } from "@/lib/nodes";
 
 const PanelHeader = ({ children, label }: { children?: React.ReactNode; label: string }) => {
   return (
@@ -52,11 +51,16 @@ const Legend = () => {
   );
 };
 
-// The default selection is the first established intermediate. Falls back to the
-// first node.
+// The default selection is the first established intermediate. Falls back to
+// the first node. Read through nodesList() (lib/nodes.ts's accessor), not
+// mockNodes directly, so a release build -- where the fixtures are an empty
+// array (see @/lib/mock-fixtures's resolve.alias in vite.config.ts) -- gets ""
+// here instead of a crash on an empty array's [0], falling through to
+// allNodes[0] below once the live fleet arrives.
 const defaultSelected =
-  mockNodes.find((n) => n.role === "intermediate" && n.identityState === "ESTABLISHED")?.name ??
-  mockNodes[0].name;
+  nodesList().find((n) => n.role === "intermediate" && n.identityState === "ESTABLISHED")?.name ??
+  nodesList()[0]?.name ??
+  "";
 
 // Shared topology surface used by both the Fleet page (full neighbourhood on
 // focus) and the Nodes page (single path to the Root on focus).

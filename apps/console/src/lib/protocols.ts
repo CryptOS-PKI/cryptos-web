@@ -17,7 +17,8 @@ limitations under the License.
 import { recordAudit } from "@/lib/audit";
 import { fleetClient } from "@/lib/fleet/client";
 import { fleetMode } from "@/lib/fleet/mode";
-import { identityStateLabels, roleLabels, type Node, type ProtocolKind } from "@/lib/mock";
+import { identityStateLabels, roleLabels } from "@/lib/fleet/labels";
+import type { Node, ProtocolKind } from "@/lib/mock";
 import { refreshLiveNodes, setMockNodeProtocol } from "@/lib/nodes";
 
 import { ServiceProtocol } from "@cryptos-pki/api-client/cryptos/node/v1/status_pb";

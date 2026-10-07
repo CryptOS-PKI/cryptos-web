@@ -19,7 +19,8 @@ import { useEffect, useMemo, useSyncExternalStore } from "react";
 import { recordAudit } from "@/lib/audit";
 import { fleetClient } from "@/lib/fleet/client";
 import { fleetMode } from "@/lib/fleet/mode";
-import { mockNodes, type Node } from "@/lib/mock";
+import { mockNodes } from "@/lib/mock-fixtures";
+import type { Node } from "@/lib/mock";
 
 import type { Certificate } from "@cryptos-pki/api-client/cryptos/fleet/v1/fleet_pb";
 

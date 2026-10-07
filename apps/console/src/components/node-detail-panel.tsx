@@ -17,6 +17,8 @@ limitations under the License.
 import { useState } from "react";
 import { Link } from "react-router-dom";
 
+import type { Node } from "@/lib/mock";
+
 import { DecommissionDialog } from "@/components/decommission-dialog";
 import { EscrowExportDialog } from "@/components/escrow-export-dialog";
 import { EscrowImportDialog } from "@/components/escrow-import-dialog";
@@ -26,7 +28,7 @@ import { RenameNodeDialog } from "@/components/rename-node-dialog";
 import { Button } from "@/components/ui/button";
 import { useOptionalAuth } from "@/context/auth";
 import { canIssue } from "@/lib/certs";
-import { type Node, roleLabels } from "@/lib/mock";
+import { roleLabels } from "@/lib/fleet/labels";
 import { cn } from "@/lib/utils";
 
 // A single labeled field cell in the detail grid. `wide` spans two columns so a

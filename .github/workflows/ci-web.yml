@@ -79,12 +79,52 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Release bundle check's own tests
+        # scripts/ is plain Node, outside the npm workspaces the Test step
+        # below covers, so its node:test suite gets its own step.
+        run: node --test scripts/*.test.mjs
+
       - name: Test
         run: npm run test
 
       - name: Build
         # tsc -b then vite build. This is the step that #99 was about.
         run: npm run build
+
+      - name: Release bundle check catches dev-only builds
+        # A positive control for the check below, so it can't be vacuously
+        # passing: building with VITE_FLEET_MODE=mock or DEV_UI_ISSUE_COPY=true
+        # must make it fail. `vite build` directly (skipping tsc -b, already
+        # run by Build above) into a throwaway outDir keeps this cheap.
+        #
+        # check_catches requires exit code 1 exactly (development-only code
+        # found), not merely non-zero: the script also exits 2 for an invalid
+        # dist directory (missing, empty, no index.html, no built JS), which
+        # a wrong or empty --outDir here would trigger without the build ever
+        # being scanned -- "non-zero" alone would wave that through as if the
+        # control had passed.
+        run: |
+          set -euo pipefail
+          check_catches() {
+            status=0
+            node scripts/check-release-bundle.mjs "$1" || status=$?
+            if [ "$status" -ne 1 ]; then
+              echo "expected scripts/check-release-bundle.mjs to exit 1 (development-only code found) for $2, got exit $status" >&2
+              exit 1
+            fi
+          }
+          VITE_FLEET_MODE=mock npm exec -w @cryptos-pki/console -- vite build --outDir dist-check-mock
+          check_catches apps/console/dist-check-mock "a VITE_FLEET_MODE=mock build"
+          rm -rf apps/console/dist-check-mock
+
+          DEV_UI_ISSUE_COPY=true npm exec -w @cryptos-pki/console -- vite build --outDir dist-check-devui
+          check_catches apps/console/dist-check-devui "a DEV_UI_ISSUE_COPY=true build"
+          rm -rf apps/console/dist-check-devui
+
+      - name: Release bundle has no development-only code
+        # The existing Build step above builds without DEV_UI_ISSUE_COPY or
+        # VITE_FLEET_MODE, so its output is the release build.
+        run: node scripts/check-release-bundle.mjs apps/console/dist
 
       - name: Icons match their sources
         run: npm -w @cryptos-pki/ui run generate:icons && git diff --exit-code packages/ui/src/icons

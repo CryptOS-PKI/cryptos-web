@@ -31,7 +31,7 @@ import {
   useEnrollments,
 } from "@/lib/enrollment";
 import { fleetErrorMessage } from "@/lib/fleet/error-copy";
-import { roleLabels } from "@/lib/mock";
+import { roleLabels } from "@/lib/fleet/labels";
 
 const Field = ({ children, label }: { children: React.ReactNode; label: string }) => (
   <div className="flex flex-col gap-1 rounded-lg border bg-secondary px-3 py-2.5">

@@ -19,7 +19,7 @@ import { Link } from "react-router-dom";
 import { useAdapters } from "@/lib/adapters";
 import { expiryClass, useAllCerts } from "@/lib/certs";
 import { useEnrollments } from "@/lib/enrollment";
-import { summarize } from "@/lib/mock";
+import { summarize } from "@/lib/fleet/labels";
 import { useNodes } from "@/lib/nodes";
 import { useProfiles } from "@/lib/profiles";
 import { cn } from "@/lib/utils";

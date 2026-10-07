@@ -19,13 +19,8 @@ import { useEffect, useSyncExternalStore } from "react";
 import { fleetClient } from "@/lib/fleet/client";
 import { fleetMode } from "@/lib/fleet/mode";
 import { validateNodeName } from "@/lib/fleet/node-name";
-import {
-  mockNodes,
-  type IdentityState,
-  type Node,
-  type NodeProtocolStatus,
-  type ProtocolKind,
-} from "@/lib/mock";
+import { mockNodes } from "@/lib/mock-fixtures";
+import type { IdentityState, Node, NodeProtocolStatus, ProtocolKind } from "@/lib/mock";
 
 import type { NodeSummary } from "@cryptos-pki/api-client/cryptos/fleet/v1/fleet_pb";
 import {

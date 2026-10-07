@@ -16,7 +16,7 @@ limitations under the License.
 
 import { describe, expect, it } from "vitest";
 
-import { mockNodes } from "@/lib/mock";
+import { mockNodes } from "@/lib/mock-fixtures";
 import { computeTreeLayout } from "@/lib/topology-layout";
 
 describe("computeTreeLayout", () => {

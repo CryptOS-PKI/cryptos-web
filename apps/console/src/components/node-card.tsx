@@ -16,6 +16,8 @@ limitations under the License.
 
 import { Link } from "react-router-dom";
 
+import type { Node } from "@/lib/mock";
+
 import { IdentityBadge } from "@/components/identity-badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,7 +29,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { type Node, roleLabels } from "@/lib/mock";
+import { roleLabels } from "@/lib/fleet/labels";
 
 export const NodeCard = ({ node }: { node: Node }) => {
   const isRoot = node.role === "root";

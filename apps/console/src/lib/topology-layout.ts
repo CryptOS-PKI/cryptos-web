@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { type IdentityState, type Node, type NodeRole } from "@/lib/mock";
+import type { IdentityState, Node, NodeRole } from "@/lib/mock";
 
 // A tidy left-to-right tree layout for the whole CA fleet. Every CA is a circle;
 // the pan/zoom canvas handles scale and a node's subtree can be collapsed. Depth

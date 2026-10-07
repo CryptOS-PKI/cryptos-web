@@ -23,7 +23,7 @@ import type { IdentityState, Node } from "@/lib/mock";
 import { DataTable } from "@/components/data-table/data-table";
 import { IdentityBadge } from "@/components/identity-badge";
 import { certsFor, useAllCerts } from "@/lib/certs";
-import { identityStateLabels, roleLabels } from "@/lib/mock";
+import { identityStateLabels, roleLabels } from "@/lib/fleet/labels";
 import { useNodes } from "@/lib/nodes";
 
 const nodeColumns: ColumnDef<Node, unknown>[] = [

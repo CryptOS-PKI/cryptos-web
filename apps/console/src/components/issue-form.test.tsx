@@ -19,7 +19,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { IssueForm } from "@/components/issue-form";
 import { __resetCerts } from "@/lib/certs";
-import { mockNodes } from "@/lib/mock";
+import { mockNodes } from "@/lib/mock-fixtures";
 import { __resetProfiles } from "@/lib/profiles";
 
 const issuingNode = mockNodes.find((n) => n.name === "acme-issuing-01")!;

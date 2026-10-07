@@ -16,8 +16,10 @@ limitations under the License.
 
 import { useEffect, useRef, useState } from "react";
 
+import type { NodeRole } from "@/lib/mock";
+
 import { IdentityBadge } from "@/components/identity-badge";
-import { type NodeRole, roleLabels } from "@/lib/mock";
+import { roleLabels } from "@/lib/fleet/labels";
 import { getNode, useNodes } from "@/lib/nodes";
 import { cn } from "@/lib/utils";
 

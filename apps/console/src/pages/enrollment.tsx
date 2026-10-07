@@ -34,7 +34,7 @@ import {
   useEnrollments,
 } from "@/lib/enrollment";
 import { fleetErrorMessage } from "@/lib/fleet/error-copy";
-import { roleLabels } from "@/lib/mock";
+import { roleLabels } from "@/lib/fleet/labels";
 
 const STATUS_TONE: Record<EnrollmentStatus, string> = {
   APPROVED: "text-success",
