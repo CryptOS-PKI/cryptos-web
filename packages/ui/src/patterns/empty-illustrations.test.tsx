@@ -33,8 +33,10 @@ describe("EmptyIllustration", () => {
     const svg = container.querySelector("svg");
     expect(svg).toHaveAttribute("aria-hidden", "true");
     expect(container.querySelector("metadata")).not.toBeInTheDocument();
-    // Hand-drawn, not exported from a design tool, so this stays clean on its
-    // own; the repo-wide CI step (ci-web.yml) is what actually enforces it.
+    // nodes, certificates and requests are ported from the brand set (stripped
+    // of its metadata); audit and generic are hand-drawn placeholders pending
+    // design review. None carries design-tool metadata, so this stays clean on
+    // its own; the repo-wide CI step (ci-web.yml) is what actually enforces it.
     expect([...svg!.attributes].some((a) => a.name.startsWith("xmlns:"))).toBe(false);
   });
 

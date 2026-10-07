@@ -52,6 +52,7 @@ describe("RoleGate", () => {
     gated("operator", onClick);
     const btn = screen.getByRole("button", { name: /Rotate key/ });
     expect(btn).toHaveAttribute("aria-disabled", "true");
+    expect(btn.tabIndex).not.toBe(-1);
 
     // Tooltip's open state updates on focus, so the native .focus() call
     // (needed to make document.activeElement move, unlike fireEvent.focus)
