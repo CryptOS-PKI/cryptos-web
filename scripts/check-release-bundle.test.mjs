@@ -22,6 +22,8 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 
+import { EXIT_CLEAN, EXIT_DEV_CODE_FOUND, EXIT_INVALID_DIST } from "./check-release-bundle.mjs";
+
 const scriptPath = fileURLToPath(new URL("check-release-bundle.mjs", import.meta.url));
 
 const run = (distDir, scriptPathOverride) =>
@@ -50,60 +52,64 @@ describe("check-release-bundle", () => {
   });
 
   describe("dist directory shape", () => {
-    it("exits non-zero and explains when the dist directory doesn't exist", () => {
+    // EXIT_INVALID_DIST (2), never EXIT_DEV_CODE_FOUND (1): a caller like
+    // ci-web.yml's positive control that only checked "non-zero" couldn't
+    // tell a real finding from a positive control pointed at a broken dist
+    // that was never actually scanned.
+    it("exits EXIT_INVALID_DIST and explains when the dist directory doesn't exist", () => {
       rmSync(distDir, { force: true, recursive: true });
 
       const result = run(distDir);
 
-      assert.equal(result.status, 1);
+      assert.equal(result.status, EXIT_INVALID_DIST);
       assert.equal(result.stdout, "");
       assert.match(result.stderr, /does not exist/);
     });
 
-    it("exits non-zero and explains when the dist directory is empty", () => {
+    it("exits EXIT_INVALID_DIST and explains when the dist directory is empty", () => {
       const result = run(distDir);
 
-      assert.equal(result.status, 1);
+      assert.equal(result.status, EXIT_INVALID_DIST);
       assert.match(result.stderr, /is empty/);
     });
 
-    it("exits non-zero when index.html is missing", () => {
+    it("exits EXIT_INVALID_DIST when index.html is missing", () => {
       mkdirSync(path.join(distDir, "assets"), { recursive: true });
       writeFileSync(path.join(distDir, "assets", "index-abc123.js"), "console.log(1);");
 
       const result = run(distDir);
 
-      assert.equal(result.status, 1);
+      assert.equal(result.status, EXIT_INVALID_DIST);
       assert.match(result.stderr, /index\.html/);
     });
 
-    it("exits non-zero when no assets/*.js file exists", () => {
+    it("exits EXIT_INVALID_DIST when no assets/*.js file exists", () => {
       writeFileSync(path.join(distDir, "index.html"), "<!doctype html>");
 
       const result = run(distDir);
 
-      assert.equal(result.status, 1);
+      assert.equal(result.status, EXIT_INVALID_DIST);
       assert.match(result.stderr, /assets.*\.js/);
     });
   });
 
   describe("marker scan", () => {
-    it("exits 0 when no built file carries a marker", () => {
+    it("exits EXIT_CLEAN when no built file carries a marker", () => {
       writeDistShape(distDir, 'console.log("hello");');
 
       const result = run(distDir);
 
-      assert.equal(result.status, 0);
+      assert.equal(result.status, EXIT_CLEAN);
       assert.match(result.stdout, /release bundle clean/);
     });
 
     for (const marker of ["__CRYPTOS_DEV_UI_ISSUE__", "__CRYPTOS_MOCK__", "c2pa"]) {
-      it(`exits 1 and names the file when a built file carries ${marker}`, () => {
+      it(`exits EXIT_DEV_CODE_FOUND and names the file when a built file carries ${marker}`, () => {
         writeDistShape(distDir, `const m="${marker}";console.log(m);`);
 
         const result = run(distDir);
 
-        assert.equal(result.status, 1);
+        assert.equal(result.status, EXIT_DEV_CODE_FOUND);
         assert.match(result.stderr, /development-only code/);
         assert.match(
           result.stderr,
@@ -111,6 +117,17 @@ describe("check-release-bundle", () => {
         );
       });
     }
+  });
+
+  describe("exit codes are distinct", () => {
+    // The literal values are part of the CLI's contract (ci-web.yml's
+    // positive control keys off exit 1 specifically), not an implementation
+    // detail free to shuffle.
+    it("are 0 (clean), 1 (dev code found) and 2 (invalid dist)", () => {
+      assert.equal(EXIT_CLEAN, 0);
+      assert.equal(EXIT_DEV_CODE_FOUND, 1);
+      assert.equal(EXIT_INVALID_DIST, 2);
+    });
   });
 
   describe("entry-point guard", () => {
@@ -125,7 +142,7 @@ describe("check-release-bundle", () => {
 
         const result = run(spacedDistDir, spacedScriptPath);
 
-        assert.equal(result.status, 0);
+        assert.equal(result.status, EXIT_CLEAN);
         assert.match(result.stdout, /release bundle clean/);
       } finally {
         rmSync(spacedScriptDir, { force: true, recursive: true });

@@ -20,6 +20,11 @@ limitations under the License.
 // design-tool asset manifest. Walks every file under the given dist
 // directory and greps it for the markers; `latin1` reads binary assets
 // (fonts, images) without throwing on invalid UTF-8.
+//
+// Exit codes (see the EXIT_* constants below): 0 clean, 1 development-only
+// code found, 2 the given dist directory itself is invalid (missing, empty,
+// no index.html, no built JS) -- distinct from 1 so a caller can tell
+// "found what it was looking for" from "never actually scanned anything".
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -65,6 +70,16 @@ export const findDevCode = (distDir) =>
     return MARKERS.some((marker) => contents.includes(marker));
   });
 
+// Distinct exit codes, not a shared non-zero: a caller (ci-web.yml's positive
+// control) that only checks "did this exit non-zero" can't tell "found
+// dev-only code" (1, the thing it wants to see) from "the dist directory it
+// pointed at was invalid" (2, a broken control that never actually scanned
+// anything) -- a wrong or empty --outDir would otherwise make the control
+// pass without checking anything. 0 is clean, same as before.
+export const EXIT_CLEAN = 0;
+export const EXIT_DEV_CODE_FOUND = 1;
+export const EXIT_INVALID_DIST = 2;
+
 // pathToFileURL (not a `file://${argv[1]}` template) matches how Node itself
 // builds import.meta.url: it percent-encodes characters like a space, which
 // the template doesn't, so a worktree path with a space in it made the two
@@ -77,14 +92,15 @@ if (isMain) {
   const distError = validateDistDir(distDir);
   if (distError) {
     console.error(`release bundle check: ${distError}`);
-    process.exitCode = 1;
+    process.exitCode = EXIT_INVALID_DIST;
   } else {
     const hits = findDevCode(distDir);
     if (hits.length > 0) {
       console.error(`release bundle contains development-only code:\n${hits.join("\n")}`);
-      process.exitCode = 1;
+      process.exitCode = EXIT_DEV_CODE_FOUND;
     } else {
       console.log("release bundle clean");
+      process.exitCode = EXIT_CLEAN;
     }
   }
 }

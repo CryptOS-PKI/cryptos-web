@@ -96,11 +96,20 @@ jobs:
         # passing: building with VITE_FLEET_MODE=mock or DEV_UI_ISSUE_COPY=true
         # must make it fail. `vite build` directly (skipping tsc -b, already
         # run by Build above) into a throwaway outDir keeps this cheap.
+        #
+        # check_catches requires exit code 1 exactly (development-only code
+        # found), not merely non-zero: the script also exits 2 for an invalid
+        # dist directory (missing, empty, no index.html, no built JS), which
+        # a wrong or empty --outDir here would trigger without the build ever
+        # being scanned -- "non-zero" alone would wave that through as if the
+        # control had passed.
         run: |
           set -euo pipefail
           check_catches() {
-            if node scripts/check-release-bundle.mjs "$1"; then
-              echo "expected scripts/check-release-bundle.mjs to fail for $2" >&2
+            status=0
+            node scripts/check-release-bundle.mjs "$1" || status=$?
+            if [ "$status" -ne 1 ]; then
+              echo "expected scripts/check-release-bundle.mjs to exit 1 (development-only code found) for $2, got exit $status" >&2
               exit 1
             fi
           }
