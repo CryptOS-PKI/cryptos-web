@@ -9,9 +9,11 @@ Fleet Manager web frontend for CryptOS-PKI. React + TypeScript, built with Vite,
 
 This is a leaf application (a static bundle). Live mode (the default) is wired to the manager: live
 surfaces talk to it through Connect-Web using the TypeScript stubs in `packages/api-client`. Mock mode
-(`VITE_FLEET_MODE=mock`, which the test suite pins) reads typed fixtures from `src/lib/mock.ts` that
-stand in for the manager's gRPC responses. The whole bundle is self-contained (fonts bundled as
-woff2, strict CSP, no runtime CDN) for air-gap use.
+(`VITE_FLEET_MODE=mock`, which the test suite pins) reads typed fixtures from `src/lib/mock-fixtures.real.ts`
+that stand in for the manager's gRPC responses; `vite.config.ts`'s `resolve.alias` swaps that
+specifier for `mock-fixtures.stub.ts`'s empty array in any other build, so a release build carries
+none of the fixture data (`scripts/check-release-bundle.mjs` checks this in CI). The whole bundle is
+self-contained (fonts bundled as woff2, strict CSP, no runtime CDN) for air-gap use.
 
 ## Layout
 
@@ -31,7 +33,9 @@ components, named exports from `src/index.ts`) and
 - `src/components/layout/` - app shell: header, sidebar nav, wordmark, theme toggle, auth gate.
 - `src/components/ui/` - shadcn/ui primitives (button, card, badge, separator).
 - `src/context/` - `theme.tsx` (dark/light, persisted) and `auth.tsx` (browser-mTLS gate stub).
-- `src/lib/` - `mock.ts` (typed Node model + fixtures) and `utils.ts` (the `cn` helper).
+- `src/lib/` - `mock.ts` (the typed Node model), `mock-fixtures.real.ts`/`mock-fixtures.stub.ts`
+  (the fixtures `vite.config.ts` swaps between at build time), `fleet/labels.ts` (the display
+  labels both data sources use) and `utils.ts` (the `cn` helper).
 - `src/pages/` - the routed views. `src/test/` - vitest setup.
 
 ## Build, test, lint

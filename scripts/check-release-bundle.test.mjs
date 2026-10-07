@@ -16,13 +16,26 @@ limitations under the License.
 
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import {
+  chmodSync,
+  cpSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { EXIT_CLEAN, EXIT_DEV_CODE_FOUND, EXIT_INVALID_DIST } from "./check-release-bundle.mjs";
+import {
+  EXIT_CLEAN,
+  EXIT_DEV_CODE_FOUND,
+  EXIT_INVALID_DIST,
+  runCheck,
+} from "./check-release-bundle.mjs";
 
 const scriptPath = fileURLToPath(new URL("check-release-bundle.mjs", import.meta.url));
 
@@ -30,6 +43,10 @@ const run = (distDir, scriptPathOverride) =>
   spawnSync(process.execPath, [scriptPathOverride ?? scriptPath, distDir], { encoding: "utf8" });
 
 const escapeForRegExp = (value) => value.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
+
+const boom = () => {
+  throw new Error("EACCES: permission denied, open 'whatever.js'");
+};
 
 // A minimal but real-shaped dist: index.html plus one assets/*.js file, so
 // validateDistDir() passes and only the marker scan in `jsContents` is
@@ -127,6 +144,49 @@ describe("check-release-bundle", () => {
       assert.equal(EXIT_CLEAN, 0);
       assert.equal(EXIT_DEV_CODE_FOUND, 1);
       assert.equal(EXIT_INVALID_DIST, 2);
+    });
+  });
+
+  describe("unexpected errors", () => {
+    // An uncaught exception (an unreadable file, say) is otherwise a bare
+    // Node exit 1 -- indistinguishable from EXIT_DEV_CODE_FOUND, so a caller
+    // like ci-web.yml's positive control would wrongly call a crash a catch.
+    // Calls runCheck() directly with a throwing scan, rather than spawning:
+    // deterministic regardless of the platform or which user runs the test
+    // (see the real-file case below, which chmod 000 doesn't enforce for
+    // every user).
+    it("reports EXIT_INVALID_DIST with a clear message when the scan throws unexpectedly", () => {
+      writeDistShape(distDir, "console.log(1);");
+
+      const result = runCheck(distDir, { findDevCode: boom });
+
+      assert.equal(result.code, EXIT_INVALID_DIST);
+      assert.match(result.message, /unexpected error/);
+      assert.match(result.message, /permission denied/);
+    });
+
+    it("exits EXIT_INVALID_DIST for a real unreadable file, on a platform/user that enforces it", (t) => {
+      writeDistShape(distDir, "console.log(1);");
+      const unreadable = path.join(distDir, "assets", "unreadable.js");
+      writeFileSync(unreadable, "console.log(2);");
+      chmodSync(unreadable, 0o000);
+      try {
+        readFileSync(unreadable, "latin1");
+        // Some users (root, chief among them) ignore the permission bits, so
+        // chmod 000 didn't actually block this process from reading the
+        // file -- the injected-scan test above already covers the behavior
+        // on a platform/user where this one can't.
+        t.skip("chmod 000 did not block reading for this user");
+        return;
+      } catch {
+        // Expected: confirms this platform/user really can't read the file,
+        // so the assertions below are exercising the real filesystem path.
+      }
+
+      const result = run(distDir);
+
+      assert.equal(result.status, EXIT_INVALID_DIST);
+      assert.match(result.stderr, /unexpected error/);
     });
   });
 

@@ -22,9 +22,11 @@ limitations under the License.
 // (fonts, images) without throwing on invalid UTF-8.
 //
 // Exit codes (see the EXIT_* constants below): 0 clean, 1 development-only
-// code found, 2 the given dist directory itself is invalid (missing, empty,
-// no index.html, no built JS) -- distinct from 1 so a caller can tell
-// "found what it was looking for" from "never actually scanned anything".
+// code found, 2 the check didn't complete -- the given dist directory is
+// invalid (missing, empty, no index.html, no built JS) or something
+// unexpected (e.g. an unreadable file) broke the scan -- distinct from 1 so
+// a caller can tell "found what it was looking for" from "never actually
+// scanned anything".
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -72,13 +74,42 @@ export const findDevCode = (distDir) =>
 
 // Distinct exit codes, not a shared non-zero: a caller (ci-web.yml's positive
 // control) that only checks "did this exit non-zero" can't tell "found
-// dev-only code" (1, the thing it wants to see) from "the dist directory it
-// pointed at was invalid" (2, a broken control that never actually scanned
-// anything) -- a wrong or empty --outDir would otherwise make the control
-// pass without checking anything. 0 is clean, same as before.
+// dev-only code" (1, the thing it wants to see) from "the check didn't
+// actually complete" (2: an invalid dist directory, or an unreadable file or
+// other unexpected error partway through the scan -- a wrong or empty
+// --outDir, or a permissions problem, would otherwise make the control pass
+// without ever really checking anything). 0 is clean, same as before.
 export const EXIT_CLEAN = 0;
 export const EXIT_DEV_CODE_FOUND = 1;
 export const EXIT_INVALID_DIST = 2;
+
+// Runs the check and reports the result rather than exiting directly, so the
+// test can call this instead of spawning the CLI -- including with a
+// `findDevCode` that deliberately throws, to prove an unreadable file (or any
+// other unexpected error mid-scan) is EXIT_INVALID_DIST, not an uncaught
+// exception that Node turns into a bare exit 1 indistinguishable from
+// EXIT_DEV_CODE_FOUND.
+export const runCheck = (distDir, { findDevCode: scan = findDevCode } = {}) => {
+  try {
+    const distError = validateDistDir(distDir);
+    if (distError) {
+      return { code: EXIT_INVALID_DIST, message: `release bundle check: ${distError}` };
+    }
+    const hits = scan(distDir);
+    if (hits.length > 0) {
+      return {
+        code: EXIT_DEV_CODE_FOUND,
+        message: `release bundle contains development-only code:\n${hits.join("\n")}`,
+      };
+    }
+    return { code: EXIT_CLEAN, message: "release bundle clean" };
+  } catch (error) {
+    return {
+      code: EXIT_INVALID_DIST,
+      message: `release bundle check: unexpected error scanning ${distDir}: ${error.message}`,
+    };
+  }
+};
 
 // pathToFileURL (not a `file://${argv[1]}` template) matches how Node itself
 // builds import.meta.url: it percent-encodes characters like a space, which
@@ -89,18 +120,11 @@ const isMain =
   process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href;
 if (isMain) {
   const distDir = process.argv[2] ?? "apps/console/dist";
-  const distError = validateDistDir(distDir);
-  if (distError) {
-    console.error(`release bundle check: ${distError}`);
-    process.exitCode = EXIT_INVALID_DIST;
+  const { code, message } = runCheck(distDir);
+  if (code === EXIT_CLEAN) {
+    console.log(message);
   } else {
-    const hits = findDevCode(distDir);
-    if (hits.length > 0) {
-      console.error(`release bundle contains development-only code:\n${hits.join("\n")}`);
-      process.exitCode = EXIT_DEV_CODE_FOUND;
-    } else {
-      console.log("release bundle clean");
-      process.exitCode = EXIT_CLEAN;
-    }
+    console.error(message);
   }
+  process.exitCode = code;
 }

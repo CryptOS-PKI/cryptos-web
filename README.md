@@ -19,6 +19,13 @@ An npm workspaces monorepo. Each app builds on its own; the packages are shared 
 - 🎨 **`packages/ui`** — the CryptOS UI kit (`@cryptos-pki/ui`). It holds the design tokens (`tokens.css`, the light and dark palettes), the shared Tailwind preset and the console's components (buttons, fields, badges, tables, dialogs, the app shell and the confirm steps), each tested in the package.
 - 📡 **`packages/api-client`** — the generated TypeScript stubs for both APIs (`@cryptos-pki/api-client`), imported as `@cryptos-pki/api-client/cryptos/node/v1/<file>_pb` and `@cryptos-pki/api-client/cryptos/fleet/v1/<file>_pb`.
 
+## 🧩 UI kit
+
+All UI in `apps/console` comes from `@cryptos-pki/ui` (`packages/ui`) — no page hand-rolls its own styling or a one-off component. Every kit component's test renders it through axe-core, and [`eslint-plugin-jsx-a11y`](https://github.com/jsx-eslint/eslint-plugin-jsx-a11y) runs at error level across the whole repo.
+
+- 🔧 **Icons are generated, never hand-edited.** Add or change an SVG under `packages/ui/assets/icons`, then run `npm -w @cryptos-pki/ui run generate:icons` and commit the regenerated `packages/ui/src/icons`; CI fails a pull request where they disagree.
+- ♿ **The full accessibility write-up** — what axe checks automatically, what's left to a manual WCAG 2.2 AA pass, and why — is in the docs site's [Contributing section](https://cryptos-pki.com/docs/contributing/accessibility-checks).
+
 ## 🧱 Stack
 
 - ⚛️ **React + TypeScript**
@@ -67,7 +74,9 @@ A key is bound to the operator certificate that created it. It stops working whe
 It has two data sources, chosen at build time with `VITE_FLEET_MODE`:
 
 - 📡 **`live`** (the default) reads everything from the manager over Connect. `VITE_FLEET_API` is the manager's address (default `http://localhost:8080`).
-- 🧪 **`mock`** keeps every page on the in-memory fixtures in `apps/console/src/lib/mock.ts`, for UI work without a manager or a client certificate. The test suite runs in this mode.
+- 🧪 **`mock`** keeps every page on the in-memory fixtures (`apps/console/src/lib/mock-fixtures.real.ts`), for UI work without a manager or a client certificate. The test suite runs in this mode.
+
+A second, independent build-time flag, `DEV_UI_ISSUE_COPY=true` (together with the manager's own `CRYPTOS_DEV_UI_ISSUE_COPY=true`), turns on a development-only "Copy for UI issue" button; see the docs site's [Contributing section](https://cryptos-pki.com/docs/contributing/ui-issue-button) for what it copies and why. Neither that flag nor `VITE_FLEET_MODE=mock` ever reaches a release build: `scripts/check-release-bundle.mjs` proves it in CI (exit 0 clean, 1 if either leaked in, 2 if the check itself couldn't run).
 
 To run it locally:
 
