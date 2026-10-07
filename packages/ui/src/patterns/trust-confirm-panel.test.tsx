@@ -51,7 +51,7 @@ describe("TrustConfirmPanel", () => {
     expect(screen.getByRole("button", { name: "Copy fingerprint" })).toBeInTheDocument();
   });
 
-  it("disables Confirm while busy", () => {
+  it("disables Confirm and Reject while busy", () => {
     render(
       <TrustConfirmPanel
         busy
@@ -62,6 +62,7 @@ describe("TrustConfirmPanel", () => {
       />,
     );
     expect(screen.getByRole("button", { name: /Confirming/ })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Reject" })).toBeDisabled();
   });
 
   it("calls onConfirm when Confirm is pressed", () => {
