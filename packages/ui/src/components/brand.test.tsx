@@ -31,6 +31,11 @@ describe("brand", () => {
     await expectNoA11yViolations(container);
   });
 
+  it("has no axe violations when labelled", async () => {
+    const { container } = render(<CryptosMark title="CryptOS" />);
+    await expectNoA11yViolations(container);
+  });
+
   it("draws the marks as decorative unless labelled", () => {
     const { container } = render(<FleetosMark />);
     expect(container.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
