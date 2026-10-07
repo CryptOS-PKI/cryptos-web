@@ -138,4 +138,46 @@ describe("Dialog", () => {
     render(<Dialog onClose={() => {}} open title="Wide" variant="wide" />);
     expect(screen.getByRole("dialog")).toHaveClass("sm:max-w-[720px]");
   });
+
+  it("calls onEscape instead of closing when given", () => {
+    const onClose = vi.fn();
+    const onEscape = vi.fn();
+    render(
+      <Dialog onClose={onClose} onEscape={onEscape} open title="Ask">
+        <input />
+      </Dialog>,
+    );
+    fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
+    expect(onEscape).toHaveBeenCalledOnce();
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it("never closes a destructive dialog on backdrop click", () => {
+    const onClose = vi.fn();
+    render(<Dialog closeOnBackdrop onClose={onClose} open title="Delete" variant="destructive" />);
+    fireEvent.click(screen.getByTestId("dialog-backdrop"));
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it("returns focus to the trigger on close", () => {
+    const Harness = () => {
+      const [open, setOpen] = useState(false);
+      return (
+        <>
+          <button onClick={() => setOpen(true)} type="button">
+            Open
+          </button>
+          <Dialog onClose={() => setOpen(false)} open={open} title="T">
+            <input />
+          </Dialog>
+        </>
+      );
+    };
+    render(<Harness />);
+    const trigger = screen.getByRole("button", { name: "Open" });
+    trigger.focus();
+    fireEvent.click(trigger);
+    fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
+    expect(trigger).toHaveFocus();
+  });
 });

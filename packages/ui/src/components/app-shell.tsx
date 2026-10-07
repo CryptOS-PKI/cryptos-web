@@ -14,11 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { type LucideIcon, Menu, X } from "lucide-react";
 import * as React from "react";
 
 import { cn } from "../lib/cn";
-import { useFocusTrap } from "../lib/focus-trap";
 import { useIsDesktop } from "../lib/use-media-query";
 
 export interface AppShellProps {
@@ -52,10 +52,13 @@ const Sidebar = ({ footer, nav }: { footer?: React.ReactNode; nav: React.ReactNo
 export const AppShell = ({ banner, brand, children, nav, navFooter, topBar }: AppShellProps) => {
   const desktop = useIsDesktop();
   const [open, setOpen] = React.useState(false);
-  const drawer = React.useRef<HTMLDivElement>(null);
-  const titleId = React.useId();
   const drawerOpen = open && !desktop;
-  useFocusTrap(drawer, drawerOpen, "nav [aria-current='page'], nav a[href]");
+  // The drawer has no Radix Trigger (the menu button toggles `open` itself), so
+  // restore focus to it ourselves once the drawer closes; see dialog.tsx.
+  const returnFocusTo = React.useRef<HTMLElement | null>(null);
+  React.useEffect(() => {
+    if (!drawerOpen) returnFocusTo.current?.focus();
+  }, [drawerOpen]);
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
@@ -86,36 +89,39 @@ export const AppShell = ({ banner, brand, children, nav, navFooter, topBar }: Ap
         ) : null}
         <main className="min-w-0 flex-1 px-4 pb-10 pt-5 md:px-8 md:pt-7">{children}</main>
       </div>
-      {drawerOpen ? (
-        <div
-          className="fixed inset-0 z-50 bg-black/60"
-          onClick={(event) => {
-            if (
-              event.target === event.currentTarget ||
-              (event.target as HTMLElement).closest("a")
-            ) {
-              setOpen(false);
-            }
-          }}
-          role="presentation"
-        >
-          {/* The ARIA APG modal dialog pattern puts the Escape handler on the dialog
-              container; there is no interactive role for "dialog" to satisfy the rule. */}
-          {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */}
-          <div
-            aria-labelledby={titleId}
+      <DialogPrimitive.Root
+        onOpenChange={(next) => {
+          if (!next) setOpen(false);
+        }}
+        open={drawerOpen}
+      >
+        <DialogPrimitive.Portal>
+          <DialogPrimitive.Overlay
+            className="fixed inset-0 z-50 bg-black/60"
+            onClick={() => setOpen(false)}
+          />
+          <DialogPrimitive.Content
             aria-modal="true"
-            className="flex h-full w-[min(300px,85vw)] flex-col overflow-y-auto border-r bg-card px-2.5 py-3"
-            onKeyDown={(event) => {
-              if (event.key === "Escape") setOpen(false);
+            className="fixed inset-y-0 left-0 z-50 flex h-full w-[min(300px,85vw)] flex-col overflow-y-auto border-r bg-card px-2.5 py-3"
+            onClick={(event) => {
+              if ((event.target as HTMLElement).closest("a")) setOpen(false);
             }}
-            ref={drawer}
-            role="dialog"
+            onOpenAutoFocus={(event) => {
+              returnFocusTo.current = document.activeElement as HTMLElement | null;
+              const root = event.currentTarget as HTMLElement;
+              const target =
+                root.querySelector<HTMLElement>("nav [aria-current='page']") ??
+                root.querySelector<HTMLElement>("nav a[href]");
+              if (target) {
+                event.preventDefault();
+                target.focus();
+              }
+            }}
           >
             <div className="mb-2 flex items-center justify-between px-2.5">
-              <span className="sr-only" id={titleId}>
-                Navigation
-              </span>
+              <DialogPrimitive.Title asChild>
+                <span className="sr-only">Navigation</span>
+              </DialogPrimitive.Title>
               {brand}
               <button
                 aria-label="Close navigation"
@@ -129,9 +135,9 @@ export const AppShell = ({ banner, brand, children, nav, navFooter, topBar }: Ap
             <nav aria-label="Main" className="flex flex-1 flex-col">
               <Sidebar footer={navFooter} nav={nav} />
             </nav>
-          </div>
-        </div>
-      ) : null}
+          </DialogPrimitive.Content>
+        </DialogPrimitive.Portal>
+      </DialogPrimitive.Root>
     </div>
   );
 };

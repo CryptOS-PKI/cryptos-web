@@ -79,5 +79,4 @@ export {
 } from "./components/trust-chain";
 export { typedMatches, TypeToConfirm, type TypeToConfirmProps } from "./components/type-to-confirm";
 export { cn } from "./lib/cn";
-export { focusableIn, useFocusTrap } from "./lib/focus-trap";
 export { DESKTOP_QUERY, useIsDesktop, useMediaQuery } from "./lib/use-media-query";
