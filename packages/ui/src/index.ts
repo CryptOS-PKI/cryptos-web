@@ -84,3 +84,10 @@ export { typedMatches, TypeToConfirm, type TypeToConfirmProps } from "./componen
 export * from "./icons";
 export { cn } from "./lib/cn";
 export { DESKTOP_QUERY, useIsDesktop, useMediaQuery } from "./lib/use-media-query";
+export {
+  EmptyIllustration,
+  type EmptyIllustrationKind,
+  type EmptyIllustrationProps,
+} from "./patterns/empty-illustrations";
+export { type Role, RoleGate, roleRank } from "./patterns/role-gate";
+export { TrustConfirmPanel, type TrustConfirmPanelProps } from "./patterns/trust-confirm-panel";
