@@ -14,12 +14,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 import { expectNoA11yViolations } from "../test/axe";
 import { Dialog } from "./dialog";
+
+// Radix's DismissableLayer registers its own outside-pointerdown listener a
+// tick after mount (so the click that opened the dialog isn't mistaken for an
+// outside click); this lets that registration, and the pointerdown itself,
+// settle before the next event fires.
+const settle = () => act(() => new Promise((resolve) => setTimeout(resolve, 0)));
 
 const Harness = ({ variant }: { variant?: "destructive" | "standard" | "wide" }) => {
   const [open, setOpen] = useState(false);
@@ -152,11 +158,26 @@ describe("Dialog", () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 
-  it("never closes a destructive dialog on backdrop click", () => {
+  it("never closes a destructive dialog on backdrop click", async () => {
     const onClose = vi.fn();
     render(<Dialog closeOnBackdrop onClose={onClose} open title="Delete" variant="destructive" />);
-    fireEvent.click(screen.getByTestId("dialog-backdrop"));
+    const backdrop = screen.getByTestId("dialog-backdrop");
+    await settle();
+    fireEvent.pointerDown(backdrop);
+    await settle();
+    fireEvent.click(backdrop);
     expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it("closes a standard closeOnBackdrop dialog on backdrop click exactly once", async () => {
+    const onClose = vi.fn();
+    render(<Dialog closeOnBackdrop onClose={onClose} open title="T" />);
+    const backdrop = screen.getByTestId("dialog-backdrop");
+    await settle();
+    fireEvent.pointerDown(backdrop);
+    await settle();
+    fireEvent.click(backdrop);
+    expect(onClose).toHaveBeenCalledOnce();
   });
 
   it("returns focus to the trigger on close", () => {
