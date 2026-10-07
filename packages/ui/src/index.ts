@@ -64,12 +64,15 @@ export {
 } from "./components/fingerprint";
 export { Input, inputClasses, type InputProps } from "./components/input";
 export { KeyBackupStep, type KeyBackupStepProps } from "./components/key-backup-step";
+export { Menu, MenuContent, MenuItem, MenuTrigger } from "./components/menu";
 export { Notice, type NoticeProps, type NoticeTone } from "./components/notice";
 export { type Phase, PhaseRail } from "./components/phase-rail";
 export { Separator } from "./components/separator";
 export { ShownOnceSecret, type ShownOnceSecretProps } from "./components/shown-once-secret";
 export { Stepper, type StepperProps } from "./components/stepper";
+export { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/tabs";
 export { ThemeToggle } from "./components/theme-toggle";
+export { Tooltip, type TooltipProps, TooltipProvider } from "./components/tooltip";
 export {
   type ChainStatus,
   TrustChain,

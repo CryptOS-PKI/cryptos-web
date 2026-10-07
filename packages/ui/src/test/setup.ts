@@ -18,6 +18,16 @@ import "@testing-library/jest-dom/vitest";
 import { cleanup } from "@testing-library/react";
 import { afterEach } from "vitest";
 
+// jsdom has no ResizeObserver; Radix Tooltip/Popover content measures itself
+// with one on mount (@radix-ui/react-use-size).
+if (!globalThis.ResizeObserver) {
+  globalThis.ResizeObserver = class {
+    disconnect() {}
+    observe() {}
+    unobserve() {}
+  };
+}
+
 afterEach(() => {
   cleanup();
 });
