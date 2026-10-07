@@ -22,48 +22,223 @@ export interface EmptyIllustrationProps {
   kind: EmptyIllustrationKind;
 }
 
-// Hand-drawn line art in the kit's icon style (currentColor stroke, rounded
-// caps and joins), not generated, so there is no design-tool metadata to
-// strip. Decorative only: the EmptyState title and body next to it carry the
-// meaning.
+// nodes, certificates and requests are ported from the brand set's empty-state
+// drawings (its "certs" and "approvals" kinds map onto certificates and
+// requests here) and built from the mark's own geometry: the open body, the
+// channel and the cores, in muted outline (currentColor, so it follows
+// text-muted-foreground by default like the rest of the kit) with one primary
+// accent, the same two-tone convention CryptosMark/FleetosMark already use.
+// audit and generic have no drawing in that set, so they stay hand-drawn
+// placeholders in the same muted single-tone line style.
 const DRAWINGS: Record<EmptyIllustrationKind, React.ReactNode> = {
   audit: (
     <>
-      <rect height="58" rx="4" width="44" x="18" y="16" />
-      <path d="M26 28h28M26 38h28M26 48h18" />
-      <circle cx="66" cy="62" r="14" />
-      <path d="M76 72l10 10" />
+      <rect
+        fill="none"
+        height={64}
+        rx={5}
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        width={56}
+        x={46}
+        y={10}
+      />
+      <line
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeWidth={2}
+        x1={54}
+        x2={90}
+        y1={24}
+        y2={24}
+      />
+      <line
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeWidth={2}
+        x1={54}
+        x2={90}
+        y1={36}
+        y2={36}
+      />
+      <line
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeWidth={2}
+        x1={54}
+        x2={78}
+        y1={48}
+        y2={48}
+      />
+      <circle
+        cx={100}
+        cy={58}
+        fill="none"
+        r={16}
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeWidth={2}
+      />
+      <line
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeWidth={2}
+        x1={112}
+        x2={126}
+        y1={70}
+        y2={80}
+      />
     </>
   ),
   certificates: (
     <>
-      <rect height="64" rx="4" width="52" x="22" y="16" />
-      <path d="M30 30h36M30 40h36M30 50h22" />
-      <circle cx="60" cy="64" r="10" />
-      <path d="M55 72l-4 10 9-5 9 5-4-10" />
+      <rect
+        fill="none"
+        height={64}
+        rx={6}
+        stroke="currentColor"
+        strokeDasharray="4 5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        width={52}
+        x={50}
+        y={14}
+      />
+      <rect
+        fill="none"
+        height={64}
+        rx={6}
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        width={52}
+        x={58}
+        y={6}
+      />
+      <line
+        className="stroke-primary"
+        strokeLinecap="round"
+        strokeWidth={3}
+        x1={68}
+        x2={100}
+        y1={24}
+        y2={24}
+      />
+      <line
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeWidth={2}
+        x1={68}
+        x2={92}
+        y1={36}
+        y2={36}
+      />
+      <line
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeWidth={2}
+        x1={68}
+        x2={84}
+        y1={48}
+        y2={48}
+      />
     </>
   ),
   generic: (
     <>
-      <path d="M20 46h56l-8 26H28z" />
-      <path d="M20 46l10-24h36l10 24" />
-      <path d="M40 46v10h16V46" />
+      <path
+        d="M34 50h92l-13 26H47z"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+      />
+      <path
+        d="M34 50l16-34h58l16 34"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+      />
+      <path
+        d="M66 50v12h28V50"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+      />
     </>
   ),
   nodes: (
     <>
-      <circle cx="48" cy="24" r="8" />
-      <circle cx="24" cy="66" r="8" />
-      <circle cx="72" cy="66" r="8" />
-      <path d="M43 31l-13 28M53 31l13 28M32 66h32" />
+      <path
+        d="M40 20H29a9 9 0 0 0-9 9V61a9 9 0 0 0 9 9H61a9 9 0 0 0 9-9V29a9 9 0 0 0-9-9H50"
+        fill="none"
+        stroke="currentColor"
+        strokeDasharray="4 5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+      />
+      <path
+        d="M110 20H99a9 9 0 0 0-9 9V61a9 9 0 0 0 9 9H131a9 9 0 0 0 9-9V29a9 9 0 0 0-9-9H120"
+        fill="none"
+        stroke="currentColor"
+        strokeDasharray="4 5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+      />
+      <line
+        stroke="currentColor"
+        strokeDasharray="3 4"
+        strokeLinecap="round"
+        strokeWidth={2}
+        x1={70}
+        x2={90}
+        y1={45}
+        y2={45}
+      />
+      <line
+        className="stroke-primary"
+        strokeLinecap="round"
+        strokeWidth={3}
+        x1={45}
+        x2={45}
+        y1={10}
+        y2={34}
+      />
+      <rect className="fill-primary" height={16} rx={3} width={16} x={37} y={37} />
     </>
   ),
   requests: (
     <>
-      <rect height="60" rx="4" width="48" x="20" y="18" />
-      <path d="M28 32h32M28 42h32M28 52h20" />
-      <circle cx="68" cy="68" r="14" />
-      <path d="M68 60v8l6 4" />
+      <circle
+        cx={80}
+        cy={42}
+        fill="none"
+        r={30}
+        stroke="currentColor"
+        strokeDasharray="4 5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+      />
+      <path
+        className="stroke-primary"
+        d="M66 43l9 9 18-19"
+        fill="none"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={3}
+      />
     </>
   ),
 };
@@ -71,13 +246,10 @@ const DRAWINGS: Record<EmptyIllustrationKind, React.ReactNode> = {
 export const EmptyIllustration = ({ kind }: EmptyIllustrationProps) => (
   <svg
     aria-hidden="true"
-    className="size-24 text-muted-foreground"
-    fill="none"
-    stroke="currentColor"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    strokeWidth={1.5}
-    viewBox="0 0 96 96"
+    className="text-muted-foreground"
+    height={84}
+    viewBox="0 0 160 84"
+    width={160}
     xmlns="http://www.w3.org/2000/svg"
   >
     {DRAWINGS[kind]}
