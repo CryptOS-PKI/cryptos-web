@@ -18,9 +18,15 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { createRef } from "react";
 import { describe, expect, it, vi } from "vitest";
 
+import { expectNoA11yViolations } from "../test/axe";
 import { Input } from "./input";
 
 describe("Input", () => {
+  it("has no axe violations", async () => {
+    const { container } = render(<Input aria-label="Endpoint" onChange={() => {}} value="" />);
+    await expectNoA11yViolations(container);
+  });
+
   it("forwards typed values", () => {
     const onChange = vi.fn();
     render(<Input aria-label="Endpoint" onChange={onChange} value="" />);

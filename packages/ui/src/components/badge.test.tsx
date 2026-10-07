@@ -17,9 +17,15 @@ limitations under the License.
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
+import { expectNoA11yViolations } from "../test/axe";
 import { Badge, StatusBadge } from "./badge";
 
 describe("Badge", () => {
+  it("has no axe violations", async () => {
+    const { container } = render(<Badge variant="tag">leaf</Badge>);
+    await expectNoA11yViolations(container);
+  });
+
   it("renders a square mono tag", () => {
     render(<Badge variant="tag">leaf</Badge>);
     const tag = screen.getByText("leaf");
@@ -39,6 +45,11 @@ describe("Badge", () => {
 });
 
 describe("StatusBadge", () => {
+  it("has no axe violations", async () => {
+    const { container } = render(<StatusBadge status="established">established</StatusBadge>);
+    await expectNoA11yViolations(container);
+  });
+
   it.each([
     ["established", "text-success"],
     ["valid", "text-success"],

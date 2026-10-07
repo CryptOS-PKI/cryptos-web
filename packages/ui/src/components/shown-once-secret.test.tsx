@@ -17,11 +17,24 @@ limitations under the License.
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { expectNoA11yViolations } from "../test/axe";
 import { ShownOnceSecret } from "./shown-once-secret";
 
 afterEach(() => vi.unstubAllGlobals());
 
 describe("ShownOnceSecret", () => {
+  it("has no axe violations", async () => {
+    const { container } = render(
+      <ShownOnceSecret
+        label="Agent key"
+        onDone={() => {}}
+        secret="fos_agent_k7Q2"
+        warning="It will not be shown again."
+      />,
+    );
+    await expectNoA11yViolations(container);
+  });
+
   it("shows the warning and the secret", () => {
     render(
       <ShownOnceSecret

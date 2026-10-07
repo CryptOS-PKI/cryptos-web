@@ -17,6 +17,7 @@ limitations under the License.
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
+import { expectNoA11yViolations } from "../test/axe";
 import { type BannerItem, BannerStack } from "./banner-stack";
 
 const items: BannerItem[] = [
@@ -43,6 +44,11 @@ const items: BannerItem[] = [
 ];
 
 describe("BannerStack", () => {
+  it("has no axe violations", async () => {
+    const { container } = render(<BannerStack items={items} />);
+    await expectNoA11yViolations(container);
+  });
+
   it("renders nothing with no items", () => {
     const { container } = render(<BannerStack items={[]} />);
     expect(container).toBeEmptyDOMElement();

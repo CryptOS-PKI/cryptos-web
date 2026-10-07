@@ -17,9 +17,20 @@ limitations under the License.
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
+import { expectNoA11yViolations } from "../test/axe";
 import { CryptosMark, FleetosMark, Wordmark } from "./brand";
 
 describe("brand", () => {
+  it("has no axe violations", async () => {
+    const { container } = render(
+      <>
+        <FleetosMark />
+        <Wordmark product="FleetOS" />
+      </>,
+    );
+    await expectNoA11yViolations(container);
+  });
+
   it("draws the marks as decorative unless labelled", () => {
     const { container } = render(<FleetosMark />);
     expect(container.querySelector("svg")).toHaveAttribute("aria-hidden", "true");

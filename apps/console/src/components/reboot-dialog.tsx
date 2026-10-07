@@ -70,14 +70,15 @@ export const RebootDialog = ({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-      onClick={onClose}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
       role="presentation"
     >
       <div
         aria-labelledby="reboot-title"
         aria-modal="true"
         className="w-full max-w-md space-y-4 rounded-xl border bg-card p-5 shadow-xl"
-        onClick={(e) => e.stopPropagation()}
         role="dialog"
       >
         <div className="space-y-1">

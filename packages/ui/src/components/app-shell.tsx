@@ -89,17 +89,23 @@ export const AppShell = ({ banner, brand, children, nav, navFooter, topBar }: Ap
       {drawerOpen ? (
         <div
           className="fixed inset-0 z-50 bg-black/60"
-          onClick={() => setOpen(false)}
+          onClick={(event) => {
+            if (
+              event.target === event.currentTarget ||
+              (event.target as HTMLElement).closest("a")
+            ) {
+              setOpen(false);
+            }
+          }}
           role="presentation"
         >
+          {/* The ARIA APG modal dialog pattern puts the Escape handler on the dialog
+              container; there is no interactive role for "dialog" to satisfy the rule. */}
+          {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */}
           <div
             aria-labelledby={titleId}
             aria-modal="true"
             className="flex h-full w-[min(300px,85vw)] flex-col overflow-y-auto border-r bg-card px-2.5 py-3"
-            onClick={(event) => {
-              event.stopPropagation();
-              if ((event.target as HTMLElement).closest("a")) setOpen(false);
-            }}
             onKeyDown={(event) => {
               if (event.key === "Escape") setOpen(false);
             }}

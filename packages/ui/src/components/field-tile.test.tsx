@@ -17,9 +17,19 @@ limitations under the License.
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
+import { expectNoA11yViolations } from "../test/axe";
 import { FieldTile, FieldTiles } from "./field-tile";
 
 describe("FieldTile", () => {
+  it("has no axe violations", async () => {
+    const { container } = render(
+      <FieldTiles>
+        <FieldTile label="TPM" value="SEALED" />
+      </FieldTiles>,
+    );
+    await expectNoA11yViolations(container);
+  });
+
   it("shows a label and a value", () => {
     render(
       <FieldTiles>

@@ -17,6 +17,7 @@ limitations under the License.
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
+import { expectNoA11yViolations } from "../test/axe";
 import { TrustChain, TrustChainChip } from "./trust-chain";
 
 describe("TrustChain", () => {
@@ -25,6 +26,11 @@ describe("TrustChain", () => {
     { id: "n1", label: "node-01", status: "established" as const },
     { id: "n2", label: "node-02", status: "pending" as const },
   ];
+
+  it("has no axe violations", async () => {
+    const { container } = render(<TrustChain items={items} label="Trust chain" />);
+    await expectNoA11yViolations(container);
+  });
 
   it("lists each link in order and marks the last one current", () => {
     render(<TrustChain items={items} label="Trust chain" />);
@@ -47,6 +53,13 @@ describe("TrustChain", () => {
       "data-orientation",
       "vertical",
     );
+  });
+
+  it("has no axe violations for a chip", async () => {
+    const { container } = render(
+      <TrustChainChip label="node-01" onClick={() => {}} status="established" />,
+    );
+    await expectNoA11yViolations(container);
   });
 
   it("makes a chip a button when it has onClick", () => {

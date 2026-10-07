@@ -306,14 +306,15 @@ export const EnrollmentDetailPage = () => {
       {rejecting ? (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-          onClick={() => setRejecting(false)}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setRejecting(false);
+          }}
           role="presentation"
         >
           <div
             aria-labelledby="reject-title"
             aria-modal="true"
             className="w-full max-w-sm space-y-4 rounded-xl border bg-card p-5 shadow-xl"
-            onClick={(e) => e.stopPropagation()}
             role="dialog"
           >
             <h2 className="text-lg font-bold" id="reject-title">

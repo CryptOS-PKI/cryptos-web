@@ -17,6 +17,7 @@ limitations under the License.
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
+import { expectNoA11yViolations } from "../test/axe";
 import { Stepper } from "./stepper";
 
 const steps = [
@@ -27,6 +28,11 @@ const steps = [
 ];
 
 describe("Stepper", () => {
+  it("has no axe violations", async () => {
+    const { container } = render(<Stepper current={2} steps={steps} />);
+    await expectNoA11yViolations(container);
+  });
+
   it("marks the current step", () => {
     render(<Stepper current={2} steps={steps} />);
     expect(screen.getByRole("list", { name: "Progress" })).toBeInTheDocument();

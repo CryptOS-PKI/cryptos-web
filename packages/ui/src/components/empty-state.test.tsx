@@ -18,9 +18,22 @@ import { render, screen } from "@testing-library/react";
 import { FileText } from "lucide-react";
 import { describe, expect, it } from "vitest";
 
+import { expectNoA11yViolations } from "../test/axe";
 import { EmptyState } from "./empty-state";
 
 describe("EmptyState", () => {
+  it("has no axe violations", async () => {
+    const { container } = render(
+      <EmptyState
+        action={<button type="button">Issue certificate</button>}
+        body="Certificates issued by any node in the fleet appear here."
+        icon={FileText}
+        title="No certificates yet"
+      />,
+    );
+    await expectNoA11yViolations(container);
+  });
+
   it("renders the title, body, illustration and action", () => {
     render(
       <EmptyState

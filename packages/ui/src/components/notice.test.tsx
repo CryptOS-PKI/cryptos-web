@@ -17,9 +17,19 @@ limitations under the License.
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
+import { expectNoA11yViolations } from "../test/axe";
 import { Notice } from "./notice";
 
 describe("Notice", () => {
+  it("has no axe violations", async () => {
+    const { container } = render(
+      <Notice title="Needs reboot" tone="warning">
+        This change takes effect only after the node reboots.
+      </Notice>,
+    );
+    await expectNoA11yViolations(container);
+  });
+
   it("renders a title and body with the tone's edge", () => {
     render(
       <Notice title="Needs reboot" tone="warning">

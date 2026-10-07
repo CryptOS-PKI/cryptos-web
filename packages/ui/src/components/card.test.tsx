@@ -17,10 +17,24 @@ limitations under the License.
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
+import { expectNoA11yViolations } from "../test/axe";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./card";
 import { Separator } from "./separator";
 
 describe("Card", () => {
+  it("has no axe violations", async () => {
+    const { container } = render(
+      <Card data-testid="card">
+        <CardHeader>
+          <CardTitle>Fleet health</CardTitle>
+          <CardDescription>7 nodes</CardDescription>
+        </CardHeader>
+        <CardContent>body</CardContent>
+      </Card>,
+    );
+    await expectNoA11yViolations(container);
+  });
+
   it("renders its parts", () => {
     render(
       <Card data-testid="card">
@@ -38,6 +52,11 @@ describe("Card", () => {
 });
 
 describe("Separator", () => {
+  it("has no axe violations", async () => {
+    const { container } = render(<Separator />);
+    await expectNoA11yViolations(container);
+  });
+
   it("is a horizontal separator by default and decorative when asked", () => {
     const { rerender } = render(<Separator />);
     expect(screen.getByRole("separator")).toHaveAttribute("aria-orientation", "horizontal");

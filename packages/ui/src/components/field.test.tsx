@@ -17,10 +17,20 @@ limitations under the License.
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
+import { expectNoA11yViolations } from "../test/axe";
 import { Field } from "./field";
 import { Input } from "./input";
 
 describe("Field", () => {
+  it("has no axe violations", async () => {
+    const { container } = render(
+      <Field help="Comma-separated IPv4 or IPv6." label="DNS nameservers">
+        <Input />
+      </Field>,
+    );
+    await expectNoA11yViolations(container);
+  });
+
   it("labels its control", () => {
     render(
       <Field label="Endpoint (host:port)">

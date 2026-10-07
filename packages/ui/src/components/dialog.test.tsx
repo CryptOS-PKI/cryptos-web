@@ -18,6 +18,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 
+import { expectNoA11yViolations } from "../test/axe";
 import { Dialog } from "./dialog";
 
 const Harness = ({ variant }: { variant?: "destructive" | "standard" | "wide" }) => {
@@ -48,6 +49,15 @@ const Harness = ({ variant }: { variant?: "destructive" | "standard" | "wide" })
 };
 
 describe("Dialog", () => {
+  it("has no axe violations", async () => {
+    const { container } = render(
+      <Dialog description="web-01.example.org" onClose={() => {}} open title="Revoke certificate">
+        body
+      </Dialog>,
+    );
+    await expectNoA11yViolations(container);
+  });
+
   it("renders nothing while closed", () => {
     render(<Dialog onClose={() => {}} open={false} title="T" />);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();

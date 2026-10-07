@@ -17,6 +17,7 @@ limitations under the License.
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
+import { expectNoA11yViolations } from "../test/axe";
 import {
   compareFingerprints,
   Fingerprint,
@@ -51,6 +52,11 @@ describe("compareFingerprints", () => {
 });
 
 describe("Fingerprint", () => {
+  it("has no axe violations", async () => {
+    const { container } = render(<Fingerprint value={FP} />);
+    await expectNoA11yViolations(container);
+  });
+
   it("is read as sixteen groups of four", () => {
     render(<Fingerprint value={FP} />);
     expect(
@@ -80,6 +86,26 @@ describe("Fingerprint", () => {
 });
 
 describe("FingerprintConfirm", () => {
+  it("has no axe violations", async () => {
+    const { container } = render(
+      <FingerprintConfirm
+        actions={
+          <button onClick={() => {}} type="button">
+            Confirm fingerprint
+          </button>
+        }
+        fingerprint={FP}
+        step="Step 1 of 2"
+        subject={[["subject", "CN=maintenance,O=CryptOS"]]}
+        title="First contact"
+        tone="warning"
+      >
+        Confirm this is the node you expect before trusting it.
+      </FingerprintConfirm>,
+    );
+    await expectNoA11yViolations(container);
+  });
+
   it("shows the title, step, subject and fingerprint with its actions", () => {
     const onConfirm = vi.fn();
     render(

@@ -17,6 +17,7 @@ limitations under the License.
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
+import { expectNoA11yViolations } from "../test/axe";
 import { KeyBackupStep } from "./key-backup-step";
 
 const setup = () => {
@@ -35,6 +36,19 @@ const setup = () => {
 };
 
 describe("KeyBackupStep", () => {
+  it("has no axe violations", async () => {
+    const { container } = render(
+      <KeyBackupStep
+        filename="alice@example.org.key.enc"
+        onContinue={() => {}}
+        onDownload={() => {}}
+        passphrase="cobalt-quarry-tundra-9-lantern"
+        warning="Save the key backup and its passphrase."
+      />,
+    );
+    await expectNoA11yViolations(container);
+  });
+
   it("shows the passphrase once, with the warning", () => {
     setup();
     expect(screen.getByText("Save the key backup and its passphrase.")).toBeInTheDocument();

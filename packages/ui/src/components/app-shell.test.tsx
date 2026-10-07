@@ -18,6 +18,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import { LayoutGrid, Network } from "lucide-react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { expectNoA11yViolations } from "../test/axe";
 import { AppShell, NavItem, NavSection, PageHeader } from "./app-shell";
 
 const setDesktop = (desktop: boolean) =>
@@ -46,6 +47,22 @@ const nav = (
 );
 
 describe("AppShell", () => {
+  it("has no axe violations", async () => {
+    setDesktop(true);
+    const { container } = render(
+      <AppShell
+        banner={<span>PRE-1.0</span>}
+        brand={<span>FleetOS</span>}
+        nav={nav}
+        navFooter="FleetOS v0.1.0"
+        topBar={<span>alice@example.org</span>}
+      >
+        <p>page</p>
+      </AppShell>,
+    );
+    await expectNoA11yViolations(container);
+  });
+
   it("shows the sidebar, top bar, banner and content on a desktop", () => {
     setDesktop(true);
     render(
@@ -121,6 +138,15 @@ describe("AppShell", () => {
 });
 
 describe("NavItem", () => {
+  it("has no axe violations", async () => {
+    const { container } = render(
+      <NavItem active asChild icon={LayoutGrid} label="Dashboard">
+        <a href="/">x</a>
+      </NavItem>,
+    );
+    await expectNoA11yViolations(container);
+  });
+
   it("shows a lock for items above the caller's level", () => {
     render(
       <NavItem asChild icon={Network} label="Adopt" locked="Needs admin level">
@@ -135,6 +161,18 @@ describe("NavItem", () => {
 });
 
 describe("PageHeader", () => {
+  it("has no axe violations", async () => {
+    const { container } = render(
+      <PageHeader
+        actions={<button type="button">Issue…</button>}
+        back={<a href="/nodes">Nodes</a>}
+        description="Issuing CA"
+        title="node-02"
+      />,
+    );
+    await expectNoA11yViolations(container);
+  });
+
   it("renders the back link, title, description and actions", () => {
     render(
       <PageHeader

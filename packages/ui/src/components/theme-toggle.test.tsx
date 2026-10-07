@@ -17,9 +17,15 @@ limitations under the License.
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
+import { expectNoA11yViolations } from "../test/axe";
 import { ThemeToggle } from "./theme-toggle";
 
 describe("ThemeToggle", () => {
+  it("has no axe violations", async () => {
+    const { container } = render(<ThemeToggle onToggle={() => {}} theme="dark" />);
+    await expectNoA11yViolations(container);
+  });
+
   it("offers the other theme and toggles", () => {
     const onToggle = vi.fn();
     const { rerender } = render(<ThemeToggle onToggle={onToggle} theme="dark" />);

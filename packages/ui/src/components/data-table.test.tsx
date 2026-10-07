@@ -17,6 +17,7 @@ limitations under the License.
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { expectNoA11yViolations } from "../test/axe";
 import { DataTable, type DataTableColumn, DataTablePagination } from "./data-table";
 
 type Cert = { cn: string; days: number; serial: string };
@@ -46,6 +47,13 @@ afterEach(() => {
 });
 
 describe("DataTable", () => {
+  it("has no axe violations", async () => {
+    const { container } = render(
+      <DataTable columns={columns} label="Certificates" rowKey={(r) => r.serial} rows={rows} />,
+    );
+    await expectNoA11yViolations(container);
+  });
+
   it("renders a header and one row per item", () => {
     render(
       <DataTable columns={columns} label="Certificates" rowKey={(r) => r.serial} rows={rows} />,
@@ -214,6 +222,21 @@ describe("DataTable", () => {
 });
 
 describe("DataTablePagination", () => {
+  it("has no axe violations", async () => {
+    const { container } = render(
+      <DataTablePagination
+        canNext
+        canPrevious={false}
+        from={1}
+        onNext={() => {}}
+        onPrevious={() => {}}
+        to={10}
+        total={42}
+      />,
+    );
+    await expectNoA11yViolations(container);
+  });
+
   it("shows the range and pages", () => {
     const onNext = vi.fn();
     const onPrevious = vi.fn();

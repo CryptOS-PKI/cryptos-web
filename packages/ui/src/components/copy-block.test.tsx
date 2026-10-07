@@ -17,6 +17,7 @@ limitations under the License.
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { expectNoA11yViolations } from "../test/axe";
 import { CopyBlock } from "./copy-block";
 
 afterEach(() => {
@@ -25,6 +26,13 @@ afterEach(() => {
 });
 
 describe("CopyBlock", () => {
+  it("has no axe violations", async () => {
+    const { container } = render(
+      <CopyBlock label="CSR · PEM" text="-----BEGIN CERTIFICATE REQUEST-----" />,
+    );
+    await expectNoA11yViolations(container);
+  });
+
   it("shows the text under its label", () => {
     render(<CopyBlock label="CSR · PEM" text="-----BEGIN CERTIFICATE REQUEST-----" />);
     expect(screen.getByLabelText("CSR · PEM")).toHaveTextContent(

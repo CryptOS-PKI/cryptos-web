@@ -17,9 +17,24 @@ limitations under the License.
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
+import { expectNoA11yViolations } from "../test/axe";
 import { Button } from "./button";
 
 describe("Button", () => {
+  it("has no axe violations", async () => {
+    const { container } = render(<Button>Save</Button>);
+    await expectNoA11yViolations(container);
+  });
+
+  it("flags an icon-only button with no name", async () => {
+    const { container } = render(
+      <button type="button">
+        <svg aria-hidden="true" />
+      </button>,
+    );
+    await expect(expectNoA11yViolations(container)).rejects.toThrow(/button-name/);
+  });
+
   it("runs onClick when pressed", () => {
     const onClick = vi.fn();
     render(<Button onClick={onClick}>Adopt node</Button>);

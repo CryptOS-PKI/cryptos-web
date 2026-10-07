@@ -18,6 +18,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { useState } from "react";
 import { describe, expect, it } from "vitest";
 
+import { expectNoA11yViolations } from "../test/axe";
 import { typedMatches, TypeToConfirm } from "./type-to-confirm";
 
 const Harness = ({ expected }: { expected: string | string[] }) => {
@@ -45,6 +46,11 @@ describe("typedMatches", () => {
 });
 
 describe("TypeToConfirm", () => {
+  it("has no axe violations", async () => {
+    const { container } = render(<Harness expected="node-02" />);
+    await expectNoA11yViolations(container);
+  });
+
   it("names what to type and is labelled by it", () => {
     render(<Harness expected="Example Issuing CA G1" />);
     expect(screen.getByText("Example Issuing CA G1")).toBeInTheDocument();

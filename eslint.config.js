@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 import { createESLintConfig } from "@the-rabbit-hole/eslint-config";
+import jsxA11y from "eslint-plugin-jsx-a11y";
 import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
 import globals from "globals";
@@ -31,10 +32,15 @@ export default [
     ignores: ["packages/api-client/src/gen/**", "packages/api-client/.protos/**"],
   },
   ...createESLintConfig(),
+  jsxA11y.flatConfigs.strict,
   {
     // A few of the shared config's Unicorn defaults fight conventions this repo
     // is committed to; each is turned off (or narrowed) with a specific reason.
     rules: {
+      // The kit's Input wraps a native <input> and forwards a label's implicit
+      // association through to it; the rule only recognises native elements and
+      // listed custom components by default.
+      "jsx-a11y/label-has-associated-control": ["error", { controlComponents: ["Input"] }],
       // Filenames are PascalCase for React components and kebab-case for
       // everything else (shadcn/ui primitives, routes). Unicorn defaults to
       // camelCase, which neither convention uses.

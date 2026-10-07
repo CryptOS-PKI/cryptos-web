@@ -70,9 +70,14 @@ export const Dialog = ({
     <div
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 sm:items-center sm:p-4"
       data-testid="dialog-backdrop"
-      onClick={closeOnBackdrop ? onClose : undefined}
+      onClick={(event) => {
+        if (closeOnBackdrop && event.target === event.currentTarget) onClose();
+      }}
       role="presentation"
     >
+      {/* The ARIA APG modal dialog pattern puts the Escape handler on the dialog
+          container; there is no interactive role for "dialog" to satisfy the rule. */}
+      {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */}
       <div
         aria-describedby={description ? descriptionId : undefined}
         aria-labelledby={titleId}
@@ -84,7 +89,6 @@ export const Dialog = ({
           className,
         )}
         data-variant={variant}
-        onClick={(event) => event.stopPropagation()}
         onKeyDown={(event) => {
           if (event.key !== "Escape") return;
           event.stopPropagation();

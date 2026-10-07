@@ -17,6 +17,7 @@ limitations under the License.
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
+import { expectNoA11yViolations } from "../test/axe";
 import { PhaseRail } from "./phase-rail";
 
 describe("PhaseRail", () => {
@@ -35,6 +36,11 @@ describe("PhaseRail", () => {
     },
     { id: "est", label: "established", state: "pending" as const },
   ];
+
+  it("has no axe violations", async () => {
+    const { container } = render(<PhaseRail label="Adoption progress" phases={phases} />);
+    await expectNoA11yViolations(container);
+  });
 
   it("lists the phases in order with their state", () => {
     render(<PhaseRail label="Adoption progress" phases={phases} />);
