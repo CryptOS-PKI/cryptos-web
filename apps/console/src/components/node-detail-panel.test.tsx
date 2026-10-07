@@ -41,9 +41,9 @@ const renderPanel = (onRenamed = vi.fn()) => {
 };
 
 describe("NodeDetailPanel escrow actions", () => {
-  beforeEach(async () => {
+  beforeEach(() => {
     level = "admin";
-    await __resetNodes();
+    __resetNodes();
   });
 
   it("shows Rename, Export/Import key, Decommission and Reboot actions to an admin", () => {
@@ -81,9 +81,9 @@ describe("NodeDetailPanel escrow actions", () => {
 });
 
 describe("NodeDetailPanel reboot action", () => {
-  beforeEach(async () => {
+  beforeEach(() => {
     level = "admin";
-    await __resetNodes();
+    __resetNodes();
   });
 
   it("opens the reboot dialog naming the node's CA CN", () => {
@@ -95,9 +95,9 @@ describe("NodeDetailPanel reboot action", () => {
 });
 
 describe("NodeDetailPanel rename action", () => {
-  beforeEach(async () => {
+  beforeEach(() => {
     level = "admin";
-    await __resetNodes();
+    __resetNodes();
   });
 
   it("opens the rename dialog and reports the new name on success", async () => {

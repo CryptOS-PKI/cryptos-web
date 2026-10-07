@@ -22,6 +22,11 @@
 
     "baseUrl": ".",
     "paths": {
+      // Resolved at build/test time by vite.config.ts's resolve.alias (to
+      // mock-fixtures.real.ts or mock-fixtures.stub.ts); tsc has no concept
+      // of that swap, so it type-checks against the real one -- both share
+      // the same mockNodes: Node[] shape, so this is accurate either way.
+      "@/lib/mock-fixtures": ["./src/lib/mock-fixtures.real.ts"],
       "@/*": ["./src/*"]
     },
 

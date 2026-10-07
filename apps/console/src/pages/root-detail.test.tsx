@@ -40,9 +40,9 @@ const renderAt = (path: string) =>
   );
 
 describe("RootDetailPage", () => {
-  beforeEach(async () => {
+  beforeEach(() => {
     level = "admin";
-    await __resetNodes();
+    __resetNodes();
   });
 
   it("shows a root's connection, config, and ceremony", () => {

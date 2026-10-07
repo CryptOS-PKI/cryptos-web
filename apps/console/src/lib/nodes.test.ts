@@ -16,7 +16,7 @@ limitations under the License.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { mockNodes } from "@/lib/mock";
+import { mockNodes } from "@/lib/mock-fixtures";
 import {
   __resetNodes,
   addNode,
@@ -211,8 +211,8 @@ describe("setMockNodeProtocol", () => {
 describe("renameNode", () => {
   beforeEach(() => __resetNodes());
 
-  afterEach(async () => {
-    await __resetNodes();
+  afterEach(() => {
+    __resetNodes();
     vi.restoreAllMocks();
   });
 

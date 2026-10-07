@@ -91,6 +91,27 @@ jobs:
         # tsc -b then vite build. This is the step that #99 was about.
         run: npm run build
 
+      - name: Release bundle check catches dev-only builds
+        # A positive control for the check below, so it can't be vacuously
+        # passing: building with VITE_FLEET_MODE=mock or DEV_UI_ISSUE_COPY=true
+        # must make it fail. `vite build` directly (skipping tsc -b, already
+        # run by Build above) into a throwaway outDir keeps this cheap.
+        run: |
+          set -euo pipefail
+          check_catches() {
+            if node scripts/check-release-bundle.mjs "$1"; then
+              echo "expected scripts/check-release-bundle.mjs to fail for $2" >&2
+              exit 1
+            fi
+          }
+          VITE_FLEET_MODE=mock npm exec -w @cryptos-pki/console -- vite build --outDir dist-check-mock
+          check_catches apps/console/dist-check-mock "a VITE_FLEET_MODE=mock build"
+          rm -rf apps/console/dist-check-mock
+
+          DEV_UI_ISSUE_COPY=true npm exec -w @cryptos-pki/console -- vite build --outDir dist-check-devui
+          check_catches apps/console/dist-check-devui "a DEV_UI_ISSUE_COPY=true build"
+          rm -rf apps/console/dist-check-devui
+
       - name: Release bundle has no development-only code
         # The existing Build step above builds without DEV_UI_ISSUE_COPY or
         # VITE_FLEET_MODE, so its output is the release build.

@@ -40,10 +40,7 @@ const catalog: CertProfile[] = [
   },
 ];
 
-vi.mock("@/lib/fleet/mode", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/lib/fleet/mode")>();
-  return { ...actual, fleetMode: () => "live" };
-});
+vi.mock("@/lib/fleet/mode", () => ({ fleetMode: () => "live" }));
 vi.mock("@/context/auth", () => ({
   useAuth: () => ({
     operator: { commonName: "admin@acme.example", level: "admin", serial: "AA" },

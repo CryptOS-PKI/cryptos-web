@@ -16,9 +16,8 @@ limitations under the License.
 
 import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import { beforeEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
-import { __resetNodes } from "@/lib/nodes";
 import { NodeConfigPage } from "@/pages/node-config";
 
 const renderAt = (path: string) =>
@@ -32,8 +31,6 @@ const renderAt = (path: string) =>
   );
 
 describe("NodeConfigPage", () => {
-  beforeEach(() => __resetNodes());
-
   it("applies config and shows a result", () => {
     renderAt("/nodes/acme-issuing-01/config");
     fireEvent.click(screen.getByRole("button", { name: /apply/i }));

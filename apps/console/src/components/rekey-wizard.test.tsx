@@ -17,8 +17,10 @@ limitations under the License.
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import type { Node } from "@/lib/mock";
+
 import { RekeyWizard } from "@/components/rekey-wizard";
-import { mockNodes, type Node } from "@/lib/mock";
+import { mockNodes } from "@/lib/mock-fixtures";
 
 const issuingNode = (): Node => mockNodes.find((n) => n.name === "acme-issuing-01")!;
 const rootNode = (): Node => mockNodes.find((n) => n.name === "acme-root-01")!;
@@ -30,10 +32,7 @@ vi.mock("@/lib/rekey", async () => {
   const actual = await vi.importActual<typeof import("@/lib/rekey")>("@/lib/rekey");
   return { ...actual, rekeyNode: (...args: [string, string]) => rekeyNode(...args) };
 });
-vi.mock("@/lib/fleet/mode", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/lib/fleet/mode")>();
-  return { ...actual, fleetMode: () => mode };
-});
+vi.mock("@/lib/fleet/mode", () => ({ fleetMode: () => mode }));
 
 describe("RekeyWizard (mock)", () => {
   beforeEach(() => {

@@ -16,9 +16,10 @@ limitations under the License.
 
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 
+import type { IdentityState } from "@/lib/mock";
+
 import { RootMark } from "@/components/root-mark";
 import { useCertCounts } from "@/lib/certs";
-import { type IdentityState } from "@/lib/mock";
 import { useNodes } from "@/lib/nodes";
 import { computeTreeLayout } from "@/lib/topology-layout";
 import { cn } from "@/lib/utils";

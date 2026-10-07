@@ -33,8 +33,8 @@ const Probe = ({ node }: { node: string }) => {
 };
 
 describe("useCertCounts", () => {
-  beforeEach(async () => {
-    await __resetCerts();
+  beforeEach(() => {
+    __resetCerts();
   });
 
   // The bug this exists for: NodeSummary carries no counts, so a live node

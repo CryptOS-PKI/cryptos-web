@@ -20,8 +20,10 @@ import { Code, ConnectError } from "@connectrpc/connect";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import type { Node } from "@/lib/mock";
+
 import { ConfigForm } from "@/components/config-form";
-import { mockNodes, type Node } from "@/lib/mock";
+import { mockNodes } from "@/lib/mock-fixtures";
 
 const issuingNode = (): Node => mockNodes.find((n) => n.name === "acme-issuing-01")!;
 
@@ -36,10 +38,7 @@ vi.mock("@/lib/config", async (importOriginal) => ({
   applyNodeConfig: (...args: unknown[]) => applyNodeConfig(...args),
   getNodeConfig: (...args: unknown[]) => getNodeConfig(...args),
 }));
-vi.mock("@/lib/fleet/mode", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/lib/fleet/mode")>();
-  return { ...actual, fleetMode: () => mode };
-});
+vi.mock("@/lib/fleet/mode", () => ({ fleetMode: () => mode }));
 vi.mock("@/context/auth", () => ({
   useAuth: () => ({
     operator: { commonName: "op@acme.example", level, serial: "AA" },

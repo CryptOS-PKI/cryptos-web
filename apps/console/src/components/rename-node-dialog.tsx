@@ -16,10 +16,11 @@ limitations under the License.
 
 import { useState } from "react";
 
+import type { Node } from "@/lib/mock";
+
 import { Button } from "@/components/ui/button";
 import { fleetErrorMessage } from "@/lib/fleet/error-copy";
 import { validateNodeName } from "@/lib/fleet/node-name";
-import { type Node } from "@/lib/mock";
 import { renameNode } from "@/lib/nodes";
 
 // RenameNodeDialog renames a node's inventory entry (#87): its display name,

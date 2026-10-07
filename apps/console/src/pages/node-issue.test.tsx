@@ -19,7 +19,6 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { __resetCerts, certsFor } from "@/lib/certs";
-import { __resetNodes } from "@/lib/nodes";
 import { NodeIssuePage } from "@/pages/node-issue";
 
 const renderAt = (path: string) =>
@@ -33,10 +32,7 @@ const renderAt = (path: string) =>
   );
 
 describe("NodeIssuePage", () => {
-  beforeEach(async () => {
-    await __resetNodes();
-    await __resetCerts();
-  });
+  beforeEach(() => __resetCerts());
 
   it("issues a leaf cert from an issuing CA", async () => {
     const before = certsFor("acme-issuing-01").length;

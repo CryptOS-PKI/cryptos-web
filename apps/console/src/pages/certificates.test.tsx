@@ -23,9 +23,9 @@ import { __resetNodes, nodesList } from "@/lib/nodes";
 import { CertificatesPage } from "@/pages/certificates";
 
 describe("CertificatesPage", () => {
-  beforeEach(async () => {
-    await __resetNodes();
-    await __resetCerts();
+  beforeEach(() => {
+    __resetNodes();
+    __resetCerts();
   });
 
   it("lists seeded certs and links the subject to the cert detail", () => {

@@ -16,7 +16,7 @@ limitations under the License.
 
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { __resetNodes, getNode } from "@/lib/nodes";
+import { getNode } from "@/lib/nodes";
 import {
   MOCK_NOW_MS,
   allCerts,
@@ -31,8 +31,6 @@ import {
 } from "@/lib/certs";
 
 describe("canIssue", () => {
-  beforeEach(() => __resetNodes());
-
   it("gates by role and state", () => {
     expect(canIssue(getNode("acme-root-01")!)).toEqual(["subordinate-ca"]);
     expect(canIssue(getNode("acme-intermediate-01")!).sort()).toEqual(["leaf", "subordinate-ca"]);

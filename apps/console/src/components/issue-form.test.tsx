@@ -19,7 +19,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { IssueForm } from "@/components/issue-form";
 import { __resetCerts } from "@/lib/certs";
-import { mockNodes } from "@/lib/mock";
+import { mockNodes } from "@/lib/mock-fixtures";
 import { __resetProfiles } from "@/lib/profiles";
 
 const issuingNode = mockNodes.find((n) => n.name === "acme-issuing-01")!;
@@ -38,10 +38,7 @@ vi.mock("@/lib/crypto/leaf-key", () => ({
 }));
 
 const fleetMode = vi.fn(() => "mock" as string);
-vi.mock("@/lib/fleet/mode", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/lib/fleet/mode")>();
-  return { ...actual, fleetMode: () => fleetMode() };
-});
+vi.mock("@/lib/fleet/mode", () => ({ fleetMode: () => fleetMode() }));
 
 const issueCert = vi.fn();
 vi.mock("@/lib/certs", async (importOriginal) => {
@@ -50,8 +47,8 @@ vi.mock("@/lib/certs", async (importOriginal) => {
 });
 
 describe("IssueForm profile picker", () => {
-  beforeEach(async () => {
-    await __resetCerts();
+  beforeEach(() => {
+    __resetCerts();
     __resetProfiles();
     fleetMode.mockReturnValue("mock");
     issueCert.mockImplementation((_node: string, draft: { eku?: string[]; profile?: string }) =>
@@ -82,8 +79,8 @@ describe("IssueForm profile picker", () => {
 describe("IssueForm live keygen and guarded export", () => {
   const fakePrivateKey = { extractable: true } as unknown as CryptoKey;
 
-  beforeEach(async () => {
-    await __resetCerts();
+  beforeEach(() => {
+    __resetCerts();
     __resetProfiles();
     fleetMode.mockReturnValue("live");
     issueCert.mockResolvedValue({

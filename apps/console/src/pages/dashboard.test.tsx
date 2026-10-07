@@ -33,9 +33,9 @@ const renderDash = () =>
   );
 
 describe("DashboardPage", () => {
-  beforeEach(async () => {
-    await __resetNodes();
-    await __resetCerts();
+  beforeEach(() => {
+    __resetNodes();
+    __resetCerts();
     __resetEnrollments();
     __resetProfiles();
     __resetAdapters();

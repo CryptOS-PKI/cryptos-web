@@ -20,8 +20,9 @@ limitations under the License.
 // design-tool asset manifest. Walks every file under the given dist
 // directory and greps it for the markers; `latin1` reads binary assets
 // (fonts, images) without throwing on invalid UTF-8.
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 
 export const MARKERS = ["__CRYPTOS_DEV_UI_ISSUE__", "__CRYPTOS_MOCK__", "c2pa"];
 
@@ -31,6 +32,31 @@ const walk = (dir) =>
     return statSync(full).isDirectory() ? walk(full) : [full];
   });
 
+// A missing or empty dist directory means the build never ran (or ran
+// somewhere else), not a clean release -- findDevCode() alone would walk
+// zero files and report "clean" either way, which is the wrong answer for
+// both. Checks for the shape an actual `vite build` output has: an
+// index.html, and at least one built JS chunk under assets/.
+export const validateDistDir = (distDir) => {
+  if (!existsSync(distDir) || !statSync(distDir).isDirectory()) {
+    return `${distDir} does not exist`;
+  }
+  const files = walk(distDir);
+  if (files.length === 0) {
+    return `${distDir} is empty`;
+  }
+  if (!existsSync(path.join(distDir, "index.html"))) {
+    return `${distDir} has no index.html`;
+  }
+  const hasBuiltAsset = files.some(
+    (file) => path.basename(path.dirname(file)) === "assets" && file.endsWith(".js"),
+  );
+  if (!hasBuiltAsset) {
+    return `${distDir} has no assets/*.js file`;
+  }
+  return;
+};
+
 // The files under distDir that carry any marker. Exported so the test can
 // exercise the scan without going through the CLI's process.exit.
 export const findDevCode = (distDir) =>
@@ -39,14 +65,26 @@ export const findDevCode = (distDir) =>
     return MARKERS.some((marker) => contents.includes(marker));
   });
 
-const isMain = process.argv[1] && import.meta.url === `file://${process.argv[1]}`;
+// pathToFileURL (not a `file://${argv[1]}` template) matches how Node itself
+// builds import.meta.url: it percent-encodes characters like a space, which
+// the template doesn't, so a worktree path with a space in it made the two
+// strings disagree, this guard read false, and the check silently exited 0
+// without scanning anything.
+const isMain =
+  process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href;
 if (isMain) {
   const distDir = process.argv[2] ?? "apps/console/dist";
-  const hits = findDevCode(distDir);
-  if (hits.length > 0) {
-    console.error(`release bundle contains development-only code:\n${hits.join("\n")}`);
+  const distError = validateDistDir(distDir);
+  if (distError) {
+    console.error(`release bundle check: ${distError}`);
     process.exitCode = 1;
   } else {
-    console.log("release bundle clean");
+    const hits = findDevCode(distDir);
+    if (hits.length > 0) {
+      console.error(`release bundle contains development-only code:\n${hits.join("\n")}`);
+      process.exitCode = 1;
+    } else {
+      console.log("release bundle clean");
+    }
   }
 }

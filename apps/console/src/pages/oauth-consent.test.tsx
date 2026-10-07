@@ -21,10 +21,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { OAuthConsentPage } from "@/pages/oauth-consent";
 
 const leaveForClient = vi.fn();
-vi.mock("@/lib/fleet/mode", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/lib/fleet/mode")>();
-  return { ...actual, fleetMode: () => "live" };
-});
+vi.mock("@/lib/fleet/mode", () => ({ fleetMode: () => "live" }));
 vi.mock("@/lib/oauth-consent", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/oauth-consent")>()),
   leaveForClient: (url: string) => leaveForClient(url),

@@ -26,10 +26,7 @@ const createProfileRpc = vi.fn();
 const updateProfileRpc = vi.fn();
 const deleteProfileRpc = vi.fn();
 
-vi.mock("@/lib/fleet/mode", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/lib/fleet/mode")>();
-  return { ...actual, fleetMode: () => currentMode };
-});
+vi.mock("@/lib/fleet/mode", () => ({ fleetMode: () => currentMode }));
 vi.mock("@/lib/fleet/client", () => ({
   fleetClient: () => ({
     createProfile: createProfileRpc,

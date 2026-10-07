@@ -16,6 +16,8 @@ limitations under the License.
 
 import { useEffect, useState } from "react";
 
+import type { Node } from "@/lib/mock";
+
 import { Button } from "@/components/ui/button";
 import { canIssue, type Cert, type CertKind, issueCert } from "@/lib/certs";
 import { parseCsr, type ParsedCsr } from "@/lib/crypto/csr";
@@ -27,7 +29,6 @@ import {
   toPemEncryptedKey,
 } from "@/lib/crypto/leaf-key";
 import { fleetMode } from "@/lib/fleet/mode";
-import { type Node } from "@/lib/mock";
 import { getProfile, useProfiles } from "@/lib/profiles";
 import { cn } from "@/lib/utils";
 

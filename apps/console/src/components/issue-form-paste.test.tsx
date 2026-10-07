@@ -18,14 +18,12 @@ import "reflect-metadata";
 import { Pkcs10CertificateRequestGenerator } from "@peculiar/x509";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 
 import { IssueForm } from "@/components/issue-form";
-import { __resetNodes, nodesList } from "@/lib/nodes";
+import { nodesList } from "@/lib/nodes";
 
 let csrPem = "";
-
-beforeEach(() => __resetNodes());
 
 beforeAll(async () => {
   const keys = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-384" }, true, [

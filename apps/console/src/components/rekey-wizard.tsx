@@ -16,9 +16,10 @@ limitations under the License.
 
 import { useState } from "react";
 
+import type { Node } from "@/lib/mock";
+
 import { Button } from "@/components/ui/button";
 import { fleetMode } from "@/lib/fleet/mode";
-import { type Node } from "@/lib/mock";
 import { DEFAULT_REKEY_PROFILE, rekeyNode, type RekeyResult } from "@/lib/rekey";
 import { cn } from "@/lib/utils";
 

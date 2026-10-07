@@ -51,9 +51,9 @@ const renderAt = (path: string) =>
 const rowFor = (name: RegExp) => screen.getByRole("link", { name }).closest("tr") as HTMLElement;
 
 describe("ProtocolDetailPage", () => {
-  beforeEach(async () => {
+  beforeEach(() => {
     operatorLevel = "admin";
-    await __resetNodes();
+    __resetNodes();
   });
   afterEach(() => vi.restoreAllMocks());
 

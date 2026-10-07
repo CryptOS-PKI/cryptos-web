@@ -29,10 +29,7 @@ let currentMode: "live" | "live-auth" | "mock" = "mock";
 const listAdapters = vi.fn();
 const setAdapterEnabled = vi.fn();
 
-vi.mock("@/lib/fleet/mode", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/lib/fleet/mode")>();
-  return { ...actual, fleetMode: () => currentMode };
-});
+vi.mock("@/lib/fleet/mode", () => ({ fleetMode: () => currentMode }));
 vi.mock("@/lib/fleet/client", () => ({
   fleetClient: () => ({
     listAdapters,

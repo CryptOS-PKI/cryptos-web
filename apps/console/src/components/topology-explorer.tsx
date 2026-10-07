@@ -51,14 +51,13 @@ const Legend = () => {
   );
 };
 
-// The default selection is the first established intermediate, falling back
-// to the first node. Read through nodesList() (not mockNodes directly) so a
-// release build never pulls the fixtures in just for this guess; a lazy
-// useState initializer defers the read to mount, since nodesList() is empty
-// until lib/nodes.ts's fire-and-forget fixture load resolves (see
-// lib/fleet/mode.ts), and the empty-string fallback lets allNodes[0] below
-// take over once the live fleet arrives.
-const computeDefaultSelected = (): string =>
+// The default selection is the first established intermediate. Falls back to
+// the first node. Read through nodesList() (lib/nodes.ts's accessor), not
+// mockNodes directly, so a release build -- where the fixtures are an empty
+// array (see @/lib/mock-fixtures's resolve.alias in vite.config.ts) -- gets ""
+// here instead of a crash on an empty array's [0], falling through to
+// allNodes[0] below once the live fleet arrives.
+const defaultSelected =
   nodesList().find((n) => n.role === "intermediate" && n.identityState === "ESTABLISHED")?.name ??
   nodesList()[0]?.name ??
   "";
@@ -74,7 +73,7 @@ export const TopologyExplorer = ({
   title: string;
   withList?: boolean;
 }) => {
-  const [selected, setSelected] = useState(computeDefaultSelected);
+  const [selected, setSelected] = useState(defaultSelected);
   const [focus, setFocus] = useState<null | string>(null);
   const allNodes = useNodes();
   const rootCount = allNodes.filter((n) => n.role === "root").length;
