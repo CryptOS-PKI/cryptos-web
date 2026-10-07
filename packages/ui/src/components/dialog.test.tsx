@@ -201,4 +201,37 @@ describe("Dialog", () => {
     fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
     expect(trigger).toHaveFocus();
   });
+
+  it("returns focus to the trigger when a conditionally mounted dialog unmounts while open", () => {
+    const Harness = () => {
+      const [open, setOpen] = useState(false);
+      const [mounted, setMounted] = useState(true);
+      return (
+        <>
+          <button onClick={() => setOpen(true)} type="button">
+            Open
+          </button>
+          <button onClick={() => setMounted(false)} type="button">
+            Unmount
+          </button>
+          {mounted ? (
+            <Dialog onClose={() => setOpen(false)} open={open} title="T">
+              <input />
+            </Dialog>
+          ) : null}
+        </>
+      );
+    };
+    render(<Harness />);
+    const trigger = screen.getByRole("button", { name: "Open" });
+    // Radix aria-hides background siblings (including this button) once the
+    // dialog is open, so it's queried once up front and the reference reused;
+    // fireEvent.click on it still dispatches directly to the element.
+    const unmount = screen.getByRole("button", { name: "Unmount" });
+    trigger.focus();
+    fireEvent.click(trigger);
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    fireEvent.click(unmount);
+    expect(trigger).toHaveFocus();
+  });
 });

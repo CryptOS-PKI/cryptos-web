@@ -69,9 +69,19 @@ export const Dialog = ({
   // in onOpenAutoFocus (it still runs synchronously, before focus moves) and
   // restore it synchronously here once `open` goes false.
   const returnFocusTo = React.useRef<HTMLElement | null>(null);
+  const restoreFocus = React.useCallback(() => {
+    returnFocusTo.current?.focus();
+    // Clear it once restored so a dialog that unmounts later (already closed)
+    // can't steal focus a second time.
+    returnFocusTo.current = null;
+  }, []);
   React.useEffect(() => {
-    if (!open) returnFocusTo.current?.focus();
-  }, [open]);
+    if (!open) restoreFocus();
+  }, [open, restoreFocus]);
+  // A parent that conditionally mounts an open Dialog removes it from the
+  // tree without ever flipping `open` to false, so the effect above never
+  // runs; this cleanup covers that unmount.
+  React.useEffect(() => () => restoreFocus(), [restoreFocus]);
 
   return (
     <DialogPrimitive.Root
