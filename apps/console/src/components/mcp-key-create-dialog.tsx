@@ -74,15 +74,16 @@ export const McpKeyCreateDialog = ({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-      // A stray click outside must not throw away a key nobody has copied yet.
-      onClick={plaintext ? undefined : close}
+      onClick={(e) => {
+        // A stray click outside must not throw away a key nobody has copied yet.
+        if (e.target === e.currentTarget && !plaintext) close();
+      }}
       role="presentation"
     >
       <div
         aria-labelledby="mcp-key-create-title"
         aria-modal="true"
         className="w-full max-w-md space-y-4 rounded-xl border bg-card p-5 shadow-xl"
-        onClick={(e) => e.stopPropagation()}
         role="dialog"
       >
         <div className="space-y-1">

@@ -16,7 +16,8 @@ woff2, strict CSP, no runtime CDN) for air-gap use.
 ## Layout
 
 An npm workspaces monorepo: `apps/console` (the Fleet Manager UI; the `src/` paths below are
-under it), `packages/ui` (the UI kit; the design tokens in `tokens.css` today) and
+under it), `packages/ui` (the UI kit: the tokens in `tokens.css`, the Tailwind preset and the
+components, named exports from `src/index.ts`) and
 `packages/api-client` (the generated node and fleet API stubs).
 
 - `src/main.tsx` - entry; mounts the theme + auth providers and the router.
@@ -44,6 +45,22 @@ under it), `packages/ui` (the UI kit; the design tokens in `tokens.css` today) a
 
 ## Conventions and gotchas
 
+- The kit (`packages/ui`) is imported as `@cryptos-pki/ui` straight from its TypeScript source;
+  there is no compile step, and its `build` script only typechecks. Its classes reach the console's CSS because the console's
+  `tailwind.config.js` extends the kit's preset and scans `uiContent`. Inside the kit use relative
+  imports (the console's `@/` alias does not apply there). Layouts that differ on phones (the shell's
+  drawer, the table's stacked cards) switch on `useIsDesktop()` rather than hiding a second copy with
+  CSS; the console's test setup stubs `matchMedia` to match, so tests see the desktop layout.
+- `packages/ui/src/icons/` is generated from the brand icon set
+  (`packages/ui/scripts/gen-icons.mjs`); never hand-edit `Icon*.tsx` or `index.ts` there. Regenerate
+  with `npm -w @cryptos-pki/ui run generate:icons` after changing the source set. CI's "Icons match
+  their sources" step reruns the generator and fails on any diff, and "No embedded design-tool
+  metadata" fails on a stray `c2pa` string anywhere under `packages/` or `apps/console/public/`
+  (both in `ci-web.yml`). Both files are excluded from ESLint and Prettier (`eslint.config.js`,
+  `.prettierignore`): they follow the generator's template, not the repo's formatting rules.
+- Every kit component test calls `expectNoA11yViolations` (`packages/ui/src/test/axe.ts`) on what it
+  renders, and `eslint-plugin-jsx-a11y` runs at error level (`jsxA11y.flatConfigs.strict` in
+  `eslint.config.js`).
 - See `CLAUDE.md` for the branch/commit/PR rules; they are enforced by the git hooks in
   `.claude/hooks` (run `bash .claude/hooks/install.sh` once per clone).
 - Open every PR as a draft. CI skips drafts, so run the full checks locally, push once they pass,

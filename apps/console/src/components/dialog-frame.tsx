@@ -31,14 +31,15 @@ export const DialogFrame = ({
 }) => (
   <div
     className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 p-4"
-    onClick={onClose}
+    onClick={(e) => {
+      if (e.target === e.currentTarget) onClose();
+    }}
     role="presentation"
   >
     <div
       aria-labelledby={labelId}
       aria-modal="true"
       className={`w-full ${wide ? "max-w-2xl" : "max-w-md"} max-h-[90vh] space-y-4 overflow-y-auto rounded-xl border bg-card p-5 shadow-xl`}
-      onClick={(e) => e.stopPropagation()}
       role="dialog"
     >
       {children}

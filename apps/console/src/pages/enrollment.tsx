@@ -129,14 +129,15 @@ const CreateEnrollmentForm = ({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-      onClick={onCancel}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onCancel();
+      }}
       role="presentation"
     >
       <div
         aria-labelledby="create-enrollment-title"
         aria-modal="true"
         className="w-full max-w-md space-y-4 rounded-xl border bg-card p-5 shadow-xl"
-        onClick={(e) => e.stopPropagation()}
         role="dialog"
       >
         <h2 className="text-lg font-bold" id="create-enrollment-title">
