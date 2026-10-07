@@ -14,12 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 
 import { aggregateState, childrenOf } from "@/lib/mock";
-import { getNodeByCn } from "@/lib/nodes";
+import { __resetNodes, getNodeByCn } from "@/lib/nodes";
 
 describe("mock topology", () => {
+  beforeEach(() => __resetNodes());
+
   it("has two intermediates under the root, each with a fan-out", () => {
     expect(
       childrenOf("ACME Root CA G1")

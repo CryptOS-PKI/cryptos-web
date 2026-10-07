@@ -32,9 +32,9 @@ const renderAt = (path: string) =>
   );
 
 describe("NodeDetailPage trust chain", () => {
-  beforeEach(() => {
-    __resetNodes();
-    __resetCerts();
+  beforeEach(async () => {
+    await __resetNodes();
+    await __resetCerts();
   });
 
   it("shows the trust chain with a link to an ancestor", () => {
@@ -51,9 +51,9 @@ describe("NodeDetailPage trust chain", () => {
 // A root has no page under /nodes -- that route used to render an empty one
 // (#86). It now sends the operator to the page that actually has the root.
 describe("NodeDetailPage root deep link", () => {
-  beforeEach(() => {
-    __resetNodes();
-    __resetCerts();
+  beforeEach(async () => {
+    await __resetNodes();
+    await __resetCerts();
   });
 
   it("redirects a root to its own page", () => {

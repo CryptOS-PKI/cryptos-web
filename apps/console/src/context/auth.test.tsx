@@ -26,7 +26,10 @@ const fleetMode = vi.fn(() => "live");
 // it can answer without a client certificate.
 const probe = vi.fn();
 vi.mock("@/lib/fleet/client", () => ({ fleetClient: () => ({ whoAmI }) }));
-vi.mock("@/lib/fleet/mode", () => ({ fleetMode: () => fleetMode() }));
+vi.mock("@/lib/fleet/mode", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/fleet/mode")>();
+  return { ...actual, fleetMode: () => fleetMode() };
+});
 
 const Probe = () => {
   const { login, operator, reason, status } = useAuth();

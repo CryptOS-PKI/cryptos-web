@@ -16,13 +16,16 @@ limitations under the License.
 
 import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 
+import { __resetNodes } from "@/lib/nodes";
 import { FleetPage } from "@/pages/fleet";
 
 const renderPage = (ui: React.ReactElement) => render(<MemoryRouter>{ui}</MemoryRouter>);
 
 describe("FleetPage", () => {
+  beforeEach(() => __resetNodes());
+
   it("renders the topology graph with the Root on screen", () => {
     renderPage(<FleetPage />);
     expect(screen.getByRole("img", { name: /CA fleet topology graph/i })).toBeInTheDocument();

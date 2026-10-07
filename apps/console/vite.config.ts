@@ -23,6 +23,16 @@ export default defineConfig({
   // code is absent from a build that doesn't ask for it.
   define: {
     "import.meta.env.DEV_UI_ISSUE_COPY": JSON.stringify(process.env.DEV_UI_ISSUE_COPY ?? "false"),
+    // Deliberately a different name from VITE_FLEET_MODE: that one stays a
+    // plain, unreplaced import.meta.env read (lib/fleet/mode.ts's fleetMode()),
+    // because tests reassign it at runtime (vi.stubEnv, direct assignment) to
+    // switch data source mid-suite, which a literal substitution would break.
+    // This flag is fixed for the whole build and lets Vite fold away
+    // lib/mock.ts's fixtures (dev-only: see lib/nodes.ts and lib/certs.ts)
+    // whenever the build arg isn't VITE_FLEET_MODE=mock.
+    "import.meta.env.MOCK_FIXTURES_BUILD": JSON.stringify(
+      process.env.VITE_FLEET_MODE === "mock" ? "true" : "false",
+    ),
     // Vite only auto-exposes process.env vars already prefixed VITE_; GITHUB_SHA
     // (set by Actions) is not, so this needs an explicit define to fall back to it.
     "import.meta.env.VITE_GIT_SHA": JSON.stringify(

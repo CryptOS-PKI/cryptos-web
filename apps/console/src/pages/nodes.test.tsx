@@ -16,11 +16,18 @@ limitations under the License.
 
 import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 
+import { __resetCerts } from "@/lib/certs";
+import { __resetNodes } from "@/lib/nodes";
 import { NodesPage } from "@/pages/nodes";
 
 describe("NodesPage", () => {
+  beforeEach(async () => {
+    await __resetNodes();
+    await __resetCerts();
+  });
+
   it("lists operational nodes and excludes the root", () => {
     render(
       <MemoryRouter>

@@ -36,7 +36,10 @@ vi.mock("@/lib/config", async (importOriginal) => ({
   applyNodeConfig: (...args: unknown[]) => applyNodeConfig(...args),
   getNodeConfig: (...args: unknown[]) => getNodeConfig(...args),
 }));
-vi.mock("@/lib/fleet/mode", () => ({ fleetMode: () => mode }));
+vi.mock("@/lib/fleet/mode", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/fleet/mode")>();
+  return { ...actual, fleetMode: () => mode };
+});
 vi.mock("@/context/auth", () => ({
   useAuth: () => ({
     operator: { commonName: "op@acme.example", level, serial: "AA" },

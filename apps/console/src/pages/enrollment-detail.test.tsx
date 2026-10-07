@@ -74,9 +74,9 @@ const renderAt = (path: string) =>
   );
 
 describe("EnrollmentDetailPage", () => {
-  beforeEach(() => {
-    __resetNodes();
-    __resetCerts();
+  beforeEach(async () => {
+    await __resetNodes();
+    await __resetCerts();
     __resetEnrollments();
     mockOperator.mockReturnValue({ level: "admin" });
     vi.mocked(approveEnrollment).mockClear();

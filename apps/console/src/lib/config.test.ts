@@ -29,7 +29,10 @@ vi.mock("@/lib/fleet/client", () => ({
     getNodeConfig: getNodeConfigRpc,
   }),
 }));
-vi.mock("@/lib/fleet/mode", () => ({ fleetMode: () => mode }));
+vi.mock("@/lib/fleet/mode", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/fleet/mode")>();
+  return { ...actual, fleetMode: () => mode };
+});
 
 const fetchedConfig = (): MachineConfig =>
   ({

@@ -17,15 +17,9 @@ limitations under the License.
 import { useEffect, useSyncExternalStore } from "react";
 
 import { fleetClient } from "@/lib/fleet/client";
-import { fleetMode } from "@/lib/fleet/mode";
+import { fleetMode, loadMockFleet } from "@/lib/fleet/mode";
 import { validateNodeName } from "@/lib/fleet/node-name";
-import {
-  mockNodes,
-  type IdentityState,
-  type Node,
-  type NodeProtocolStatus,
-  type ProtocolKind,
-} from "@/lib/mock";
+import type { IdentityState, Node, NodeProtocolStatus, ProtocolKind } from "@/lib/mock";
 
 import type { NodeSummary } from "@cryptos-pki/api-client/cryptos/fleet/v1/fleet_pb";
 import {
@@ -37,7 +31,7 @@ import {
 // (addNode). useSyncExternalStore lets the topology, nodes table, and root list
 // re-render when the fleet changes. This path is unchanged by the live seam
 // below -- `mock` mode never touches the live store.
-let nodes: Node[] = [...mockNodes];
+let nodes: Node[] = [];
 const listeners = new Set<() => void>();
 const emit = (): void => {
   for (const l of listeners) l();
@@ -46,6 +40,24 @@ const subscribe = (l: () => void): (() => void) => {
   listeners.add(l);
   return () => listeners.delete(l);
 };
+
+// MOCK_FIXTURES_BUILD (not fleetMode(), not VITE_FLEET_MODE directly -- see
+// vite.config.ts) is a vite `define` literal fixed for the whole build, so
+// Vite folds this to `if (false)` in a release build and drops loadMockFleet()
+// -- and the module it loads -- entirely. Not a top-level await: this app's
+// build target (vite.config.ts) predates it and esbuild's transpile step
+// refuses one (see main.tsx for the same constraint). In the app, this
+// resolves before any page can observe `nodes` empty: nothing reads it until
+// a page mounts and calls useNodes()/useNode(), after this module (and this
+// microtask) has already run. A test that reads the store without going
+// through a mounted page awaits __resetNodes() itself instead.
+if (import.meta.env.MOCK_FIXTURES_BUILD === "true") {
+  // eslint-disable-next-line unicorn/prefer-top-level-await
+  void (async () => {
+    nodes = [...(await loadMockFleet()).mockNodes];
+    emit();
+  })();
+}
 
 export const nodesList = (): Node[] => nodes;
 export const getNode = (name: string): Node | undefined =>
@@ -249,7 +261,7 @@ export const chainToRoot = (node: Node): Node[] => {
 };
 
 // Test-only: restore the seeded fixture between tests.
-export const __resetNodes = (): void => {
-  nodes = [...mockNodes];
+export const __resetNodes = async (): Promise<void> => {
+  nodes = [...(await loadMockFleet()).mockNodes];
   emit();
 };

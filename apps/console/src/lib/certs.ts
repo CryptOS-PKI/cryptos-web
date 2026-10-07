@@ -18,8 +18,8 @@ import { useEffect, useMemo, useSyncExternalStore } from "react";
 
 import { recordAudit } from "@/lib/audit";
 import { fleetClient } from "@/lib/fleet/client";
-import { fleetMode } from "@/lib/fleet/mode";
-import { mockNodes, type Node } from "@/lib/mock";
+import { fleetMode, loadMockFleet } from "@/lib/fleet/mode";
+import type { Node } from "@/lib/mock";
 
 import type { Certificate } from "@cryptos-pki/api-client/cryptos/fleet/v1/fleet_pb";
 
@@ -96,10 +96,10 @@ export const expiryClass = (cert: Cert): ExpiryClass => {
   return "ok";
 };
 
-const seed = (): Cert[] => {
+const seed = (nodes: Node[]): Cert[] => {
   const out: Cert[] = [];
   let n = 1;
-  for (const node of mockNodes) {
+  for (const node of nodes) {
     if (canIssue(node).length === 0 && node.identityState !== "REVOKED") continue;
     const count = node.role === "issuing" ? 3 : 2;
     for (let i = 0; i < count; i += 1) {
@@ -163,7 +163,7 @@ const seed = (): Cert[] => {
   return out;
 };
 
-let certs: Cert[] = seed();
+let certs: Cert[] = [];
 const listeners = new Set<() => void>();
 const emit = (): void => {
   for (const l of listeners) l();
@@ -185,6 +185,20 @@ const reindex = (): void => {
   }
 };
 reindex();
+
+// MOCK_FIXTURES_BUILD (not fleetMode(), not VITE_FLEET_MODE directly -- see
+// vite.config.ts) is a vite `define` literal fixed for the whole build, so
+// Vite folds this to `if (false)` in a release build and drops loadMockFleet()
+// -- and the module it loads -- entirely. Not a top-level await: see
+// lib/nodes.ts (the same seeding pattern) for why.
+if (import.meta.env.MOCK_FIXTURES_BUILD === "true") {
+  // eslint-disable-next-line unicorn/prefer-top-level-await
+  void (async () => {
+    certs = seed((await loadMockFleet()).mockNodes);
+    reindex();
+    emit();
+  })();
+}
 
 const EMPTY: Cert[] = [];
 export const certsFor = (nodeName: string): Cert[] => byNode.get(nodeName) ?? EMPTY;
@@ -478,8 +492,8 @@ export const renewCert = (serial: string): Cert | undefined => {
 };
 
 // Test-only: restore the seeded fixtures between tests.
-export const __resetCerts = (): void => {
-  certs = seed();
+export const __resetCerts = async (): Promise<void> => {
+  certs = seed((await loadMockFleet()).mockNodes);
   nextSerial = 10_000;
   reindex();
   emit();

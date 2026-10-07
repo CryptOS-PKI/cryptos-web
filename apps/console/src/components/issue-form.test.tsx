@@ -38,7 +38,10 @@ vi.mock("@/lib/crypto/leaf-key", () => ({
 }));
 
 const fleetMode = vi.fn(() => "mock" as string);
-vi.mock("@/lib/fleet/mode", () => ({ fleetMode: () => fleetMode() }));
+vi.mock("@/lib/fleet/mode", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/fleet/mode")>();
+  return { ...actual, fleetMode: () => fleetMode() };
+});
 
 const issueCert = vi.fn();
 vi.mock("@/lib/certs", async (importOriginal) => {
@@ -47,8 +50,8 @@ vi.mock("@/lib/certs", async (importOriginal) => {
 });
 
 describe("IssueForm profile picker", () => {
-  beforeEach(() => {
-    __resetCerts();
+  beforeEach(async () => {
+    await __resetCerts();
     __resetProfiles();
     fleetMode.mockReturnValue("mock");
     issueCert.mockImplementation((_node: string, draft: { eku?: string[]; profile?: string }) =>
@@ -79,8 +82,8 @@ describe("IssueForm profile picker", () => {
 describe("IssueForm live keygen and guarded export", () => {
   const fakePrivateKey = { extractable: true } as unknown as CryptoKey;
 
-  beforeEach(() => {
-    __resetCerts();
+  beforeEach(async () => {
+    await __resetCerts();
     __resetProfiles();
     fleetMode.mockReturnValue("live");
     issueCert.mockResolvedValue({

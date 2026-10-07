@@ -21,7 +21,10 @@ import { describe, expect, it, vi } from "vitest";
 import { AuditPage } from "@/pages/audit";
 
 const listAudit = vi.fn();
-vi.mock("@/lib/fleet/mode", () => ({ fleetMode: () => "live" }));
+vi.mock("@/lib/fleet/mode", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/fleet/mode")>();
+  return { ...actual, fleetMode: () => "live" };
+});
 vi.mock("@/lib/fleet/client", () => ({ fleetClient: () => ({ listAudit }) }));
 
 const blank = {

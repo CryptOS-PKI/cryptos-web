@@ -19,12 +19,14 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 
+import type { IdentityState } from "@/lib/mock";
+
 import { DataTable } from "@/components/data-table/data-table";
 import { IdentityBadge } from "@/components/identity-badge";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/auth";
 import { fleetErrorMessage } from "@/lib/fleet/error-copy";
-import { type IdentityState, identityStateLabels, roleLabels } from "@/lib/mock";
+import { identityStateLabels, roleLabels } from "@/lib/fleet/labels";
 import { useNodes } from "@/lib/nodes";
 import {
   ineligibleReason,

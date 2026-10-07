@@ -41,8 +41,8 @@ vi.mock("@/lib/enrollment", async () => {
 });
 
 describe("EnrollmentPage", () => {
-  beforeEach(() => {
-    __resetNodes();
+  beforeEach(async () => {
+    await __resetNodes();
     __resetEnrollments();
     mockOperator.mockReturnValue({ level: "admin" });
     vi.mocked(createEnrollment).mockClear();

@@ -19,8 +19,7 @@ import { useEffect, useState } from "react";
 import { FleetTopology } from "@/components/fleet-topology";
 import { NodeDetailPanel } from "@/components/node-detail-panel";
 import { NodeSelect } from "@/components/node-select";
-import { mockNodes } from "@/lib/mock";
-import { getNode, useNodes } from "@/lib/nodes";
+import { getNode, nodesList, useNodes } from "@/lib/nodes";
 
 const PanelHeader = ({ children, label }: { children?: React.ReactNode; label: string }) => {
   return (
@@ -52,11 +51,17 @@ const Legend = () => {
   );
 };
 
-// The default selection is the first established intermediate. Falls back to the
-// first node.
-const defaultSelected =
-  mockNodes.find((n) => n.role === "intermediate" && n.identityState === "ESTABLISHED")?.name ??
-  mockNodes[0].name;
+// The default selection is the first established intermediate, falling back
+// to the first node. Read through nodesList() (not mockNodes directly) so a
+// release build never pulls the fixtures in just for this guess; a lazy
+// useState initializer defers the read to mount, since nodesList() is empty
+// until lib/nodes.ts's fire-and-forget fixture load resolves (see
+// lib/fleet/mode.ts), and the empty-string fallback lets allNodes[0] below
+// take over once the live fleet arrives.
+const computeDefaultSelected = (): string =>
+  nodesList().find((n) => n.role === "intermediate" && n.identityState === "ESTABLISHED")?.name ??
+  nodesList()[0]?.name ??
+  "";
 
 // Shared topology surface used by both the Fleet page (full neighbourhood on
 // focus) and the Nodes page (single path to the Root on focus).
@@ -69,7 +74,7 @@ export const TopologyExplorer = ({
   title: string;
   withList?: boolean;
 }) => {
-  const [selected, setSelected] = useState(defaultSelected);
+  const [selected, setSelected] = useState(computeDefaultSelected);
   const [focus, setFocus] = useState<null | string>(null);
   const allNodes = useNodes();
   const rootCount = allNodes.filter((n) => n.role === "root").length;

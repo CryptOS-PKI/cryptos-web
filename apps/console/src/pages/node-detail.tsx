@@ -16,10 +16,12 @@ limitations under the License.
 
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 
+import type { IdentityState } from "@/lib/mock";
+
 import { CertInventory } from "@/components/cert-inventory";
 import { NodeDetailPanel } from "@/components/node-detail-panel";
 import { Button } from "@/components/ui/button";
-import { type IdentityState, roleLabels } from "@/lib/mock";
+import { roleLabels } from "@/lib/fleet/labels";
 import { chainToRoot, useNode } from "@/lib/nodes";
 import { cn } from "@/lib/utils";
 

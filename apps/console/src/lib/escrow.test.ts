@@ -28,7 +28,10 @@ vi.mock("@/lib/fleet/client", () => ({
 }));
 
 let mode: "live" | "mock" = "live";
-vi.mock("@/lib/fleet/mode", () => ({ fleetMode: () => mode }));
+vi.mock("@/lib/fleet/mode", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/fleet/mode")>();
+  return { ...actual, fleetMode: () => mode };
+});
 
 const STRONG = "correct-horse-battery-staple"; // >= 18 chars
 

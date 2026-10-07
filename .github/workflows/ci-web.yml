@@ -79,12 +79,22 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Release bundle check's own tests
+        # scripts/ is plain Node, outside the npm workspaces the Test step
+        # below covers, so its node:test suite gets its own step.
+        run: node --test scripts/*.test.mjs
+
       - name: Test
         run: npm run test
 
       - name: Build
         # tsc -b then vite build. This is the step that #99 was about.
         run: npm run build
+
+      - name: Release bundle has no development-only code
+        # The existing Build step above builds without DEV_UI_ISSUE_COPY or
+        # VITE_FLEET_MODE, so its output is the release build.
+        run: node scripts/check-release-bundle.mjs apps/console/dist
 
       - name: Icons match their sources
         run: npm -w @cryptos-pki/ui run generate:icons && git diff --exit-code packages/ui/src/icons

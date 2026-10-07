@@ -46,13 +46,16 @@ vi.mock("@/lib/fleet/client", () => ({
     rejectEnrollment: rejectEnrollmentRpc,
   }),
 }));
-vi.mock("@/lib/fleet/mode", () => ({ fleetMode: () => mode }));
+vi.mock("@/lib/fleet/mode", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/fleet/mode")>();
+  return { ...actual, fleetMode: () => mode };
+});
 
 describe("enrollment store (mock)", () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     mode = "mock";
-    __resetNodes();
-    __resetCerts();
+    await __resetNodes();
+    await __resetCerts();
     __resetEnrollments();
   });
 

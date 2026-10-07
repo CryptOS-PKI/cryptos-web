@@ -211,8 +211,8 @@ describe("setMockNodeProtocol", () => {
 describe("renameNode", () => {
   beforeEach(() => __resetNodes());
 
-  afterEach(() => {
-    __resetNodes();
+  afterEach(async () => {
+    await __resetNodes();
     vi.restoreAllMocks();
   });
 

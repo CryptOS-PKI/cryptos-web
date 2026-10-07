@@ -28,3 +28,13 @@ export const fleetMode = (): FleetMode => {
   if (raw === "mock" || raw === "live-auth") return raw;
   return "live";
 };
+
+// lib/mock.ts's fixtures, loaded only when MOCK_FIXTURES_BUILD (a vite
+// `define` literal, fixed for the whole build -- see vite.config.ts) is
+// "true". That condition, unlike fleetMode() === "mock", is a literal Vite
+// substitutes before Rollup bundles, so a release build folds the guard to
+// `if (false)` and drops this call, and the module it loads, entirely. Call
+// it only from inside that exact check; never import "@/lib/mock" for a
+// runtime value directly (lib/fleet/labels.ts holds the display labels
+// pages need regardless of data source).
+export const loadMockFleet = (): Promise<typeof import("@/lib/mock")> => import("@/lib/mock");

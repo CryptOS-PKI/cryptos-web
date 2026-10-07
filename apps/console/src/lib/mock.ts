@@ -24,6 +24,8 @@ limitations under the License.
 // into feeder edges. The identity state drives both the node ring color and the
 // color of the feeder that flows toward the child.
 
+import { summarize } from "@/lib/fleet/labels";
+
 export type NodeRole = "root" | "intermediate" | "issuing";
 
 export type IdentityState = "ESTABLISHED" | "AWAITING_CERT" | "REVOKED";
@@ -180,6 +182,15 @@ const issuingFanOut = (options: {
   });
 };
 
+// This module is reached only through lib/fleet/mode.ts's loadMockFleet(), a
+// dynamic import gated on MOCK_FIXTURES_BUILD (a vite `define` literal); see
+// that file and lib/nodes.ts/lib/certs.ts for the gate. Nothing imports a
+// runtime value from here statically -- lib/fleet/labels.ts holds the display
+// labels pages need regardless of data source -- so a release build never
+// reaches this file at all, and scripts/check-release-bundle.mjs's
+// MOCK_MARKER check is a tripwire for a future static import undoing that.
+export const MOCK_MARKER = "__CRYPTOS_MOCK__";
+
 export const mockNodes: Node[] = [
   {
     name: "acme-root-01",
@@ -198,6 +209,7 @@ export const mockNodes: Node[] = [
       endpoint: "acme-root-01.pki.acme.example:8443",
       mtlsIdentity: "fm-client@acme-root-01",
     },
+    __mockMarker: MOCK_MARKER,
   },
   {
     name: "acme-intermediate-01",
@@ -304,19 +316,7 @@ export const mockNodes: Node[] = [
     parentCn: "ACME Intermediate CA R2",
     subnet: 10,
   }),
-];
-
-export const roleLabels: Record<NodeRole, string> = {
-  root: "Root CA",
-  intermediate: "Intermediate CA",
-  issuing: "Issuing CA",
-};
-
-export const identityStateLabels: Record<IdentityState, string> = {
-  ESTABLISHED: "ESTABLISHED",
-  AWAITING_CERT: "AWAITING_CERT",
-  REVOKED: "REVOKED",
-};
+] as Node[];
 
 /** A resolved trust edge from a parent CA to a child CA. */
 export interface TrustEdge {
@@ -345,24 +345,6 @@ export const groupThreshold = 5;
 /** Direct children of a parent CA, resolved by the children's `parentCn`. */
 export const childrenOf = (parentCn: string): Node[] => {
   return mockNodes.filter((node) => node.parentCn === parentCn);
-};
-
-/** Per-state member counts for a set of nodes. */
-export interface StateSummary {
-  established: number;
-  pending: number;
-  revoked: number;
-}
-
-/** Tally a set of nodes by identity state. */
-export const summarize = (nodes: Node[]): StateSummary => {
-  const summary: StateSummary = { established: 0, pending: 0, revoked: 0 };
-  for (const node of nodes) {
-    if (node.identityState === "ESTABLISHED") summary.established += 1;
-    else if (node.identityState === "AWAITING_CERT") summary.pending += 1;
-    else summary.revoked += 1;
-  }
-  return summary;
 };
 
 /**

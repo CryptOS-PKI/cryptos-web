@@ -44,9 +44,9 @@ describe("audit store", () => {
 });
 
 describe("audit capture from mutators", () => {
-  beforeEach(() => {
-    __resetNodes();
-    __resetCerts();
+  beforeEach(async () => {
+    await __resetNodes();
+    await __resetCerts();
     __resetEnrollments();
     __resetAdapters();
     __resetProfiles();
