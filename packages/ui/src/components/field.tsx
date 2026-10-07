@@ -14,9 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { CircleAlert } from "lucide-react";
 import * as React from "react";
 
+import { IconDanger } from "../icons";
 import { cn } from "../lib/cn";
 
 export interface FieldProps {
@@ -60,7 +60,7 @@ export const Field = ({ badge, children, className, error, help, label }: FieldP
       {control}
       {error ? (
         <p className="flex items-start gap-1.5 text-xs text-destructive" id={noteId} role="alert">
-          <CircleAlert aria-hidden="true" className="mt-0.5 size-3.5 shrink-0" />
+          <IconDanger className="mt-0.5 size-3.5 shrink-0" />
           <span>{error}</span>
         </p>
       ) : null}

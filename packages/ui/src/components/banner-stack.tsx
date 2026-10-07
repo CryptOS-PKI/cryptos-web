@@ -14,9 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { CircleAlert, TriangleAlert } from "lucide-react";
 import * as React from "react";
 
+import { IconDanger, IconWarning } from "../icons";
 import { cn } from "../lib/cn";
 
 export interface BannerItem {
@@ -54,7 +54,7 @@ export const BannerStack = ({
       <ul>
         {shown.map((item) => {
           const danger = item.tone === "danger";
-          const Icon = danger ? CircleAlert : TriangleAlert;
+          const Icon = danger ? IconDanger : IconWarning;
           return (
             <li
               className={cn(
@@ -64,7 +64,6 @@ export const BannerStack = ({
               key={item.id}
             >
               <Icon
-                aria-hidden="true"
                 className={cn(
                   "mt-0.5 size-4 shrink-0",
                   danger ? "text-destructive" : "text-warning",

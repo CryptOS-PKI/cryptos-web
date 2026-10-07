@@ -14,9 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { Check } from "lucide-react";
 import * as React from "react";
 
+import { IconApprove } from "../icons";
 import { cn } from "../lib/cn";
 import { Input } from "./input";
 
@@ -83,11 +83,9 @@ export const TypeToConfirm = ({
           value={value}
         />
         {matches ? (
-          <Check
-            aria-hidden="true"
-            className="absolute right-3 top-1/2 size-4 -translate-y-1/2 text-success"
-            data-testid="confirm-match"
-          />
+          <span className="absolute right-3 top-1/2 -translate-y-1/2" data-testid="confirm-match">
+            <IconApprove className="size-4 text-success" />
+          </span>
         ) : null}
       </div>
     </div>

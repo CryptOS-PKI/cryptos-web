@@ -15,9 +15,9 @@ limitations under the License.
 */
 
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { type LucideIcon, Trash2 } from "lucide-react";
 import * as React from "react";
 
+import { type IconComponent, IconDecommission } from "../icons";
 import { cn } from "../lib/cn";
 
 export interface DialogProps {
@@ -29,7 +29,7 @@ export interface DialogProps {
    */
   closeOnBackdrop?: boolean;
   /** Icon in the destructive dialog's red disc. */
-  dangerIcon?: LucideIcon;
+  dangerIcon?: IconComponent;
   description?: React.ReactNode;
   /** The actions row, pinned to the bottom (48 px targets on phones). */
   footer?: React.ReactNode;
@@ -53,7 +53,7 @@ export const Dialog = ({
   children,
   className,
   closeOnBackdrop = false,
-  dangerIcon: DangerIcon = Trash2,
+  dangerIcon: DangerIcon = IconDecommission,
   description,
   footer,
   onClose,

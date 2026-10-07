@@ -14,17 +14,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {
-  Check,
-  CircleAlert,
-  CircleCheck,
-  Copy,
-  Fingerprint as FingerprintIcon,
-  type LucideIcon,
-  ShieldAlert,
-} from "lucide-react";
 import * as React from "react";
 
+import {
+  IconApprove,
+  type IconComponent,
+  IconCopy,
+  IconDanger,
+  IconFingerprint,
+  IconSuccess,
+} from "../icons";
 import { cn } from "../lib/cn";
 import { useCopy } from "./copy-block";
 
@@ -81,11 +80,7 @@ export const Fingerprint = ({
       onClick={() => void copy()}
       type="button"
     >
-      {copied ? (
-        <Check aria-hidden="true" className="size-3.5" />
-      ) : (
-        <Copy aria-hidden="true" className="size-3.5" />
-      )}
+      {copied ? <IconApprove className="size-3.5" /> : <IconCopy className="size-3.5" />}
       {size === "short" ? null : copyText}
     </button>
   ) : null;
@@ -165,14 +160,14 @@ export const Fingerprint = ({
 
 type PanelTone = "danger" | "success" | "warning";
 
-const PANEL: Record<PanelTone, { box: string; icon: LucideIcon; text: string }> = {
+const PANEL: Record<PanelTone, { box: string; icon: IconComponent; text: string }> = {
   danger: {
     box: "border-destructive/40 bg-destructive/5",
-    icon: ShieldAlert,
+    icon: IconDanger,
     text: "text-destructive",
   },
-  success: { box: "border-success/40 bg-success/5", icon: CircleCheck, text: "text-success" },
-  warning: { box: "border-warning/40 bg-warning/5", icon: FingerprintIcon, text: "text-warning" },
+  success: { box: "border-success/40 bg-success/5", icon: IconSuccess, text: "text-success" },
+  warning: { box: "border-warning/40 bg-warning/5", icon: IconFingerprint, text: "text-warning" },
 };
 
 export interface FingerprintConfirmProps {
@@ -223,7 +218,7 @@ export const FingerprintConfirm = ({
       data-tone={tone}
     >
       <div className="flex items-center gap-2">
-        <Icon aria-hidden="true" className={cn("size-4", t.text)} />
+        <Icon className={cn("size-4", t.text)} />
         <h3 className="text-[15px] font-semibold" id={titleId}>
           {title}
         </h3>
@@ -274,12 +269,12 @@ export const FingerprintConfirm = ({
           {result ? (
             result.match ? (
               <p className="flex items-center gap-1.5 text-xs text-success" role="status">
-                <CircleCheck aria-hidden="true" className="size-3.5" />
+                <IconSuccess className="size-3.5" />
                 All {fingerprintGroups(fingerprint).length} groups match.
               </p>
             ) : (
               <p className="flex items-center gap-1.5 text-xs text-destructive" role="alert">
-                <CircleAlert aria-hidden="true" className="size-3.5" />
+                <IconDanger className="size-3.5" />
                 {result.differing.length === 1
                   ? `That fingerprint doesn't match. Group ${result.differing[0] + 1} differs. Don't confirm.`
                   : `That fingerprint doesn't match. ${result.differing.length} groups differ. Don't confirm.`}

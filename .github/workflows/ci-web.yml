@@ -86,6 +86,26 @@ jobs:
         # tsc -b then vite build. This is the step that #99 was about.
         run: npm run build
 
+      - name: Icons match their sources
+        run: npm -w @cryptos-pki/ui run generate:icons && git diff --exit-code packages/ui/src/icons
+
+      - name: No embedded design-tool metadata
+        # A plain `grep -r ... packages apps/console/public` fails outright
+        # (exit 2, not 1) while apps/console/public doesn't exist yet, which
+        # `!` would silently turn into a false pass; find skips a missing path
+        # instead of erroring. gen-icons.mjs and icons.test.tsx are the only
+        # files allowed to say "c2pa" -- stripping and checking for it is the
+        # whole point of both -- so they're excluded by name; any other hit is
+        # a real embedded manifest.
+        run: |
+          hits="$(find packages apps/console/public -type f 2>/dev/null \
+            ! -path '*/node_modules/*' ! -name gen-icons.mjs ! -name icons.test.tsx \
+            -exec grep -lI -i c2pa {} + 2>/dev/null)"
+          if [ -n "$hits" ]; then
+            echo "$hits" >&2
+            exit 1
+          fi
+
       - name: Generated stubs match the pinned protos
         # git status rather than git diff, so a newly generated file counts as
         # stale too instead of passing as untracked.

@@ -14,9 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import type { LucideIcon } from "lucide-react";
-
 import * as React from "react";
+
+import type { IconComponent } from "../icons";
 
 import { cn } from "../lib/cn";
 
@@ -25,8 +25,8 @@ export interface EmptyStateProps {
   body?: React.ReactNode;
   className?: string;
   footnote?: React.ReactNode;
-  /** A lucide icon drawn in the dashed tile. */
-  icon?: LucideIcon;
+  /** A kit icon drawn in the dashed tile. */
+  icon?: IconComponent;
   /** A full illustration; replaces the icon tile. */
   illustration?: React.ReactNode;
   title: React.ReactNode;
@@ -63,7 +63,7 @@ export const EmptyState = ({
                 : "border-dashed border-muted-foreground/50 text-muted-foreground",
             )}
           >
-            <Icon className="size-6" strokeWidth={1.75} />
+            <Icon className="size-6" />
           </span>
         ) : null)}
       <h3 className="text-[15px] font-semibold">{title}</h3>

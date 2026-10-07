@@ -15,9 +15,9 @@ limitations under the License.
 */
 
 import { fireEvent, render, screen, within } from "@testing-library/react";
-import { LayoutGrid, Network } from "lucide-react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { IconDashboard, IconFleet } from "../icons";
 import { expectNoA11yViolations } from "../test/axe";
 import { AppShell, NavItem, NavSection, PageHeader } from "./app-shell";
 
@@ -34,12 +34,12 @@ afterEach(() => vi.unstubAllGlobals());
 const nav = (
   <>
     <NavSection>
-      <NavItem active asChild icon={LayoutGrid} label="Dashboard">
+      <NavItem active asChild icon={IconDashboard} label="Dashboard">
         <a href="/">x</a>
       </NavItem>
     </NavSection>
     <NavSection label="Fleet">
-      <NavItem asChild badge={3} badgeLabel="3 pending approvals" icon={Network} label="Fleet">
+      <NavItem asChild badge={3} badgeLabel="3 pending approvals" icon={IconFleet} label="Fleet">
         <a href="/fleet">x</a>
       </NavItem>
     </NavSection>
@@ -140,7 +140,7 @@ describe("AppShell", () => {
 describe("NavItem", () => {
   it("has no axe violations", async () => {
     const { container } = render(
-      <NavItem active asChild icon={LayoutGrid} label="Dashboard">
+      <NavItem active asChild icon={IconDashboard} label="Dashboard">
         <a href="/">x</a>
       </NavItem>,
     );
@@ -149,7 +149,7 @@ describe("NavItem", () => {
 
   it("shows a lock for items above the caller's level", () => {
     render(
-      <NavItem asChild icon={Network} label="Adopt" locked="Needs admin level">
+      <NavItem asChild icon={IconFleet} label="Adopt" locked="Needs admin level">
         <a href="/adopt">x</a>
       </NavItem>,
     );

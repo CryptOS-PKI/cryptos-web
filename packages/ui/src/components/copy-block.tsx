@@ -14,9 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { Check, Copy, Download } from "lucide-react";
 import * as React from "react";
 
+import { IconApprove, IconCopy, IconDownload } from "../icons";
 import { cn } from "../lib/cn";
 
 const COPIED_MS = 2000;
@@ -83,11 +83,7 @@ export const CopyBlock = ({
             onClick={() => void copy()}
             type="button"
           >
-            {copied ? (
-              <Check aria-hidden="true" className="size-3.5" />
-            ) : (
-              <Copy aria-hidden="true" className="size-3.5" />
-            )}
+            {copied ? <IconApprove className="size-3.5" /> : <IconCopy className="size-3.5" />}
             {copied ? "Copied" : "Copy"}
           </button>
           {filename ? (
@@ -99,7 +95,7 @@ export const CopyBlock = ({
               }
               type="button"
             >
-              <Download aria-hidden="true" className="size-3.5" />
+              <IconDownload className="size-3.5" />
               Download
             </button>
           ) : null}

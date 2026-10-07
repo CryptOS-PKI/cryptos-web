@@ -15,9 +15,9 @@ limitations under the License.
 */
 
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { type LucideIcon, Menu, X } from "lucide-react";
 import * as React from "react";
 
+import { IconClose, type IconComponent, IconMenu } from "../icons";
 import { cn } from "../lib/cn";
 import { useIsDesktop } from "../lib/use-media-query";
 
@@ -71,7 +71,7 @@ export const AppShell = ({ banner, brand, children, nav, navFooter, topBar }: Ap
             onClick={() => setOpen(true)}
             type="button"
           >
-            <Menu aria-hidden="true" className="size-5" />
+            <IconMenu className="size-5" />
           </button>
         )}
         <div className="flex min-w-0 items-center">{brand}</div>
@@ -129,7 +129,7 @@ export const AppShell = ({ banner, brand, children, nav, navFooter, topBar }: Ap
                 onClick={() => setOpen(false)}
                 type="button"
               >
-                <X aria-hidden="true" className="size-5" />
+                <IconClose className="size-5" />
               </button>
             </div>
             <nav aria-label="Main" className="flex flex-1 flex-col">
@@ -161,7 +161,7 @@ export interface NavItemProps {
   badgeLabel?: string;
   children?: React.ReactElement<Record<string, unknown>>;
   href?: string;
-  icon: LucideIcon;
+  icon: IconComponent;
   label: string;
   /** Why the caller's level can't use this page; dims the item and sets a tooltip. */
   locked?: string;
@@ -187,10 +187,7 @@ export const NavItem = ({
   );
   const content = (
     <>
-      <Icon
-        aria-hidden="true"
-        className={cn("size-4 shrink-0", active ? "text-primary" : "text-muted-foreground")}
-      />
+      <Icon className={cn("size-4 shrink-0", active ? "text-primary" : "text-muted-foreground")} />
       <span className="truncate">{label}</span>
       {badge !== undefined && badge !== 0 ? (
         <span

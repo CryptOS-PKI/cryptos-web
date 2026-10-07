@@ -15,20 +15,21 @@ limitations under the License.
 */
 
 import { cva, type VariantProps } from "class-variance-authority";
-import {
-  Check,
-  Circle,
-  CircleAlert,
-  CircleDot,
-  CircleSlash,
-  Clock,
-  Info,
-  type LucideIcon,
-  TriangleAlert,
-  X,
-} from "lucide-react";
 import * as React from "react";
 
+import {
+  IconApprove,
+  type IconComponent,
+  IconDanger,
+  IconDeny,
+  IconEstablished,
+  IconExpiring,
+  IconInfo,
+  IconPending,
+  IconRevoked,
+  IconValid,
+  IconWarning,
+} from "../icons";
 import { cn } from "../lib/cn";
 
 // Kind, level and role badges are square-cornered mono tags; state badges are
@@ -70,26 +71,26 @@ type Tone = "danger" | "muted" | "primary" | "success" | "warning";
 // (filled dot, open circle, clock, exclamation, slash) so a state never relies
 // on colour alone.
 const STATUS = {
-  active: ["success", CircleDot],
-  approved: ["success", Check],
-  denied: ["danger", X],
-  drifted: ["warning", TriangleAlert],
-  error: ["danger", CircleAlert],
-  established: ["success", CircleDot],
-  expired: ["danger", CircleAlert],
-  expiring: ["warning", Clock],
-  "in-sync": ["success", Check],
-  info: ["primary", Info],
-  muted: ["muted", Circle],
-  ok: ["success", Check],
-  pending: ["warning", Circle],
-  rejected: ["danger", X],
-  retired: ["muted", X],
-  retiring: ["warning", Clock],
-  revoked: ["danger", CircleSlash],
-  used: ["muted", CircleDot],
-  valid: ["success", CircleDot],
-} as const satisfies Record<string, readonly [Tone, LucideIcon]>;
+  active: ["success", IconValid],
+  approved: ["success", IconApprove],
+  denied: ["danger", IconDeny],
+  drifted: ["warning", IconWarning],
+  error: ["danger", IconDanger],
+  established: ["success", IconEstablished],
+  expired: ["danger", IconDanger],
+  expiring: ["warning", IconExpiring],
+  "in-sync": ["success", IconApprove],
+  info: ["primary", IconInfo],
+  muted: ["muted", IconPending],
+  ok: ["success", IconApprove],
+  pending: ["warning", IconPending],
+  rejected: ["danger", IconDeny],
+  retired: ["muted", IconDeny],
+  retiring: ["warning", IconExpiring],
+  revoked: ["danger", IconRevoked],
+  used: ["muted", IconEstablished],
+  valid: ["success", IconValid],
+} as const satisfies Record<string, readonly [Tone, IconComponent]>;
 
 export type Status = keyof typeof STATUS;
 
@@ -128,7 +129,7 @@ export const StatusBadge = ({ children, className, status, ...props }: StatusBad
       data-status={status}
       {...props}
     >
-      <Icon aria-hidden="true" className={cn("size-3 shrink-0", iconTone[tone])} strokeWidth={2} />
+      <Icon className={cn("size-3 shrink-0", iconTone[tone])} />
       <span>{children ?? status}</span>
     </span>
   );

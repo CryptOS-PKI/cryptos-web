@@ -14,9 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { Download } from "lucide-react";
 import * as React from "react";
 
+import { IconDownload } from "../icons";
 import { cn } from "../lib/cn";
 import { Button } from "./button";
 import { useCopy } from "./copy-block";
@@ -87,7 +87,7 @@ export const KeyBackupStep = ({
         size="sm"
         variant="secondary"
       >
-        <Download aria-hidden="true" />
+        <IconDownload />
         Download key backup · {filename}
       </Button>
       <div className="flex items-center gap-2 text-[13px]">

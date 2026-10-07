@@ -81,5 +81,6 @@ export {
   type TrustChainItem,
 } from "./components/trust-chain";
 export { typedMatches, TypeToConfirm, type TypeToConfirmProps } from "./components/type-to-confirm";
+export * from "./icons";
 export { cn } from "./lib/cn";
 export { DESKTOP_QUERY, useIsDesktop, useMediaQuery } from "./lib/use-media-query";

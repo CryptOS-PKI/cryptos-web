@@ -14,9 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { ArrowDown, ChevronRight, Circle, CircleDot, CircleSlash } from "lucide-react";
 import * as React from "react";
 
+import { IconChev, IconChevDown, IconEstablished, IconPending, IconRevoked } from "../icons";
 import { cn } from "../lib/cn";
 import { CryptosMark } from "./brand";
 
@@ -46,10 +46,9 @@ const currentText: Record<"root" | ChainStatus, string> = {
 
 const iconFor = (role?: "root", status?: ChainStatus) => {
   if (role === "root") return <CryptosMark className="text-foreground" size={14} />;
-  if (status === "pending") return <Circle aria-hidden="true" className="size-3.5 text-warning" />;
-  if (status === "revoked")
-    return <CircleSlash aria-hidden="true" className="size-3.5 text-destructive" />;
-  return <CircleDot aria-hidden="true" className="size-3.5 text-success" />;
+  if (status === "pending") return <IconPending className="size-3.5 text-warning" />;
+  if (status === "revoked") return <IconRevoked className="size-3.5 text-destructive" />;
+  return <IconEstablished className="size-3.5 text-success" />;
 };
 
 export const TrustChainChip = ({
@@ -127,9 +126,9 @@ export const TrustChain = ({
         >
           {index > 0 ? (
             vertical ? (
-              <ArrowDown aria-hidden="true" className="ml-3 size-3.5 text-muted-foreground" />
+              <IconChevDown className="ml-3 size-3.5 text-muted-foreground" />
             ) : (
-              <ChevronRight aria-hidden="true" className="size-3.5 text-muted-foreground" />
+              <IconChev className="size-3.5 text-muted-foreground" />
             )
           ) : null}
           <TrustChainChip {...item} current={index === items.length - 1} />

@@ -14,9 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { Check, Copy, TriangleAlert } from "lucide-react";
 import * as React from "react";
 
+import { IconApprove, IconCopy, IconWarning } from "../icons";
 import { cn } from "../lib/cn";
 import { Button } from "./button";
 import { useCopy } from "./copy-block";
@@ -47,7 +47,7 @@ export const ShownOnceSecret = ({
         className="flex gap-3 rounded-md border border-l-4 border-warning/40 border-l-warning bg-warning/10 px-3.5 py-3 text-[13px]"
         role="note"
       >
-        <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-warning" />
+        <IconWarning className="mt-0.5 size-4 shrink-0 text-warning" />
         <div>{warning}</div>
       </div>
       <code
@@ -63,7 +63,7 @@ export const ShownOnceSecret = ({
           size="sm"
           variant="outline"
         >
-          {copied ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
+          {copied ? <IconApprove /> : <IconCopy />}
           {copied ? "Copied" : "Copy"}
         </Button>
         <Button className="ml-auto" onClick={onDone} size="sm">

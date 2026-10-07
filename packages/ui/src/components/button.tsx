@@ -16,9 +16,9 @@ limitations under the License.
 
 import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
-import { Lock } from "lucide-react";
 import * as React from "react";
 
+import { IconLock } from "../icons";
 import { cn } from "../lib/cn";
 
 export const buttonVariants = cva(
@@ -127,7 +127,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         {...props}
       >
         {loading ? <Spinner /> : null}
-        {locked ? <Lock aria-hidden="true" /> : null}
+        {locked ? <IconLock /> : null}
         {loading && loadingLabel ? loadingLabel : children}
         {locked ? (
           <span className="sr-only" id={reasonId}>

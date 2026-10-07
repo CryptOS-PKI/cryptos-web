@@ -14,8 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { Moon, Sun } from "lucide-react";
-
+import { IconMoon, IconSun } from "../icons";
 import { cn } from "../lib/cn";
 
 export const ThemeToggle = ({
@@ -39,11 +38,7 @@ export const ThemeToggle = ({
       title={label}
       type="button"
     >
-      {theme === "dark" ? (
-        <Sun aria-hidden="true" className="size-4" />
-      ) : (
-        <Moon aria-hidden="true" className="size-4" />
-      )}
+      {theme === "dark" ? <IconSun className="size-4" /> : <IconMoon className="size-4" />}
     </button>
   );
 };

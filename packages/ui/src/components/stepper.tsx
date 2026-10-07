@@ -14,9 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { Check } from "lucide-react";
 import * as React from "react";
 
+import { IconApprove } from "../icons";
 import { cn } from "../lib/cn";
 
 const stepState = (index: number, current: number) => {
@@ -64,7 +64,7 @@ export const Stepper = ({
             state === "upcoming" && "border border-border text-muted-foreground",
           )}
         >
-          {state === "done" ? <Check className="size-3.5" strokeWidth={3} /> : index + 1}
+          {state === "done" ? <IconApprove className="size-3.5" /> : index + 1}
         </span>
       );
       const text = (

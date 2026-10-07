@@ -14,9 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { Check, ScanLine, X } from "lucide-react";
 import * as React from "react";
 
+import { IconApprove, IconDeny, IconPending } from "../icons";
 import { cn } from "../lib/cn";
 
 export interface Phase {
@@ -60,11 +60,9 @@ export const PhaseRail = ({
                   phase.state === "failed" && "bg-destructive text-destructive-foreground",
                 )}
               >
-                {phase.state === "done" ? <Check className="size-3" strokeWidth={3} /> : null}
-                {phase.state === "current" ? (
-                  <ScanLine className="size-2.5" strokeWidth={3} />
-                ) : null}
-                {phase.state === "failed" ? <X className="size-3" strokeWidth={3} /> : null}
+                {phase.state === "done" ? <IconApprove className="size-3" /> : null}
+                {phase.state === "current" ? <IconPending className="size-2.5" /> : null}
+                {phase.state === "failed" ? <IconDeny className="size-3" /> : null}
               </span>
               {last ? null : (
                 <span

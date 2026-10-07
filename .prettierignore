@@ -8,6 +8,8 @@ package-lock.json
 CHANGELOG.md
 packages/api-client/src/gen
 packages/api-client/.protos
+packages/ui/src/icons/Icon*.tsx
+packages/ui/src/icons/index.ts
 
 # Repo governance and tooling config (owned by the project template, not the app)
 .github

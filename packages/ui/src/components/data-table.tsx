@@ -14,9 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { ArrowDown, ArrowUp, ChevronsUpDown } from "lucide-react";
 import * as React from "react";
 
+import { IconChevDown } from "../icons";
 import { cn } from "../lib/cn";
 import { useIsDesktop } from "../lib/use-media-query";
 
@@ -64,10 +64,12 @@ const ariaSort = (sort: DataTableColumn<unknown>["sort"]) => {
   return;
 };
 
+// No dedicated ascending/unsorted glyphs in the kit: ascending rotates the
+// same down chevron, and unsorted is the down chevron dimmed.
 const SortIcon = ({ sort }: { sort: DataTableColumn<unknown>["sort"] }) => {
-  if (sort === "asc") return <ArrowUp aria-hidden="true" className="size-3" />;
-  if (sort === "desc") return <ArrowDown aria-hidden="true" className="size-3" />;
-  return <ChevronsUpDown aria-hidden="true" className="size-3 opacity-40" />;
+  if (sort === "asc") return <IconChevDown className="size-3 rotate-180" />;
+  if (sort === "desc") return <IconChevDown className="size-3" />;
+  return <IconChevDown className="size-3 opacity-40" />;
 };
 
 const Message = ({ children }: { children: React.ReactNode }) => (

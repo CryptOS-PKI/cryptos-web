@@ -15,9 +15,9 @@ limitations under the License.
 */
 
 import { render, screen } from "@testing-library/react";
-import { FileText } from "lucide-react";
 import { describe, expect, it } from "vitest";
 
+import { IconCertificates } from "../icons";
 import { expectNoA11yViolations } from "../test/axe";
 import { EmptyState } from "./empty-state";
 
@@ -27,7 +27,7 @@ describe("EmptyState", () => {
       <EmptyState
         action={<button type="button">Issue certificate</button>}
         body="Certificates issued by any node in the fleet appear here."
-        icon={FileText}
+        icon={IconCertificates}
         title="No certificates yet"
       />,
     );
@@ -39,7 +39,7 @@ describe("EmptyState", () => {
       <EmptyState
         action={<button type="button">Issue certificate</button>}
         body="Certificates issued by any node in the fleet appear here."
-        icon={FileText}
+        icon={IconCertificates}
         title="No certificates yet"
       />,
     );
