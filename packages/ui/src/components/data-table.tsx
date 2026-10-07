@@ -65,11 +65,19 @@ const ariaSort = (sort: DataTableColumn<unknown>["sort"]) => {
 };
 
 // No dedicated ascending/unsorted glyphs in the kit: ascending rotates the
-// same down chevron, and unsorted is the down chevron dimmed.
+// same down chevron to point up. Unsorted can't just dim that same unrotated
+// (descending) shape -- a state never relies on colour or opacity alone -- so
+// it's a distinct up/down pair, two IconChevDown, which differs in shape and
+// element count from both the ascending and the descending state.
 const SortIcon = ({ sort }: { sort: DataTableColumn<unknown>["sort"] }) => {
   if (sort === "asc") return <IconChevDown className="size-3 rotate-180" />;
   if (sort === "desc") return <IconChevDown className="size-3" />;
-  return <IconChevDown className="size-3 opacity-40" />;
+  return (
+    <span className="flex flex-col items-center opacity-40" data-testid="sort-icon-unsorted">
+      <IconChevDown className="size-2.5 rotate-180" />
+      <IconChevDown className="-mt-1 size-2.5" />
+    </span>
+  );
 };
 
 const Message = ({ children }: { children: React.ReactNode }) => (

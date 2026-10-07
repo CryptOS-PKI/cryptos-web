@@ -129,6 +129,30 @@ describe("DataTable", () => {
     expect(onSort).toHaveBeenCalledOnce();
   });
 
+  it("renders a distinct shape for ascending, descending and unsorted", () => {
+    const sorted: DataTableColumn<Cert>[] = [
+      { ...columns[0], onSort: () => {}, sort: "asc" },
+      { ...columns[1], onSort: () => {}, sort: "desc" },
+      { ...columns[2], onSort: () => {}, sort: false },
+    ];
+    render(
+      <DataTable columns={sorted} label="Certificates" rowKey={(r) => r.serial} rows={rows} />,
+    );
+    const asc = within(screen.getByRole("columnheader", { name: /Subject CN/ }));
+    const desc = within(screen.getByRole("columnheader", { name: /Serial/ }));
+    const unsorted = within(screen.getByRole("columnheader", { name: /Days left/ }));
+
+    const ascIcons = asc.getAllByRole("button")[0].querySelectorAll("svg");
+    const descIcons = desc.getAllByRole("button")[0].querySelectorAll("svg");
+    expect(ascIcons).toHaveLength(1);
+    expect(descIcons).toHaveLength(1);
+    expect(ascIcons[0]).toHaveClass("rotate-180");
+    expect(descIcons[0]).not.toHaveClass("rotate-180");
+
+    const unsortedWrapper = unsorted.getByTestId("sort-icon-unsorted");
+    expect(unsortedWrapper.querySelectorAll("svg")).toHaveLength(2);
+  });
+
   it("renders a filter row when a column has a filter", () => {
     const withFilter: DataTableColumn<Cert>[] = [
       { ...columns[0], filter: <input aria-label="Filter CN" /> },

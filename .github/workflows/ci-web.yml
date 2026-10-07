@@ -92,15 +92,26 @@ jobs:
       - name: No embedded design-tool metadata
         # A plain `grep -r ... packages apps/console/public` fails outright
         # (exit 2, not 1) while apps/console/public doesn't exist yet, which
-        # `!` would silently turn into a false pass; find skips a missing path
-        # instead of erroring. gen-icons.mjs and icons.test.tsx are the only
-        # files allowed to say "c2pa" -- stripping and checking for it is the
-        # whole point of both -- so they're excluded by name; any other hit is
-        # a real embedded manifest.
+        # `!` would silently turn into a false pass. `find` with a missing
+        # starting path is no better under this shell's `-eo pipefail`: find
+        # itself exits 1 when one of its starting points doesn't exist, which
+        # aborts the step before the hits check ever runs -- so the directory
+        # list is built from only the paths that exist first. gen-icons.mjs
+        # and icons.test.tsx are the only files allowed to say "c2pa" --
+        # stripping and checking for it is the whole point of both -- so
+        # they're excluded by name; any other hit is a real embedded manifest.
+        # GNU find also propagates a non-zero exit from `-exec ... +` itself,
+        # and grep exits 1 on the normal, clean case where nothing matches --
+        # `|| true` keeps that from aborting the step under `-e`; the actual
+        # verdict is the $hits check below.
         run: |
-          hits="$(find packages apps/console/public -type f 2>/dev/null \
+          dirs=()
+          for d in packages apps/console/public; do
+            [ -d "$d" ] && dirs+=("$d")
+          done
+          hits="$(find "${dirs[@]}" -type f \
             ! -path '*/node_modules/*' ! -name gen-icons.mjs ! -name icons.test.tsx \
-            -exec grep -lI -i c2pa {} + 2>/dev/null)"
+            -exec grep -lI -i c2pa {} + || true)"
           if [ -n "$hits" ]; then
             echo "$hits" >&2
             exit 1
