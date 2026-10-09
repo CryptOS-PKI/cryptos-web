@@ -120,7 +120,15 @@ describe("check-release-bundle", () => {
       assert.match(result.stdout, /release bundle clean/);
     });
 
-    for (const marker of ["__CRYPTOS_DEV_UI_ISSUE__", "__CRYPTOS_MOCK__", "c2pa"]) {
+    for (const marker of [
+      "__CRYPTOS_DEV_UI_ISSUE__",
+      "__CRYPTOS_MOCK__",
+      "__CRYPTOS_MOCK_ENROLLMENT__",
+      "__CRYPTOS_MOCK_PROFILES__",
+      "__CRYPTOS_MOCK_ADAPTERS__",
+      "__CRYPTOS_MOCK_AUDIT__",
+      "c2pa",
+    ]) {
       it(`exits EXIT_DEV_CODE_FOUND and names the file when a built file carries ${marker}`, () => {
         writeDistShape(distDir, `const m="${marker}";console.log(m);`);
 

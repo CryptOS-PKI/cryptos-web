@@ -21,6 +21,7 @@ import { canIssue, type CertKind } from "@/lib/certs";
 import { fleetClient } from "@/lib/fleet/client";
 import { fleetMode } from "@/lib/fleet/mode";
 import type { Node, NodeRole } from "@/lib/mock";
+import { mockEnrollments } from "@/lib/mock-fixtures";
 import { addNode, getNodeByCn } from "@/lib/nodes";
 
 import type { EnrollmentRequest as ProtoEnrollmentRequest } from "@cryptos-pki/api-client/cryptos/fleet/v1/fleet_pb";
@@ -107,44 +108,12 @@ const daysFromNow = (days: number): string => {
   return new Date(base + days * 86_400_000).toISOString();
 };
 
-const seed = (): EnrollmentRequest[] => [
-  {
-    address: "10.20.1.80:8443",
-    attestation: { nodeId: "nid-7f3a", tpm: "TPM · sealed" },
-    csr: { keyType: "ECDSA P-384", subjectCn: "ACME Issuing CA G4" },
-    id: "enr-0001",
-    kind: "SUBORDINATE",
-    parentCn: "ACME Intermediate CA G1",
-    proposedName: "acme-issuing-04",
-    requestedAt: daysFromNow(-1),
-    role: "issuing",
-    status: "PENDING",
-  },
-  {
-    address: "10.20.10.80:8443",
-    attestation: { nodeId: "nid-2b9c", tpm: "TPM · sealed" },
-    csr: { keyType: "ECDSA P-384", subjectCn: "ACME Intermediate CA R3" },
-    id: "enr-0002",
-    kind: "SUBORDINATE",
-    parentCn: "ACME Root CA R2",
-    proposedName: "acme-intermediate-04",
-    requestedAt: daysFromNow(-2),
-    role: "intermediate",
-    status: "PENDING",
-  },
-  {
-    address: "10.20.2.80:8443",
-    attestation: { nodeId: "nid-9d11", tpm: "UNAVAILABLE · nodeID" },
-    csr: { keyType: "ECDSA P-256", subjectCn: "ACME Issuing CA H3" },
-    id: "enr-0003",
-    kind: "SUBORDINATE",
-    parentCn: "ACME Intermediate CA G2", // REVOKED parent -> cannot approve
-    proposedName: "acme-issuing-h03",
-    requestedAt: daysFromNow(-3),
-    role: "issuing",
-    status: "PENDING",
-  },
-];
+// The literal seed data lives in mock-fixtures.real.ts (vite.config.ts's
+// resolve.alias swaps it for the empty mock-fixtures.stub.ts array in a
+// release build), so it never reaches that bundle; a fresh copy here keeps
+// __resetEnrollments() from handing back the same array instance a prior
+// test mutated.
+const seed = (): EnrollmentRequest[] => [...mockEnrollments];
 
 let requests: EnrollmentRequest[] = seed();
 const listeners = new Set<() => void>();

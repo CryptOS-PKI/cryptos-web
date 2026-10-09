@@ -31,7 +31,15 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
-export const MARKERS = ["__CRYPTOS_DEV_UI_ISSUE__", "__CRYPTOS_MOCK__", "c2pa"];
+export const MARKERS = [
+  "__CRYPTOS_DEV_UI_ISSUE__",
+  "__CRYPTOS_MOCK__",
+  "__CRYPTOS_MOCK_ENROLLMENT__",
+  "__CRYPTOS_MOCK_PROFILES__",
+  "__CRYPTOS_MOCK_ADAPTERS__",
+  "__CRYPTOS_MOCK_AUDIT__",
+  "c2pa",
+];
 
 const walk = (dir) =>
   readdirSync(dir).flatMap((entry) => {

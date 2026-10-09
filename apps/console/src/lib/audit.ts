@@ -18,6 +18,7 @@ import { useEffect, useSyncExternalStore } from "react";
 
 import { fleetClient } from "@/lib/fleet/client";
 import { fleetMode } from "@/lib/fleet/mode";
+import { mockAuditEvents } from "@/lib/mock-fixtures";
 
 import type { AuditEvent as ProtoAuditEvent } from "@cryptos-pki/api-client/cryptos/fleet/v1/fleet_pb";
 
@@ -63,93 +64,13 @@ const AUDIT_EPOCH_MS = Date.parse("2026-07-01T00:00:00Z");
 const daysFromNow = (days: number): string =>
   new Date(AUDIT_EPOCH_MS + days * 86_400_000).toISOString();
 
-const seed = (): AuditEvent[] => [
-  {
-    actorCn: "operator@example.org",
-    actorKind: "cert",
-    at: daysFromNow(-1),
-    id: "aud-0009",
-    outcome: "ok",
-    kind: "revoked",
-    summary: "Revoked svc-9.acme.example (keyCompromise)",
-    targetKind: "cert",
-    via: "web",
-  },
-  {
-    at: daysFromNow(-2),
-    id: "aud-0008",
-    kind: "enroll-approved",
-    summary: "Approved enrollment acme-issuing-03 under ACME Intermediate CA G1",
-    targetKind: "node",
-    targetPath: "/nodes/acme-issuing-03",
-  },
-  {
-    at: daysFromNow(-3),
-    id: "aud-0007",
-    kind: "protocol-toggled",
-    summary: "Enabled ACME (RFC 8555)",
-    targetKind: "protocol",
-    targetPath: "/protocols/acme",
-  },
-  {
-    at: daysFromNow(-4),
-    id: "aud-0006",
-    kind: "config-applied",
-    summary: "Config applied to acme-issuing-01",
-    targetKind: "node",
-    targetPath: "/nodes/acme-issuing-01",
-  },
-  {
-    at: daysFromNow(-5),
-    id: "aud-0005",
-    kind: "rekeyed",
-    summary: "Re-key ceremony completed for acme-root-01",
-    targetKind: "node",
-    targetPath: "/root/acme-root-01",
-  },
-  {
-    at: daysFromNow(-6),
-    id: "aud-0004",
-    kind: "renewed",
-    summary: "Renewed ldap-a.acme.example",
-    targetKind: "cert",
-  },
-  {
-    at: daysFromNow(-7),
-    id: "aud-0003",
-    kind: "profile-updated",
-    summary: "Updated profile Code Signing",
-    targetKind: "profile",
-    targetPath: "/profiles/Code Signing",
-  },
-  {
-    at: daysFromNow(-8),
-    id: "aud-0002",
-    kind: "enroll-rejected",
-    summary: "Rejected enrollment acme-issuing-h03 (failed attestation)",
-    targetKind: "enrollment",
-  },
-  {
-    at: daysFromNow(-9),
-    id: "aud-0001",
-    kind: "profile-created",
-    summary: "Created profile TLS Server (LDAPS)",
-    targetKind: "profile",
-    targetPath: "/profiles/TLS Server (LDAPS)",
-  },
-  {
-    actorCn: "operator@example.org",
-    actorKind: "mcp_key",
-    at: daysFromNow(-10),
-    id: "aud-0000",
-    kind: "issued",
-    outcome: "ok",
-    summary: "Issued leaf svc-1.acme.example on acme-issuing-01",
-    targetKind: "cert",
-    tool: "cert_issue_from_csr",
-    via: "mcp",
-  },
-];
+// The literal seed data lives in mock-fixtures.real.ts (vite.config.ts's
+// resolve.alias swaps it for the empty mock-fixtures.stub.ts array in a
+// release build), so it never reaches that bundle; a fresh copy here keeps
+// __resetAudit() from handing back the same array instance a prior test
+// mutated. mock-fixtures.real.ts only imports AuditEvent as a type, so this
+// stays a leaf store at runtime: it imports no domain store's values.
+const seed = (): AuditEvent[] => [...mockAuditEvents];
 
 let events: AuditEvent[] = seed();
 const listeners = new Set<() => void>();
