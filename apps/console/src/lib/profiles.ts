@@ -20,6 +20,7 @@ import { useEffect, useSyncExternalStore } from "react";
 import { recordAudit } from "@/lib/audit";
 import { fleetClient } from "@/lib/fleet/client";
 import { fleetMode } from "@/lib/fleet/mode";
+import { mockProfiles } from "@/lib/mock-fixtures";
 
 import {
   type CertificateProfile as ProtoCertProfile,
@@ -77,64 +78,12 @@ export const emptySubject = (): ProfileSubject => ({
   organization: "",
 });
 
-const seed = (): CertProfile[] => [
-  {
-    extKeyUsage: ["server_auth"],
-    extraExtensions: [],
-    isCA: false,
-    keyAlg: "ECDSA-P384",
-    keyUsage: ["digital_signature", "key_encipherment"],
-    name: "TLS Server (LDAPS)",
-    sans: emptySans(),
-    subject: emptySubject(),
-    validityDays: 365,
-  },
-  {
-    extKeyUsage: ["client_auth"],
-    extraExtensions: [],
-    isCA: false,
-    keyAlg: "ECDSA-P384",
-    keyUsage: ["digital_signature"],
-    name: "TLS Client",
-    sans: emptySans(),
-    subject: emptySubject(),
-    validityDays: 365,
-  },
-  {
-    extKeyUsage: ["server_auth", "client_auth"],
-    extraExtensions: [],
-    isCA: false,
-    keyAlg: "ECDSA-P384",
-    keyUsage: ["digital_signature", "key_encipherment"],
-    name: "Domain Controller",
-    sans: emptySans(),
-    subject: emptySubject(),
-    validityDays: 365,
-  },
-  {
-    extKeyUsage: ["code_signing"],
-    extraExtensions: [],
-    isCA: false,
-    keyAlg: "RSA-3072",
-    keyUsage: ["digital_signature"],
-    name: "Code Signing",
-    sans: emptySans(),
-    subject: emptySubject(),
-    validityDays: 1095,
-  },
-  {
-    extKeyUsage: [],
-    extraExtensions: [],
-    isCA: true,
-    keyAlg: "ECDSA-P384",
-    keyUsage: ["cert_sign", "crl_sign"],
-    name: "Subordinate CA",
-    pathLen: 0,
-    sans: emptySans(),
-    subject: emptySubject(),
-    validityDays: 1825,
-  },
-];
+// The literal seed data lives in mock-fixtures.real.ts (vite.config.ts's
+// resolve.alias swaps it for the empty mock-fixtures.stub.ts array in a
+// release build), so it never reaches that bundle; a fresh copy here keeps
+// __resetProfiles() from handing back the same array instance a prior test
+// mutated.
+const seed = (): CertProfile[] => [...mockProfiles];
 
 let profiles: CertProfile[] = seed();
 const listeners = new Set<() => void>();

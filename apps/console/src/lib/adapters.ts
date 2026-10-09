@@ -19,6 +19,7 @@ import { useEffect, useSyncExternalStore } from "react";
 import { recordAudit } from "@/lib/audit";
 import { fleetClient } from "@/lib/fleet/client";
 import { fleetMode } from "@/lib/fleet/mode";
+import { mockAdapters } from "@/lib/mock-fixtures";
 
 import type { EnrollmentAdapter as ProtoEnrollmentAdapter } from "@cryptos-pki/api-client/cryptos/fleet/v1/fleet_pb";
 
@@ -45,38 +46,12 @@ export interface EnrollmentAdapter {
   profile: string;
 }
 
-const seed = (): EnrollmentAdapter[] => [
-  {
-    challenges: ["http-01", "dns-01"],
-    enabled: true,
-    endpoint: "https://pki.acme.example/acme/directory",
-    kind: "acme",
-    name: "ACME (RFC 8555)",
-    profile: "TLS Server (LDAPS)",
-  },
-  {
-    enabled: true,
-    endpoint: "https://pki.acme.example/adpolicyprovider",
-    gpoTemplate: "DomainController",
-    kind: "ms-autoenroll",
-    name: "Windows Autoenrollment (XCEP/WSTEP)",
-    profile: "Domain Controller",
-  },
-  {
-    enabled: false,
-    endpoint: "https://pki.acme.example/scep",
-    kind: "scep",
-    name: "SCEP (RFC 8894)",
-    profile: "TLS Client",
-  },
-  {
-    enabled: false,
-    endpoint: "https://pki.acme.example/.well-known/est",
-    kind: "est",
-    name: "EST (RFC 7030)",
-    profile: "TLS Client",
-  },
-];
+// The literal seed data lives in mock-fixtures.real.ts (vite.config.ts's
+// resolve.alias swaps it for the empty mock-fixtures.stub.ts array in a
+// release build), so it never reaches that bundle; a fresh copy here keeps
+// __resetAdapters() from handing back the same array instance a prior test
+// mutated.
+const seed = (): EnrollmentAdapter[] => [...mockAdapters];
 
 let adapters: EnrollmentAdapter[] = seed();
 const listeners = new Set<() => void>();
