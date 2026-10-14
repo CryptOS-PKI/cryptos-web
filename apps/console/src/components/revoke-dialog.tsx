@@ -14,9 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import { Button, Dialog, Field, Notice } from "@cryptos-pki/ui";
 import { useState } from "react";
 
-import { Button } from "@/components/ui/button";
 import { type RevocationReason, revokeCert } from "@/lib/certs";
 
 const reasons: RevocationReason[] = [
@@ -52,57 +52,41 @@ export const RevokeDialog = ({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-      role="presentation"
-    >
-      <div
-        aria-labelledby="revoke-dialog-title"
-        aria-modal="true"
-        className="w-full max-w-sm space-y-4 rounded-xl border bg-card p-5 shadow-xl"
-        role="dialog"
-      >
-        <div className="space-y-1">
-          <h2 className="text-lg font-bold" id="revoke-dialog-title">
-            Revoke certificate
-          </h2>
-          <p className="font-mono text-xs text-muted-foreground">
-            {subjectCn} &middot; {serial}
-          </p>
-        </div>
-        <label className="block space-y-1">
-          <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-            Reason
-          </span>
-          <select
-            className="w-full rounded-md border bg-card px-3 py-2 font-mono text-sm"
-            onChange={(e) => setReason(e.target.value as RevocationReason)}
-            value={reason}
-          >
-            {reasons.map((r) => (
-              <option key={r} value={r}>
-                {r}
-              </option>
-            ))}
-          </select>
-        </label>
-        {error ? (
-          <p className="font-mono text-xs text-destructive" role="alert">
-            {error}
-          </p>
-        ) : null}
-        <div className="flex justify-end gap-2">
+    <Dialog
+      description={`${subjectCn} · ${serial}`}
+      footer={
+        <>
           <Button disabled={pending} onClick={onClose} size="sm" variant="outline">
             Cancel
           </Button>
           <Button disabled={pending} onClick={confirm} size="sm" variant="destructive">
             {pending ? "Revoking…" : "Revoke"}
           </Button>
-        </div>
-      </div>
-    </div>
+        </>
+      }
+      onClose={onClose}
+      open
+      title="Revoke certificate"
+      variant="destructive"
+    >
+      <Field label="Reason">
+        <select
+          className="flex h-9 w-full rounded-md border border-input bg-background px-3 font-mono text-sm shadow-sm focus-visible:border-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          onChange={(e) => setReason(e.target.value as RevocationReason)}
+          value={reason}
+        >
+          {reasons.map((r) => (
+            <option key={r} value={r}>
+              {r}
+            </option>
+          ))}
+        </select>
+      </Field>
+      {error ? (
+        <Notice role="alert" tone="danger">
+          {error}
+        </Notice>
+      ) : null}
+    </Dialog>
   );
 };

@@ -14,13 +14,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import {
+  Button,
+  Card,
+  type IconComponent,
+  IconEstablished,
+  IconPending,
+  IconRevoked,
+} from "@cryptos-pki/ui";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 
 import type { IdentityState } from "@/lib/mock";
 
 import { CertInventory } from "@/components/cert-inventory";
 import { NodeDetailPanel } from "@/components/node-detail-panel";
-import { Button } from "@/components/ui/button";
 import { roleLabels } from "@/lib/fleet/labels";
 import { chainToRoot, useNode } from "@/lib/nodes";
 import { cn } from "@/lib/utils";
@@ -29,6 +36,14 @@ const stateTone: Record<IdentityState, string> = {
   AWAITING_CERT: "text-warning",
   ESTABLISHED: "text-success",
   REVOKED: "text-destructive",
+};
+
+// A state is never shown by colour alone: each trust-chain link also carries a
+// distinct icon shape (established/pending/revoked).
+const stateIcon: Record<IdentityState, IconComponent> = {
+  AWAITING_CERT: IconPending,
+  ESTABLISHED: IconEstablished,
+  REVOKED: IconRevoked,
 };
 
 export const NodeDetailPage = () => {
@@ -63,52 +78,62 @@ export const NodeDetailPage = () => {
         <h1 className="text-2xl font-bold tracking-tight">{node.name}</h1>
         <p className="font-mono text-sm text-muted-foreground">{roleLabels[node.role]}</p>
       </div>
-      <div className="w-full rounded-xl border bg-card">
+      <Card className="w-full overflow-hidden">
         <NodeDetailPanel
           node={node}
           onRenamed={(newName) => navigate(`/nodes/${newName}`, { replace: true })}
         />
-      </div>
-      <div className="w-full rounded-xl border bg-card">
+      </Card>
+      <Card className="w-full overflow-hidden">
         <div className="border-b px-4 py-3 font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
           Trust chain
         </div>
         <div className="flex flex-wrap items-center gap-2 p-4 font-mono text-xs">
-          {chainToRoot(node).map((n, i) => (
-            <span className="flex items-center gap-2" key={n.name}>
-              {i > 0 ? <span className="text-muted-foreground">{"\u2192"}</span> : null}
-              {n.name === node.name ? (
-                <span
-                  className={cn(
-                    "rounded-md border bg-secondary px-2.5 py-1 font-semibold",
-                    stateTone[n.identityState],
-                  )}
-                >
-                  {n.name}
-                </span>
-              ) : (
-                <Link
-                  className={cn(
-                    "rounded-md border px-2.5 py-1 hover:bg-accent",
-                    stateTone[n.identityState],
-                  )}
-                  to={`/nodes/${n.name}`}
-                >
-                  {n.name}
-                </Link>
-              )}
-            </span>
-          ))}
+          {chainToRoot(node).map((n, i) => {
+            const Icon = stateIcon[n.identityState];
+            const content = (
+              <>
+                <Icon className="size-3.5" />
+                {n.name}
+              </>
+            );
+            return (
+              <span className="flex items-center gap-2" key={n.name}>
+                {i > 0 ? <span className="text-muted-foreground">{"\u2192"}</span> : null}
+                {n.name === node.name ? (
+                  <span
+                    aria-current="true"
+                    className={cn(
+                      "inline-flex items-center gap-1.5 rounded-md border bg-secondary px-2.5 py-1 font-semibold",
+                      stateTone[n.identityState],
+                    )}
+                  >
+                    {content}
+                  </span>
+                ) : (
+                  <Link
+                    className={cn(
+                      "inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 hover:bg-accent",
+                      stateTone[n.identityState],
+                    )}
+                    to={`/nodes/${n.name}`}
+                  >
+                    {content}
+                  </Link>
+                )}
+              </span>
+            );
+          })}
         </div>
-      </div>
-      <div className="w-full rounded-xl border bg-card">
+      </Card>
+      <Card className="w-full overflow-hidden">
         <div className="border-b px-4 py-3 font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
           Certificates
         </div>
         <div className="p-4">
           <CertInventory nodeName={node.name} />
         </div>
-      </div>
+      </Card>
       <Button asChild variant="outline">
         <Link to="/nodes">Back to nodes</Link>
       </Button>

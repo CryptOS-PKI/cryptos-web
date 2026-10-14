@@ -19,9 +19,20 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { RevokeDialog } from "@/components/revoke-dialog";
 import { __resetCerts, certsFor, issueCert } from "@/lib/certs";
+import { expectNoA11yViolations } from "@/test/axe";
 
 describe("RevokeDialog", () => {
   beforeEach(() => __resetCerts());
+
+  it("has no axe violations", async () => {
+    const cert = await issueCert("acme-issuing-01", {
+      kind: "leaf",
+      subjectCn: "x.acme.example",
+      validityDays: 30,
+    });
+    render(<RevokeDialog onClose={vi.fn()} serial={cert.serial} subjectCn={cert.subjectCn} />);
+    await expectNoA11yViolations(document.body);
+  });
 
   it("revokes with the chosen reason and closes", async () => {
     const cert = await issueCert("acme-issuing-01", {

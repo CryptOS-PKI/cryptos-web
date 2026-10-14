@@ -14,53 +14,35 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import { Button, Notice, Stepper } from "@cryptos-pki/ui";
 import { useState } from "react";
 
 import type { Node } from "@/lib/mock";
 
-import { Button } from "@/components/ui/button";
 import { fleetMode } from "@/lib/fleet/mode";
 import { DEFAULT_REKEY_PROFILE, rekeyNode, type RekeyResult } from "@/lib/rekey";
-import { cn } from "@/lib/utils";
-
-const stepClass = (i: number, current: number): string => {
-  if (i < current) return "text-success";
-  if (i === current) return "text-foreground";
-  return "text-muted-foreground";
-};
 
 // MockRekeyDemo keeps the pre-live stepped walkthrough for `mock` mode: it
 // drives no RPC, just advances a local step counter so the fixture UI still
 // demonstrates the ceremony shape.
 const MockRekeyDemo = ({ node }: { node: Node }) => {
   const isRoot = node.role === "root";
-  const steps = isRoot
+  const labels = isRoot
     ? ["Generate new key", "Self-sign new certificate", "Install new identity"]
     : ["Generate new key", "Generate CSR", "Parent signs", "Install new identity"];
+  const steps = labels.map((label) => ({ id: label, label }));
   const [current, setCurrent] = useState(0);
   const done = current >= steps.length;
 
   return (
     <div className="max-w-md space-y-4">
-      <ol className="space-y-2">
-        {steps.map((label, i) => (
-          <li
-            className={cn("flex items-center gap-2 font-mono text-sm", stepClass(i, current))}
-            key={label}
-          >
-            <span className="inline-flex size-5 items-center justify-center rounded-full border text-[11px]">
-              {i < current ? "\u2713" : i + 1}
-            </span>
-            {label}
-          </li>
-        ))}
-      </ol>
+      <Stepper current={current} label={`Re-key ${node.name}`} steps={steps} />
 
       {done ? (
-        <p className="font-mono text-sm text-success">Re-key complete for {node.name}.</p>
+        <Notice tone="success">Re-key complete for {node.name}.</Notice>
       ) : (
         <Button onClick={() => setCurrent((c) => c + 1)} type="button">
-          {steps[current]}
+          {labels[current]}
         </Button>
       )}
     </div>
@@ -102,18 +84,18 @@ const LiveRekey = ({ node }: { node: Node }) => {
 
   if (result) {
     return (
-      <div className="max-w-md space-y-1 rounded-md border bg-secondary p-3">
-        <p className="font-mono text-sm text-success">Re-key complete for {node.name}.</p>
-        <p className="font-mono text-xs text-muted-foreground">
+      <Notice className="max-w-md" tone="success">
+        <p>Re-key complete for {node.name}.</p>
+        <p className="text-muted-foreground">
           subject <span className="text-foreground">{result.subjectCn}</span>
         </p>
-        <p className="font-mono text-xs text-muted-foreground">
+        <p className="text-muted-foreground">
           issued by <span className="text-foreground">{result.issuerCn}</span>
         </p>
-        <p className="font-mono text-xs text-muted-foreground">
+        <p className="text-muted-foreground">
           chain length <span className="text-foreground">{result.chainLen}</span>
         </p>
-      </div>
+      </Notice>
     );
   }
 
@@ -124,9 +106,9 @@ const LiveRekey = ({ node }: { node: Node }) => {
         new chain in one step.
       </p>
       {error ? (
-        <p className="font-mono text-xs text-destructive" role="alert">
+        <Notice role="alert" tone="danger">
           {error}
-        </p>
+        </Notice>
       ) : null}
       <Button disabled={pending} onClick={() => void submit()} type="button">
         {pending ? "Re-keying…" : `Re-key ${node.name}`}

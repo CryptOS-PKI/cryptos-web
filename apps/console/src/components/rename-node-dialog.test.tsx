@@ -19,6 +19,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { RenameNodeDialog } from "@/components/rename-node-dialog";
 import { type Node } from "@/lib/mock";
+import { expectNoA11yViolations } from "@/test/axe";
 
 const renameNode = vi.fn();
 vi.mock("@/lib/nodes", () => ({
@@ -53,6 +54,11 @@ describe("RenameNodeDialog", () => {
   beforeEach(() => {
     renameNode.mockReset();
     renameNode.mockImplementation((_n: Node, newName: string) => Promise.resolve(newName));
+  });
+
+  it("has no axe violations", async () => {
+    renderDialog();
+    await expectNoA11yViolations(document.body);
   });
 
   it("starts with the current name and keeps Rename enabled for an unchanged name", () => {

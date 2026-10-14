@@ -14,11 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import { Button, Field, Input, inputClasses, Notice } from "@cryptos-pki/ui";
 import { useEffect, useState } from "react";
 
 import type { Node } from "@/lib/mock";
 
-import { Button } from "@/components/ui/button";
 import { canIssue, type Cert, type CertKind, issueCert } from "@/lib/certs";
 import { parseCsr, type ParsedCsr } from "@/lib/crypto/csr";
 import {
@@ -30,10 +30,6 @@ import {
 } from "@/lib/crypto/leaf-key";
 import { fleetMode } from "@/lib/fleet/mode";
 import { getProfile, useProfiles } from "@/lib/profiles";
-import { cn } from "@/lib/utils";
-
-const field =
-  "w-full rounded-md border bg-card px-3 py-2 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-ring";
 
 // download triggers a browser download of contents under filename without
 // leaving a URL object behind.
@@ -79,12 +75,15 @@ const KeyExport = ({ privateKey, subjectCn }: { privateKey: CryptoKey; subjectCn
       <p className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
         Export private key (always encrypted)
       </p>
-      <label className="block space-y-1">
-        <span className="font-mono text-[11px] text-muted-foreground">
-          Passphrase (min {MIN_PASSPHRASE_LENGTH} characters)
-        </span>
-        <input
-          className={field}
+      <Field
+        error={
+          passphrase && !longEnough
+            ? `Passphrase must be at least ${MIN_PASSPHRASE_LENGTH} characters.`
+            : undefined
+        }
+        label={`Passphrase (min ${MIN_PASSPHRASE_LENGTH} characters)`}
+      >
+        <Input
           onChange={(e) => {
             setPassphrase(e.target.value);
             setSaved(false);
@@ -93,7 +92,7 @@ const KeyExport = ({ privateKey, subjectCn }: { privateKey: CryptoKey; subjectCn
           type="password"
           value={passphrase}
         />
-      </label>
+      </Field>
       <Button
         onClick={() => {
           setPassphrase(generateStrongPassphrase());
@@ -106,11 +105,6 @@ const KeyExport = ({ privateKey, subjectCn }: { privateKey: CryptoKey; subjectCn
       >
         Generate strong passphrase
       </Button>
-      {passphrase && !longEnough ? (
-        <p className="font-mono text-xs text-destructive">
-          Passphrase must be at least {MIN_PASSPHRASE_LENGTH} characters.
-        </p>
-      ) : null}
       <label className="flex items-center gap-2 font-mono text-xs">
         <input
           checked={saved}
@@ -121,11 +115,11 @@ const KeyExport = ({ privateKey, subjectCn }: { privateKey: CryptoKey; subjectCn
         <span>I have saved the passphrase somewhere safe</span>
       </label>
       {error ? (
-        <p className="font-mono text-xs text-destructive" role="alert">
+        <Notice role="alert" tone="danger">
           {error}
-        </p>
+        </Notice>
       ) : null}
-      {done ? <p className="font-mono text-xs text-success">Encrypted key downloaded.</p> : null}
+      {done ? <Notice tone="success">Encrypted key downloaded.</Notice> : null}
       <Button
         disabled={!longEnough || !saved || pending}
         onClick={exportKey}
@@ -260,12 +254,12 @@ export const IssueForm = ({ node, onIssued }: { node: Node; onIssued: (cert: Cer
   if (issued) {
     return (
       <div className="max-w-md space-y-3">
-        <div className="space-y-1 rounded-md border bg-secondary p-3">
-          <p className="font-mono text-sm">
+        <Notice tone="success">
+          <p>
             Issued <span className="text-success">{issued.subjectCn}</span>
           </p>
-          <p className="font-mono text-xs text-muted-foreground">serial {issued.serial}</p>
-        </div>
+          <p className="text-muted-foreground">serial {issued.serial}</p>
+        </Notice>
         {privateKey ? <KeyExport privateKey={privateKey} subjectCn={issued.subjectCn} /> : null}
       </div>
     );
@@ -274,84 +268,69 @@ export const IssueForm = ({ node, onIssued }: { node: Node; onIssued: (cert: Cer
   return (
     <div className="max-w-md space-y-4">
       {kinds.length > 1 ? (
-        <div className="flex gap-1.5">
+        <div className="flex gap-1.5" role="group">
           {kinds.map((k) => (
-            <button
-              className={cn(
-                "rounded-md border px-3 py-1.5 font-mono text-xs",
-                kind === k
-                  ? "bg-secondary text-foreground"
-                  : "text-muted-foreground hover:bg-secondary",
-              )}
+            <Button
               key={k}
               onClick={() => setKind(k)}
+              size="sm"
               type="button"
+              variant={kind === k ? "secondary" : "ghost"}
             >
               {k === "subordinate-ca" ? "Subordinate CA" : "Leaf"}
-            </button>
+            </Button>
           ))}
         </div>
       ) : null}
 
-      <div className="flex gap-1.5">
+      <div className="flex gap-1.5" role="group">
         {(["generate", "paste"] as const).map((sourceOption) => (
-          <button
-            className={cn(
-              "rounded-md border px-3 py-1.5 font-mono text-xs",
-              source === sourceOption
-                ? "bg-secondary text-foreground"
-                : "text-muted-foreground hover:bg-secondary",
-            )}
+          <Button
             key={sourceOption}
             onClick={() => setSource(sourceOption)}
+            size="sm"
             type="button"
+            variant={source === sourceOption ? "secondary" : "ghost"}
           >
             {sourceOption === "generate" ? "Generate a key here" : "Paste a CSR"}
-          </button>
+          </Button>
         ))}
       </div>
 
       {source === "paste" ? (
-        <label className="block space-y-1">
-          <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-            Certificate signing request
-          </span>
+        <Field error={parseError || undefined} label="Certificate signing request">
           <textarea
-            className={cn(field, "h-32 font-mono text-[11px]")}
+            className={`${inputClasses} h-32 font-mono text-[11px]`}
             onChange={(e) => setCsrPem(e.target.value)}
             placeholder="-----BEGIN CERTIFICATE REQUEST-----"
             spellCheck={false}
             value={csrPem}
           />
-          {parseError ? <p className="text-xs text-destructive">{parseError}</p> : null}
-          {parsed ? (
-            <div className="space-y-0.5 rounded-md border bg-secondary p-2 font-mono text-[11px]">
-              <p>
-                subject <span className="text-foreground">{parsed.subjectCn}</span>
-              </p>
-              <p className="text-muted-foreground">key {parsed.keyDescription}</p>
-              {parsed.sans.length > 0 ? (
-                <p className="text-muted-foreground">sans {parsed.sans.join(", ")}</p>
-              ) : null}
-              {/* The CA refuses an RSA subject key below 3072 bits, which an
-                  appliance can easily emit. Say so before signing is attempted. */}
-              {parsed.keyBits !== undefined && parsed.keyBits < 3072 ? (
-                <p className="text-destructive">
-                  RSA {parsed.keyBits} is below this CA&apos;s 3072-bit minimum for subject keys and
-                  will be refused.
-                </p>
-              ) : null}
-            </div>
+        </Field>
+      ) : null}
+      {source === "paste" && parsed ? (
+        <div className="space-y-0.5 rounded-md border bg-secondary p-2 font-mono text-[11px]">
+          <p>
+            subject <span className="text-foreground">{parsed.subjectCn}</span>
+          </p>
+          <p className="text-muted-foreground">key {parsed.keyDescription}</p>
+          {parsed.sans.length > 0 ? (
+            <p className="text-muted-foreground">sans {parsed.sans.join(", ")}</p>
           ) : null}
-        </label>
+          {/* The CA refuses an RSA subject key below 3072 bits, which an
+              appliance can easily emit. Say so before signing is attempted. */}
+          {parsed.keyBits !== undefined && parsed.keyBits < 3072 ? (
+            <p className="text-destructive">
+              RSA {parsed.keyBits} is below this CA&apos;s 3072-bit minimum for subject keys and
+              will be refused.
+            </p>
+          ) : null}
+        </div>
       ) : null}
 
-      <label className="block space-y-1">
-        <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-          Profile
-        </span>
+      <Field label="Profile">
         <select
-          className={field}
+          className={inputClasses}
           onChange={(e) => {
             const v = e.target.value;
             setProfileName(v);
@@ -370,63 +349,41 @@ export const IssueForm = ({ node, onIssued }: { node: Node; onIssued: (cert: Cer
             </option>
           ))}
         </select>
-      </label>
+      </Field>
 
       {/* A pasted request carries its own subject and SANs, and the signer
           uses those -- so offering fields that would be ignored invites the
           operator to think they changed something. */}
       {source === "generate" ? (
-        <label className="block space-y-1">
-          <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-            Subject CN
-          </span>
-          <input
-            className={field}
-            onChange={(e) => setSubjectCn(e.target.value)}
-            value={subjectCn}
-          />
-        </label>
+        <Field label="Subject CN">
+          <Input onChange={(e) => setSubjectCn(e.target.value)} value={subjectCn} />
+        </Field>
       ) : null}
 
       {source === "generate" && kind === "leaf" ? (
-        <label className="block space-y-1">
-          <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-            SANs (comma-separated)
-          </span>
-          <input className={field} onChange={(e) => setSans(e.target.value)} value={sans} />
-        </label>
+        <Field label="SANs (comma-separated)">
+          <Input onChange={(e) => setSans(e.target.value)} value={sans} />
+        </Field>
       ) : null}
 
       {/* Path length bounds the depth below a sub-CA, and is the CA's to set
           rather than the requester's -- so it is offered for a pasted request
           too, unlike the subject. */}
       {kind === "subordinate-ca" ? (
-        <label className="block space-y-1">
-          <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-            Path length
-          </span>
-          <input
-            className={field}
-            onChange={(e) => setPathLen(e.target.value)}
-            type="number"
-            value={pathLen}
-          />
-        </label>
+        <Field label="Path length">
+          <Input onChange={(e) => setPathLen(e.target.value)} type="number" value={pathLen} />
+        </Field>
       ) : null}
 
-      <label className="block space-y-1">
-        <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-          Validity (days)
-        </span>
-        <input
-          className={field}
+      <Field label="Validity (days)">
+        <Input
           onChange={(e) => setValidityDays(e.target.value)}
           type="number"
           value={validityDays}
         />
-      </label>
+      </Field>
 
-      {error ? <p className="font-mono text-xs text-destructive">{error}</p> : null}
+      {error ? <Notice tone="danger">{error}</Notice> : null}
       <Button disabled={pending} onClick={() => void submit()} type="button">
         {pending ? "Issuing…" : "Issue"}
       </Button>

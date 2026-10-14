@@ -19,6 +19,7 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { describe, expect, it } from "vitest";
 
 import { NodeConfigPage } from "@/pages/node-config";
+import { expectNoA11yViolations } from "@/test/axe";
 
 const renderAt = (path: string) =>
   render(
@@ -31,6 +32,11 @@ const renderAt = (path: string) =>
   );
 
 describe("NodeConfigPage", () => {
+  it("has no axe violations", async () => {
+    const { container } = renderAt("/nodes/acme-issuing-01/config");
+    await expectNoA11yViolations(container);
+  });
+
   it("applies config and shows a result", () => {
     renderAt("/nodes/acme-issuing-01/config");
     fireEvent.click(screen.getByRole("button", { name: /apply/i }));

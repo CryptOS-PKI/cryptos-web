@@ -21,6 +21,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { AdoptPage } from "@/pages/adopt";
+import { expectNoA11yViolations } from "@/test/axe";
 
 const useAuth = vi.fn();
 vi.mock("@/context/auth", () => ({ useAuth: () => useAuth() }));
@@ -35,7 +36,6 @@ vi.mock("@/lib/adopt", () => ({
   confirmAdoptionFingerprint: (...a: unknown[]) => confirmAdoptionFingerprint(...a),
   fetchParentAnchor: vi.fn(),
   formatDiskSize: (b: bigint) => `${b}`,
-  formatFingerprint: (fp: string) => `fmt(${fp})`,
   listInstallDisks: (...a: unknown[]) => listInstallDisks(...a),
   previewAdoption: (...a: unknown[]) => previewAdoption(...a),
 }));
@@ -58,6 +58,16 @@ describe("AdoptPage", () => {
     expect(screen.queryByLabelText(/endpoint/i)).not.toBeInTheDocument();
   });
 
+  it("has no axe violations", async () => {
+    useAuth.mockReturnValue({ operator: { level: "admin" } });
+    previewAdoption.mockResolvedValue({ certSha256: "AB:CD:EF", subject: "CN=maintenance" });
+    const { container } = render(<AdoptPage />);
+    fireEvent.change(screen.getByLabelText(/endpoint/i), { target: { value: "host:9000" } });
+    fireEvent.click(screen.getByRole("button", { name: /preview/i }));
+    await waitFor(() => expect(screen.getByText("ABCD")).toBeInTheDocument());
+    await expectNoA11yViolations(container);
+  });
+
   it("previews the fingerprint, requires an explicit confirm, then reveals step 2", async () => {
     useAuth.mockReturnValue({ operator: { level: "admin" } });
     previewAdoption.mockResolvedValue({ certSha256: "AB:CD:EF", subject: "CN=maintenance" });
@@ -66,7 +76,7 @@ describe("AdoptPage", () => {
     fireEvent.change(screen.getByLabelText(/endpoint/i), { target: { value: "host:9000" } });
     fireEvent.click(screen.getByRole("button", { name: /preview/i }));
 
-    await waitFor(() => expect(screen.getByText(/AB:CD:EF/)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("ABCD")).toBeInTheDocument());
     // Step 2 is hidden until the operator confirms the fingerprint.
     expect(screen.queryByLabelText(/node name/i)).not.toBeInTheDocument();
 
@@ -181,7 +191,7 @@ describe("AdoptPage", () => {
     render(<AdoptPage />);
     await startAdoption();
 
-    await waitFor(() => expect(screen.getByText("fmt(5f5f)")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("5F5F")).toBeInTheDocument());
     expect(screen.getByText(/mgmt sha-256/i)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /matches the console/i }));
 

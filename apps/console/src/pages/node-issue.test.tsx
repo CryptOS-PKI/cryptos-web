@@ -20,6 +20,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { __resetCerts, certsFor } from "@/lib/certs";
 import { NodeIssuePage } from "@/pages/node-issue";
+import { expectNoA11yViolations } from "@/test/axe";
 
 const renderAt = (path: string) =>
   render(
@@ -33,6 +34,11 @@ const renderAt = (path: string) =>
 
 describe("NodeIssuePage", () => {
   beforeEach(() => __resetCerts());
+
+  it("has no axe violations", async () => {
+    const { container } = renderAt("/nodes/acme-issuing-01/issue");
+    await expectNoA11yViolations(container);
+  });
 
   it("issues a leaf cert from an issuing CA", async () => {
     const before = certsFor("acme-issuing-01").length;

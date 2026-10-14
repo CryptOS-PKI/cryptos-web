@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import { Button, Card, IconEstablished, IconPending, IconRevoked } from "@cryptos-pki/ui";
 import { useEffect, useState } from "react";
 
 import { FleetTopology } from "@/components/fleet-topology";
@@ -36,15 +37,15 @@ const Legend = () => {
   return (
     <div className="flex gap-3 font-mono text-[11px] text-muted-foreground">
       <span className="inline-flex items-center gap-1.5">
-        <i className="h-2 w-2 rounded-full bg-success" />
+        <IconEstablished className="size-3 text-success" />
         Established
       </span>
       <span className="inline-flex items-center gap-1.5">
-        <i className="h-2 w-2 rounded-full bg-warning" />
+        <IconPending className="size-3 text-warning" />
         Pending
       </span>
       <span className="inline-flex items-center gap-1.5">
-        <i className="h-2 w-2 rounded-full bg-destructive" />
+        <IconRevoked className="size-3 text-destructive" />
         Revoked
       </span>
     </div>
@@ -123,16 +124,12 @@ export const TopologyExplorer = ({
           </div>
         ) : null}
 
-        <div className="w-full rounded-xl border bg-card">
+        <Card className="w-full overflow-hidden">
           <PanelHeader label="Topology">
             {focus ? (
-              <button
-                className="rounded-md border px-2.5 py-1 font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground hover:bg-secondary"
-                onClick={() => setFocus(null)}
-                type="button"
-              >
+              <Button onClick={() => setFocus(null)} size="sm" variant="outline">
                 Overview
-              </button>
+              </Button>
             ) : (
               <Legend />
             )}
@@ -143,9 +140,9 @@ export const TopologyExplorer = ({
             selected={selected}
             singlePath={singlePath}
           />
-        </div>
+        </Card>
 
-        <div className="w-full rounded-xl border bg-card">
+        <Card className="w-full overflow-hidden">
           {node ? (
             <>
               <PanelHeader label={`Node · ${node.name}`} />
@@ -168,7 +165,7 @@ export const TopologyExplorer = ({
               </p>
             </>
           )}
-        </div>
+        </Card>
       </div>
     </section>
   );

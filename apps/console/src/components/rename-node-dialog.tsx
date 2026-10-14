@@ -14,11 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import { Button, Dialog, Field, Input } from "@cryptos-pki/ui";
 import { useState } from "react";
 
 import type { Node } from "@/lib/mock";
 
-import { Button } from "@/components/ui/button";
 import { fleetErrorMessage } from "@/lib/fleet/error-copy";
 import { validateNodeName } from "@/lib/fleet/node-name";
 import { renameNode } from "@/lib/nodes";
@@ -65,57 +65,25 @@ export const RenameNodeDialog = ({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-      role="presentation"
-    >
-      <div
-        aria-labelledby="rename-node-title"
-        aria-modal="true"
-        className="w-full max-w-md space-y-4 rounded-xl border bg-card p-5 shadow-xl"
-        role="dialog"
-      >
-        <div className="space-y-1">
-          <h2 className="text-lg font-bold" id="rename-node-title">
-            Rename node
-          </h2>
-          <p className="font-mono text-xs text-muted-foreground">{node.name}</p>
-        </div>
-
-        <label className="block space-y-1">
-          <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-            New name
-          </span>
-          <input
-            className="w-full rounded-md border bg-card px-3 py-2 font-mono text-sm"
-            onChange={(e) => setName(e.target.value)}
-            value={name}
-          />
-        </label>
-
-        {validation ? (
-          <p className="font-mono text-xs text-destructive" role="alert">
-            {validation}
-          </p>
-        ) : null}
-        {error ? (
-          <p className="font-mono text-xs text-destructive" role="alert">
-            {error}
-          </p>
-        ) : null}
-
-        <div className="flex justify-end gap-2">
+    <Dialog
+      description={node.name}
+      footer={
+        <>
           <Button disabled={pending} onClick={onClose} size="sm" variant="outline">
             Cancel
           </Button>
           <Button disabled={!ready} onClick={confirm} size="sm">
             {pending ? "Renaming…" : "Rename"}
           </Button>
-        </div>
-      </div>
-    </div>
+        </>
+      }
+      onClose={onClose}
+      open
+      title="Rename node"
+    >
+      <Field error={validation ?? error} label="New name">
+        <Input onChange={(e) => setName(e.target.value)} value={name} />
+      </Field>
+    </Dialog>
   );
 };

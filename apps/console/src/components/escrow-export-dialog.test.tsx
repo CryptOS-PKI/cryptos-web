@@ -18,6 +18,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { EscrowExportDialog } from "@/components/escrow-export-dialog";
+import { expectNoA11yViolations } from "@/test/axe";
 
 const exportCAKey = vi.fn();
 vi.mock("@/lib/escrow", async (importOriginal) => {
@@ -40,6 +41,11 @@ describe("EscrowExportDialog", () => {
     // Stub the download side effects so the click does not touch the DOM/URL.
     globalThis.URL.createObjectURL = vi.fn(() => "blob:stub");
     globalThis.URL.revokeObjectURL = vi.fn();
+  });
+
+  it("has no axe violations", async () => {
+    render(<EscrowExportDialog nodeName="acme-root-01" onClose={vi.fn()} />);
+    await expectNoA11yViolations(document.body);
   });
 
   it("keeps Export disabled until both a >= 18 passphrase and the typed confirmation are present", () => {

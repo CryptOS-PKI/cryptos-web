@@ -24,6 +24,7 @@ import type { Node } from "@/lib/mock";
 
 import { ConfigForm } from "@/components/config-form";
 import { mockNodes } from "@/lib/mock-fixtures";
+import { expectNoA11yViolations } from "@/test/axe";
 
 const issuingNode = (): Node => mockNodes.find((n) => n.name === "acme-issuing-01")!;
 
@@ -63,6 +64,12 @@ describe("ConfigForm (live) whole-config-replace safety", () => {
     level = "admin";
     getNodeConfig.mockReset().mockResolvedValue(baseline());
     applyNodeConfig.mockReset().mockResolvedValue({ generation: 5, requiresReboot: false });
+  });
+
+  it("has no axe violations", async () => {
+    const { container } = render(<ConfigForm node={issuingNode()} />);
+    await screen.findByLabelText(/revocation base url/i);
+    await expectNoA11yViolations(container);
   });
 
   it("editing only the CRL URL preserves management and every other fetched field", async () => {

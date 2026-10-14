@@ -14,21 +14,22 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import { type Status, StatusBadge } from "@cryptos-pki/ui";
+
 import type { IdentityState } from "@/lib/mock";
 
-import { Badge } from "@/components/ui/badge";
-
-// Maps a node's identity state to a semantic badge. Revoked is included for the
-// full state palette even though the mock fixtures do not currently produce it.
-type Presentation = { label: string; variant: "destructive" | "success" | "warning" };
+// Maps a node's identity state to the kit's shape-coded status badge. Revoked
+// is included for the full state palette even though the mock fixtures do not
+// currently produce it.
+type Presentation = { label: string; status: Status };
 
 const presentation: Record<"REVOKED" | IdentityState, Presentation> = {
-  AWAITING_CERT: { label: "Pending", variant: "warning" },
-  ESTABLISHED: { label: "Verified", variant: "success" },
-  REVOKED: { label: "Revoked", variant: "destructive" },
+  AWAITING_CERT: { label: "Pending", status: "pending" },
+  ESTABLISHED: { label: "Verified", status: "established" },
+  REVOKED: { label: "Revoked", status: "revoked" },
 };
 
 export const IdentityBadge = ({ state }: { state: "REVOKED" | IdentityState }) => {
-  const { label, variant } = presentation[state];
-  return <Badge variant={variant}>{label}</Badge>;
+  const { label, status } = presentation[state];
+  return <StatusBadge status={status}>{label}</StatusBadge>;
 };

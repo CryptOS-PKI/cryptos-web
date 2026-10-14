@@ -14,6 +14,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import type { IconComponent } from "@cryptos-pki/ui";
+
+import {
+  IconCertificates,
+  IconChev,
+  IconEnrollment,
+  IconFleet,
+  IconProfiles,
+  IconProtocols,
+} from "@cryptos-pki/ui";
 import { Link } from "react-router-dom";
 
 import { useAdapters } from "@/lib/adapters";
@@ -26,22 +36,26 @@ import { cn } from "@/lib/utils";
 
 const Card = ({
   children,
+  icon: Icon,
   label,
   testId,
   to,
 }: {
   children: React.ReactNode;
+  icon: IconComponent;
   label: string;
   testId: string;
   to: string;
 }) => (
   <Link
-    className="flex flex-col gap-2 rounded-xl border bg-card p-4 transition-colors hover:bg-accent"
+    className="flex flex-col gap-3.5 rounded-lg border bg-card p-5 transition-colors hover:bg-accent"
     data-testid={testId}
     to={to}
   >
-    <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
+    <span className="flex items-center gap-2 font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+      <Icon className="size-3.5" />
       {label}
+      <IconChev className="ml-auto size-3.5" />
     </span>
     {children}
   </Link>
@@ -74,41 +88,57 @@ export const DashboardPage = () => {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <Card label="Fleet health" testId="card-fleet" to="/fleet">
-          <div className="text-3xl font-bold">{nodes.length}</div>
-          <div className="font-mono text-xs text-muted-foreground">
-            {rootCount} root {"·"}{" "}
-            <span className="text-success">{health.established} established</span> {"·"}{" "}
-            <span className="text-warning">{health.pending} pending</span> {"·"}{" "}
-            <span className="text-destructive">{health.revoked} revoked</span>
+        <Card icon={IconFleet} label="Fleet health" testId="card-fleet" to="/fleet">
+          <div className="font-mono text-4xl font-semibold leading-none">{nodes.length}</div>
+          <div className="flex flex-wrap gap-x-3.5 gap-y-1 text-[13px]">
+            <span className="text-muted-foreground">{rootCount} root</span>
+            <span className="text-success">{health.established} established</span>
+            <span className="text-warning">{health.pending} pending</span>
+            <span className="text-muted-foreground">{health.revoked} revoked</span>
           </div>
         </Card>
 
-        <Card label="Certificates" testId="card-certificates" to="/certificates">
-          <div className="text-3xl font-bold">{validCerts}</div>
-          <div className="font-mono text-xs text-muted-foreground">
-            <span className={cn(expiring > 0 && "text-warning")}>{expiring} expiring</span> {"·"}{" "}
-            <span className={cn(expired > 0 && "text-destructive")}>{expired} expired</span> {"·"}{" "}
-            valid
+        <Card
+          icon={IconCertificates}
+          label="Certificates"
+          testId="card-certificates"
+          to="/certificates"
+        >
+          <div className="font-mono text-4xl font-semibold leading-none">{validCerts}</div>
+          <div className="flex flex-wrap gap-x-3.5 gap-y-1 text-[13px]">
+            <span className={cn("text-muted-foreground", expiring > 0 && "text-warning")}>
+              {expiring} expiring
+            </span>
+            <span className={cn("text-muted-foreground", expired > 0 && "text-destructive")}>
+              {expired} expired
+            </span>
+            <span className="text-muted-foreground">valid</span>
           </div>
         </Card>
 
-        <Card label="Enrollment" testId="card-enrollment" to="/enrollment">
-          <div className={cn("text-3xl font-bold", pending > 0 && "text-warning")}>{pending}</div>
-          <div className="font-mono text-xs text-muted-foreground">pending join requests</div>
+        <Card icon={IconEnrollment} label="Enrollment" testId="card-enrollment" to="/enrollment">
+          <div
+            className={cn(
+              "font-mono text-4xl font-semibold leading-none",
+              pending > 0 && "text-warning",
+            )}
+          >
+            {pending}
+          </div>
+          <div className="text-[13px] text-muted-foreground">pending join requests</div>
         </Card>
 
-        <Card label="Protocols" testId="card-protocols" to="/protocols">
-          <div className="text-3xl font-bold">
+        <Card icon={IconProtocols} label="Protocols" testId="card-protocols" to="/protocols">
+          <div className="font-mono text-4xl font-semibold leading-none">
             {enabledAdapters}
             <span className="text-base text-muted-foreground"> / {adapters.length}</span>
           </div>
-          <div className="font-mono text-xs text-muted-foreground">active protocol adapters</div>
+          <div className="text-[13px] text-muted-foreground">active protocol adapters</div>
         </Card>
 
-        <Card label="Profiles" testId="card-profiles" to="/profiles">
-          <div className="text-3xl font-bold">{profiles.length}</div>
-          <div className="font-mono text-xs text-muted-foreground">certificate templates</div>
+        <Card icon={IconProfiles} label="Profiles" testId="card-profiles" to="/profiles">
+          <div className="font-mono text-4xl font-semibold leading-none">{profiles.length}</div>
+          <div className="text-[13px] text-muted-foreground">certificate templates</div>
         </Card>
       </div>
     </section>

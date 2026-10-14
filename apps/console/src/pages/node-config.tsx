@@ -14,10 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import { Button } from "@cryptos-pki/ui";
 import { Link, Navigate, useParams } from "react-router-dom";
 
 import { ConfigForm } from "@/components/config-form";
-import { Button } from "@/components/ui/button";
 import { useNode } from "@/lib/nodes";
 
 export const NodeConfigPage = () => {

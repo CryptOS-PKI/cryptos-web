@@ -164,6 +164,17 @@ describe("DataTable", () => {
     expect(screen.getByLabelText("Filter CN")).toBeInTheDocument();
   });
 
+  it("has no axe violations when only some columns carry a filter", async () => {
+    const withFilter: DataTableColumn<Cert>[] = [
+      { ...columns[0], filter: <input aria-label="Filter CN" /> },
+      columns[1],
+    ];
+    const { container } = render(
+      <DataTable columns={withFilter} label="Certificates" rowKey={(r) => r.serial} rows={rows} />,
+    );
+    await expectNoA11yViolations(container);
+  });
+
   it("shows five skeleton rows while loading and marks the table busy", () => {
     render(
       <DataTable

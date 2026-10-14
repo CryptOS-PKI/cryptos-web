@@ -14,9 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import { Button, Dialog, Notice, TypeToConfirm } from "@cryptos-pki/ui";
 import { useState } from "react";
 
-import { Button } from "@/components/ui/button";
 import { decommissionNode } from "@/lib/decommission";
 
 // DecommissionDialog runs a remote, destructive node wipe (S11). It is
@@ -63,84 +63,10 @@ export const DecommissionDialog = ({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-      role="presentation"
-    >
-      <div
-        aria-labelledby="decommission-title"
-        aria-modal="true"
-        className="w-full max-w-md space-y-4 rounded-xl border bg-card p-5 shadow-xl"
-        role="dialog"
-      >
-        <div className="space-y-1">
-          <h2 className="text-lg font-bold" id="decommission-title">
-            Decommission node
-          </h2>
-          <p className="font-mono text-xs text-muted-foreground">{nodeName}</p>
-        </div>
-
-        <div
-          className="space-y-1 rounded-md border border-destructive/40 bg-destructive/10 p-3"
-          role="alert"
-        >
-          <p className="text-xs font-semibold text-destructive">
-            This permanently destroys the node&apos;s identity and data.
-          </p>
-          <p className="text-xs text-muted-foreground">
-            The node wipes its key material and state, then reboots into maintenance. This cannot be
-            undone.
-          </p>
-        </div>
-
-        {done ? (
-          <p className="font-mono text-xs text-success" role="status">
-            {nodeName} is wiping and entering maintenance.
-          </p>
-        ) : (
-          <>
-            <div className="space-y-1">
-              <p className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-                Root CA CN (for reference)
-              </p>
-              <p className="break-all rounded-md border bg-secondary px-3 py-2 font-mono text-xs">
-                {rootCaCn}
-              </p>
-            </div>
-
-            <label className="block space-y-1">
-              <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-                Type the Root CA CN to confirm
-              </span>
-              <input
-                className="w-full rounded-md border bg-card px-3 py-2 font-mono text-sm"
-                onChange={(e) => setConfirmCn(e.target.value)}
-                value={confirmCn}
-              />
-            </label>
-
-            <label className="flex items-start gap-2 font-mono text-xs">
-              <input
-                checked={acknowledged}
-                className="mt-0.5"
-                onChange={(e) => setAcknowledged(e.target.checked)}
-                type="checkbox"
-              />
-              <span>I understand this permanently destroys the node&apos;s identity and data.</span>
-            </label>
-
-            {error ? (
-              <p className="font-mono text-xs text-destructive" role="alert">
-                {error}
-              </p>
-            ) : null}
-          </>
-        )}
-
-        <div className="flex justify-end gap-2">
+    <Dialog
+      description={nodeName}
+      footer={
+        <>
           <Button onClick={onClose} size="sm" variant="outline">
             {done ? "Close" : "Cancel"}
           </Button>
@@ -149,8 +75,62 @@ export const DecommissionDialog = ({
               {pending ? "Decommissioning…" : "Decommission"}
             </Button>
           )}
-        </div>
-      </div>
-    </div>
+        </>
+      }
+      onClose={onClose}
+      open
+      title="Decommission node"
+      variant="destructive"
+    >
+      <Notice tone="danger">
+        <p className="font-semibold">
+          This permanently destroys the node&apos;s identity and data.
+        </p>
+        <p>
+          The node wipes its key material and state, then reboots into maintenance. This cannot be
+          undone.
+        </p>
+      </Notice>
+
+      {done ? (
+        <p className="font-mono text-xs text-success" role="status">
+          {nodeName} is wiping and entering maintenance.
+        </p>
+      ) : (
+        <>
+          <div className="space-y-1">
+            <p className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+              Root CA CN (for reference)
+            </p>
+            <p className="break-all rounded-md border bg-secondary px-3 py-2 font-mono text-xs">
+              {rootCaCn}
+            </p>
+          </div>
+
+          <TypeToConfirm
+            expected={rootCaCn}
+            label="Type the Root CA CN to confirm"
+            onChange={setConfirmCn}
+            value={confirmCn}
+          />
+
+          <label className="flex items-start gap-2 font-mono text-xs">
+            <input
+              checked={acknowledged}
+              className="mt-0.5"
+              onChange={(e) => setAcknowledged(e.target.checked)}
+              type="checkbox"
+            />
+            <span>I understand this permanently destroys the node&apos;s identity and data.</span>
+          </label>
+
+          {error ? (
+            <Notice role="alert" tone="danger">
+              {error}
+            </Notice>
+          ) : null}
+        </>
+      )}
+    </Dialog>
   );
 };

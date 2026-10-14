@@ -14,11 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import { Button } from "@cryptos-pki/ui";
 import { useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 
 import { IssueForm } from "@/components/issue-form";
-import { Button } from "@/components/ui/button";
 import { canIssue, type Cert } from "@/lib/certs";
 import { useNode } from "@/lib/nodes";
 
