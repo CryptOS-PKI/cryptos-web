@@ -18,9 +18,18 @@ import type { InstallDisk } from "@cryptos-pki/api-client/cryptos/node/v1/node_p
 
 import { create } from "@bufbuild/protobuf";
 import { MachineConfigSchema } from "@cryptos-pki/api-client/cryptos/node/v1/config_pb";
+import {
+  Button,
+  Field,
+  FingerprintConfirm,
+  Input,
+  inputClasses,
+  Notice,
+  type Phase,
+  PhaseRail,
+} from "@cryptos-pki/ui";
 import { useRef, useState } from "react";
 
-import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/auth";
 import {
   type AdoptionPreview,
@@ -30,16 +39,12 @@ import {
   confirmAdoptionFingerprint,
   fetchParentAnchor,
   formatDiskSize,
-  formatFingerprint,
   listInstallDisks,
   previewAdoption,
 } from "@/lib/adopt";
 import { parseList } from "@/lib/config";
 import { fleetErrorMessage } from "@/lib/fleet/error-copy";
 import { useNodes } from "@/lib/nodes";
-
-const field = "w-full rounded-md border bg-card px-3 py-2 font-mono text-sm";
-const label = "font-mono text-[11px] uppercase tracking-wider text-muted-foreground";
 
 // The same key-protection tiers the S5 config form offers, mapped to the
 // node's StateKey.mode token so the initial config uses real values.
@@ -72,52 +77,25 @@ const SUBORDINATE_PHASES = [
   "awaiting-certificate",
 ];
 
-// PhaseRail renders the ordered adoption phases with the current one
-// highlighted and completed ones checked. It reads live from the streamed
-// phases so partial progress stays visible if a later step needs follow-up.
-// phaseTone picks the color class for one phase row from its state, avoiding a
-// nested ternary in the JSX.
-const phaseTone = (active: boolean, passed: boolean, error: boolean): string => {
-  if (error && active) return "text-destructive";
-  if (passed) return "text-success";
-  if (active) return "text-primary";
-  return "text-muted-foreground";
-};
-
-// phaseGlyph picks the leading marker for one phase row. Plain ASCII markers
-// keep the source free of glyphs the hygiene scanner treats as emoji.
-const phaseGlyph = (active: boolean, passed: boolean): string => {
-  if (passed) return "[done]";
-  if (active) return "[...]";
-  return "[ ]";
-};
-
-const PhaseRail = ({
-  current,
-  error,
-  phases,
-}: {
-  current: null | string;
-  error: boolean;
-  phases: string[];
-}) => {
+// adoptionPhases turns the manager's phase ids into the kit PhaseRail's Phase
+// list: everything before the current one is done, the current one is current
+// (or failed, if the adoption errored on it), and the rest are pending.
+const adoptionPhases = (
+  phases: string[],
+  current: null | string,
+  error: boolean,
+  detail?: string,
+): Phase[] => {
   const terminal = phases.at(-1);
   const currentIndex = current ? phases.indexOf(current) : -1;
-  return (
-    <ol className="space-y-1.5">
-      {phases.map((p, i) => {
-        const passed = currentIndex > i || (currentIndex === i && current === terminal);
-        const active = currentIndex === i && current !== terminal;
-        return (
-          <li className="flex items-center gap-2 font-mono text-xs" key={p}>
-            <span className={phaseTone(active, passed, error)}>
-              {phaseGlyph(active, passed)} {p}
-            </span>
-          </li>
-        );
-      })}
-    </ol>
-  );
+  return phases.map((id, index) => {
+    const passed = currentIndex > index || (currentIndex === index && current === terminal);
+    const active = currentIndex === index && current !== terminal;
+    let state: Phase["state"] = "pending";
+    if (passed) state = "done";
+    else if (active) state = error ? "failed" : "current";
+    return { detail: active ? detail : undefined, id, label: id, state };
+  });
 };
 
 export const AdoptPage = () => {
@@ -327,18 +305,16 @@ export const AdoptPage = () => {
 
       {/* Step 1: endpoint + trust-on-first-use fingerprint confirmation. */}
       <div className="space-y-3 rounded-xl border bg-card p-4">
-        <p className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+        <h2 className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
           Step 1 — maintenance endpoint
-        </p>
-        <label className="block space-y-1">
-          <span className={label}>Endpoint (host:port)</span>
-          <input
-            className={field}
+        </h2>
+        <Field label="Endpoint (host:port)">
+          <Input
             disabled={!!confirmedPin}
             onChange={(e) => setEndpoint(e.target.value)}
             value={endpoint}
           />
-        </label>
+        </Field>
         {confirmedPin ? null : (
           <Button
             disabled={pending || !endpoint.trim()}
@@ -350,63 +326,54 @@ export const AdoptPage = () => {
         )}
 
         {preview && !confirmedPin ? (
-          <div className="space-y-2 rounded-md border border-warning/40 bg-warning/10 p-3">
-            <p className="text-xs text-muted-foreground">
-              First contact. Confirm this is the node you expect before trusting it.
-            </p>
-            <p className="break-all font-mono text-xs">
-              <span className="text-muted-foreground">subject </span>
-              {preview.subject}
-            </p>
-            <p className="break-all font-mono text-xs">
-              <span className="text-muted-foreground">sha256 </span>
-              {preview.certSha256}
-            </p>
-            <Button onClick={() => void confirmPin(preview.certSha256)} size="sm">
-              Confirm fingerprint
-            </Button>
-          </div>
+          <FingerprintConfirm
+            actions={
+              <Button onClick={() => void confirmPin(preview.certSha256)} size="sm">
+                Confirm fingerprint
+              </Button>
+            }
+            fingerprint={preview.certSha256}
+            fingerprintLabel="sha256"
+            subject={[["subject", preview.subject]]}
+            title="First contact"
+            tone="warning"
+          >
+            Confirm this is the node you expect before trusting it.
+          </FingerprintConfirm>
         ) : null}
 
         {confirmedPin ? (
-          <p className="font-mono text-xs text-success" role="status">
+          <Notice role="status" tone="success">
             Fingerprint pinned for this adoption.
-          </p>
+          </Notice>
         ) : null}
       </div>
 
       {/* Step 2: initial config + orchestrated adoption. */}
       {confirmedPin ? (
         <div className="space-y-3 rounded-xl border bg-card p-4">
-          <p className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+          <h2 className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
             Step 2 — initial config
-          </p>
-          <label className="block space-y-1">
-            <span className={label}>Node name</span>
-            <input
-              className={field}
-              onChange={(e) => setNodeName(e.target.value)}
-              value={nodeName}
-            />
-          </label>
-          <label className="block space-y-1">
-            <span className={label}>Role</span>
-            <select className={field} onChange={(e) => setRole(e.target.value)} value={role}>
+          </h2>
+          <Field label="Node name">
+            <Input onChange={(e) => setNodeName(e.target.value)} value={nodeName} />
+          </Field>
+          <Field label="Role">
+            <select className={inputClasses} onChange={(e) => setRole(e.target.value)} value={role}>
               {["root", "intermediate", "issuing"].map((r) => (
                 <option key={r} value={r}>
                   {r}
                 </option>
               ))}
             </select>
-          </label>
+          </Field>
 
           {/* A subordinate is signed by a parent CA already in the fleet: pick it
               and pin its certificate as the trust anchor. */}
           {isSubordinate ? (
-            <label className="block space-y-1">
-              <span className={label}>Parent CA (signs this node)</span>
+            <Field label="Parent CA (signs this node)">
               <select
-                className={field}
+                className={inputClasses}
                 onChange={(e) => void selectParent(e.target.value)}
                 value={parentName}
               >
@@ -417,93 +384,75 @@ export const AdoptPage = () => {
                   </option>
                 ))}
               </select>
-              {parentBusy ? (
-                <span className="font-mono text-[11px] text-muted-foreground" role="status">
-                  Loading parent certificate…
-                </span>
-              ) : null}
-              {parentAnchor && !parentBusy ? (
-                <span className="font-mono text-[11px] text-success" role="status">
-                  Parent certificate pinned as the trust anchor.
-                </span>
-              ) : null}
-              {parents.length === 0 ? (
-                <span className="font-mono text-[11px] text-warning">
-                  No established parent CA in the fleet yet — adopt a root first.
-                </span>
-              ) : null}
-            </label>
+            </Field>
+          ) : null}
+          {isSubordinate && parentBusy ? (
+            <span className="font-mono text-[11px] text-muted-foreground" role="status">
+              Loading parent certificate…
+            </span>
+          ) : null}
+          {isSubordinate && parentAnchor && !parentBusy ? (
+            <span className="font-mono text-[11px] text-success" role="status">
+              Parent certificate pinned as the trust anchor.
+            </span>
+          ) : null}
+          {isSubordinate && parents.length === 0 ? (
+            <span className="font-mono text-[11px] text-warning">
+              No established parent CA in the fleet yet — adopt a root first.
+            </span>
           ) : null}
 
-          <label className="block space-y-1">
-            <span className={label}>
-              {isSubordinate ? "CA subject common name" : "Root CA subject common name"}
-            </span>
-            <input className={field} onChange={(e) => setRootCn(e.target.value)} value={rootCn} />
-          </label>
+          <Field label={isSubordinate ? "CA subject common name" : "Root CA subject common name"}>
+            <Input onChange={(e) => setRootCn(e.target.value)} value={rootCn} />
+          </Field>
           {isSubordinate ? null : (
-            <label className="block space-y-1">
-              <span className={label}>Root validity (years)</span>
-              <input
-                className={field}
-                onChange={(e) => setValidityYears(e.target.value)}
-                value={validityYears}
-              />
-            </label>
+            <Field label="Root validity (years)">
+              <Input onChange={(e) => setValidityYears(e.target.value)} value={validityYears} />
+            </Field>
           )}
-          <label className="block space-y-1">
-            <span className={label}>Network interface</span>
-            <input
-              className={field}
-              onChange={(e) => setNetInterface(e.target.value)}
-              value={netInterface}
-            />
-          </label>
-          <label className="block space-y-1">
-            <span className={label}>Address (CIDR)</span>
-            <input
-              className={field}
+          <Field label="Network interface">
+            <Input onChange={(e) => setNetInterface(e.target.value)} value={netInterface} />
+          </Field>
+          <Field label="Address (CIDR)">
+            <Input
               onChange={(e) => setAddress(e.target.value)}
               placeholder="10.0.0.10/24"
               value={address}
             />
-          </label>
-          <label className="block space-y-1">
-            <span className={label}>Gateway</span>
-            <input
-              className={field}
+          </Field>
+          <Field label="Gateway">
+            <Input
               onChange={(e) => setGateway(e.target.value)}
               placeholder="10.0.0.1"
               value={gateway}
             />
-          </label>
+          </Field>
           {/* A CA whose revocation base URL is a hostname cannot pass its
               revocation preflight without a resolver. */}
-          <label className="block space-y-1">
-            <span className={label}>DNS nameservers</span>
-            <input
-              className={field}
+          <Field label="DNS nameservers">
+            <Input
               onChange={(e) => setNameservers(e.target.value)}
               placeholder="10.0.0.53, 10.0.1.53"
               value={nameservers}
             />
-          </label>
-          <label className="block space-y-1">
-            <span className={label}>DNS search domains</span>
-            <input
-              className={field}
+          </Field>
+          <Field label="DNS search domains">
+            <Input
               onChange={(e) => setSearch(e.target.value)}
               placeholder="pki.example.org"
               value={search}
             />
-          </label>
+          </Field>
           {/* The install disk is discovered from the node so the operator picks
               a real device; manual entry remains as a fallback when discovery
               returns nothing. */}
-          <label className="block space-y-1">
-            <span className={label}>Install disk</span>
+          <Field label="Install disk">
             {disks.length > 0 ? (
-              <select className={field} onChange={(e) => setDisk(e.target.value)} value={disk}>
+              <select
+                className={inputClasses}
+                onChange={(e) => setDisk(e.target.value)}
+                value={disk}
+              >
                 {disks.map((d) => (
                   <option key={d.path} value={d.path}>
                     {d.path} — {formatDiskSize(d.sizeBytes)}
@@ -512,52 +461,46 @@ export const AdoptPage = () => {
                 ))}
               </select>
             ) : (
-              <input
-                className={field}
+              <Input
                 onChange={(e) => setDisk(e.target.value)}
                 placeholder={disksBusy ? "Discovering disks…" : "/dev/nvme0n1"}
                 value={disk}
               />
             )}
-          </label>
+          </Field>
           {disksError ? (
-            <p className="text-xs text-warning" role="status">
+            <Notice role="status" tone="warning">
               Could not list the node&apos;s disks: {disksError} Enter the install disk by hand.
-            </p>
+            </Notice>
           ) : null}
           {/* Revocation is a CA responsibility, so it is offered only for a root
               at adopt time. A subordinate is not a CA until its enrollment is
               signed; its revocation base URL is set afterward via apply-config. */}
           {isSubordinate ? null : (
-            <label className="block space-y-1">
-              <span className={label}>Revocation base URL (CRL/OCSP)</span>
-              <input className={field} onChange={(e) => setCrl(e.target.value)} value={crl} />
-            </label>
+            <Field label="Revocation base URL (CRL/OCSP)">
+              <Input onChange={(e) => setCrl(e.target.value)} value={crl} />
+            </Field>
           )}
-          <label className="block space-y-1">
-            <span className={label}>Key protection tier</span>
-            <select className={field} onChange={(e) => setTier(e.target.value)} value={tier}>
+          <Field label="Key protection tier">
+            <select className={inputClasses} onChange={(e) => setTier(e.target.value)} value={tier}>
               {tiers.map((t) => (
                 <option key={t} value={t}>
                   {t}
                 </option>
               ))}
             </select>
-          </label>
+          </Field>
 
           {phase ? (
-            <div className="space-y-2 rounded-md border bg-secondary p-3">
-              <PhaseRail
-                current={phase.phase}
-                error={!!error}
-                phases={isSubordinate ? SUBORDINATE_PHASES : ROOT_PHASES}
-              />
-              {phase.detail ? (
-                <p className="font-mono text-xs text-muted-foreground" role="status">
-                  {phase.detail}
-                </p>
-              ) : null}
-            </div>
+            <PhaseRail
+              label="Adoption progress"
+              phases={adoptionPhases(
+                isSubordinate ? SUBORDINATE_PHASES : ROOT_PHASES,
+                phase.phase,
+                !!error,
+                phase.detail,
+              )}
+            />
           ) : null}
 
           {/* The installed node presents a new certificate after its reboot.
@@ -565,51 +508,51 @@ export const AdoptPage = () => {
               1, so the operator checks it against the node's console before
               the manager trusts it. */}
           {awaitingInstalled && phase ? (
-            <div className="space-y-2 rounded-md border border-warning/40 bg-warning/10 p-3">
-              <p className="text-xs text-muted-foreground">
-                The node rebooted into its installed system with a new certificate. Compare this
-                fingerprint with the Mgmt SHA-256 line on the node&apos;s console before trusting
-                it.
-              </p>
-              <p className="break-all font-mono text-xs">
-                <span className="text-muted-foreground">sha256 </span>
-                {formatFingerprint(phase.presentedCertSha256)}
-              </p>
-              <div className="flex gap-2">
-                <Button
-                  disabled={confirming}
-                  onClick={() => void confirmInstalled(phase)}
-                  size="sm"
-                >
-                  {confirming ? "Confirming…" : "Fingerprint matches the console"}
-                </Button>
-                <Button
-                  disabled={confirming}
-                  onClick={cancelAdoption}
-                  size="sm"
-                  variant="destructive"
-                >
-                  Does not match: cancel adoption
-                </Button>
-              </div>
-            </div>
+            <FingerprintConfirm
+              actions={
+                <>
+                  <Button
+                    disabled={confirming}
+                    onClick={() => void confirmInstalled(phase)}
+                    size="sm"
+                  >
+                    {confirming ? "Confirming…" : "Fingerprint matches the console"}
+                  </Button>
+                  <Button
+                    disabled={confirming}
+                    onClick={cancelAdoption}
+                    size="sm"
+                    variant="destructive"
+                  >
+                    Does not match: cancel adoption
+                  </Button>
+                </>
+              }
+              fingerprint={phase.presentedCertSha256}
+              fingerprintLabel="sha256"
+              title="Confirm the installed node"
+              tone="warning"
+            >
+              The node rebooted into its installed system with a new certificate. Compare this
+              fingerprint with the Mgmt SHA-256 line on the node&apos;s console before trusting it.
+            </FingerprintConfirm>
           ) : null}
 
           {(() => {
             if (established) {
               return (
-                <p className="font-mono text-sm text-success" role="status">
+                <Notice tone="success">
                   {nodeName || "The node"} is established and linked to the fleet.
-                </p>
+                </Notice>
               );
             }
             if (awaitingCert) {
               return (
-                <p className="font-mono text-sm text-success" role="status">
+                <Notice tone="success">
                   {nodeName || "The node"} is provisioned and awaiting a parent-signed certificate.
                   Complete it from Enrollment (create a subordinate enrollment with parent{" "}
                   {parentName || "the selected CA"}).
-                </p>
+                </Notice>
               );
             }
             return (
@@ -627,11 +570,7 @@ export const AdoptPage = () => {
         </div>
       ) : null}
 
-      {error ? (
-        <p className="font-mono text-sm text-destructive" role="alert">
-          {error}
-        </p>
-      ) : null}
+      {error ? <Notice tone="danger">{error}</Notice> : null}
     </section>
   );
 };
