@@ -14,14 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import { Button, Wordmark } from "@cryptos-pki/ui";
 import { useState } from "react";
 
 import { AdminStep } from "@/components/first-run/admin-step";
 import { CaStep } from "@/components/first-run/ca-step";
 import { TokenStep } from "@/components/first-run/token-step";
 import { CertificateHelp } from "@/components/layout/certificate-help";
-import { Wordmark } from "@/components/layout/wordmark";
-import { Button } from "@/components/ui/button";
 import { endBootstrapSession } from "@/lib/bootstrap";
 import { levelExtfileSection } from "@/lib/operators";
 
@@ -75,7 +74,7 @@ export const FirstRunWizard = ({
 
   return (
     <main className="mx-auto flex min-h-screen max-w-2xl flex-col gap-6 bg-background px-6 py-10">
-      <Wordmark className="text-2xl" />
+      <Wordmark className="text-2xl" markSize={28} product="FleetOS" />
       <div className="space-y-2">
         <h1 className="text-2xl font-bold tracking-tight">First run</h1>
         <p className="text-sm text-muted-foreground">

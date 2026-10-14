@@ -16,8 +16,8 @@ limitations under the License.
 
 // Operator white-label branding. This is a mock config for now — there is no
 // backend that serves it yet. It controls only the operator-brandable spots
-// (today: the mark inside the root node in the topology). The product wordmark
-// in the top-left header is NOT brandable and always reads "CryptOS".
+// (today: the mark inside the root node in the topology). The FleetOS
+// wordmark in the app shell is NOT brandable.
 //
 // To white-label the root mark, set `rootLogoUrl` to a self-hosted or data-URI
 // image. Leave it undefined (the shipped default) to fall back to the CryptOS
