@@ -5,7 +5,6 @@ node_modules
 
 # Generated / non-app files
 package-lock.json
-CHANGELOG.md
 packages/api-client/src/gen
 packages/api-client/.protos
 packages/ui/src/icons/Icon*.tsx
