@@ -24,6 +24,7 @@ import { __resetEnrollments } from "@/lib/enrollment";
 import { __resetNodes } from "@/lib/nodes";
 import { __resetProfiles } from "@/lib/profiles";
 import { DashboardPage } from "@/pages/dashboard";
+import { expectNoA11yViolations } from "@/test/axe";
 
 const renderDash = () =>
   render(
@@ -39,6 +40,11 @@ describe("DashboardPage", () => {
     __resetEnrollments();
     __resetProfiles();
     __resetAdapters();
+  });
+
+  it("has no axe violations", async () => {
+    const { container } = renderDash();
+    await expectNoA11yViolations(container);
   });
 
   it("cards link to their surfaces", () => {
