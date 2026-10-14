@@ -18,6 +18,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DecommissionDialog } from "@/components/decommission-dialog";
+import { expectNoA11yViolations } from "@/test/axe";
 
 const decommissionNode = vi.fn();
 vi.mock("@/lib/decommission", () => ({
@@ -36,6 +37,11 @@ describe("DecommissionDialog", () => {
   beforeEach(() => {
     decommissionNode.mockReset();
     decommissionNode.mockImplementation(() => Promise.resolve());
+  });
+
+  it("has no axe violations", async () => {
+    renderDialog();
+    await expectNoA11yViolations(document.body);
   });
 
   it("keeps Decommission disabled until the CN matches and the acknowledgement is ticked", () => {

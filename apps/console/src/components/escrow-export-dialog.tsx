@@ -14,9 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import { Button, Dialog, Field, Input, Notice, TypeToConfirm } from "@cryptos-pki/ui";
 import { useState } from "react";
 
-import { Button } from "@/components/ui/button";
 import { exportCAKey, generateStrongPassphrase, MIN_PASSPHRASE_LENGTH } from "@/lib/escrow";
 
 // download triggers a browser download of the encrypted envelope without
@@ -77,91 +77,10 @@ export const EscrowExportDialog = ({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-      role="presentation"
-    >
-      <div
-        aria-labelledby="escrow-export-title"
-        aria-modal="true"
-        className="w-full max-w-md space-y-4 rounded-xl border bg-card p-5 shadow-xl"
-        role="dialog"
-      >
-        <div className="space-y-1">
-          <h2 className="text-lg font-bold" id="escrow-export-title">
-            Export CA key
-          </h2>
-          <p className="font-mono text-xs text-muted-foreground">{nodeName}</p>
-        </div>
-
-        <div
-          className="space-y-1 rounded-md border border-destructive/40 bg-destructive/10 p-3"
-          role="alert"
-        >
-          <p className="text-xs font-semibold text-destructive">
-            This extracts the CA private key into an encrypted backup.
-          </p>
-          <p className="text-xs text-muted-foreground">
-            Store the passphrase safely. Without it the backup is unrecoverable, and anyone with
-            both the file and the passphrase can restore this CA elsewhere.
-          </p>
-        </div>
-
-        {done ? (
-          <p className="font-mono text-xs text-success" role="status">
-            Encrypted backup downloaded.
-          </p>
-        ) : (
-          <>
-            <label className="block space-y-1">
-              <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-                Passphrase (min {MIN_PASSPHRASE_LENGTH})
-              </span>
-              <input
-                autoComplete="new-password"
-                className="w-full rounded-md border bg-card px-3 py-2 font-mono text-sm"
-                onChange={(e) => setPassphrase(e.target.value)}
-                type="password"
-                value={passphrase}
-              />
-            </label>
-            <Button
-              onClick={() => setPassphrase(generateStrongPassphrase())}
-              size="sm"
-              type="button"
-              variant="outline"
-            >
-              Generate strong passphrase
-            </Button>
-            {passphrase.length > 0 && !passphraseLongEnough ? (
-              <p className="font-mono text-xs text-destructive" role="alert">
-                Passphrase must be at least {MIN_PASSPHRASE_LENGTH} characters.
-              </p>
-            ) : null}
-
-            <label className="block space-y-1">
-              <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-                Type {nodeName} or EXPORT to confirm
-              </span>
-              <input
-                className="w-full rounded-md border bg-card px-3 py-2 font-mono text-sm"
-                onChange={(e) => setConfirmText(e.target.value)}
-                value={confirmText}
-              />
-            </label>
-
-            {error ? (
-              <p className="font-mono text-xs text-destructive" role="alert">
-                {error}
-              </p>
-            ) : null}
-          </>
-        )}
-
-        <div className="flex justify-end gap-2">
+    <Dialog
+      description={nodeName}
+      footer={
+        <>
           <Button onClick={onClose} size="sm" variant="outline">
             {done ? "Close" : "Cancel"}
           </Button>
@@ -170,8 +89,65 @@ export const EscrowExportDialog = ({
               {pending ? "Exporting…" : "Export key"}
             </Button>
           )}
-        </div>
-      </div>
-    </div>
+        </>
+      }
+      onClose={onClose}
+      open
+      title="Export CA key"
+      variant="destructive"
+    >
+      <Notice tone="danger">
+        <p className="font-semibold">This extracts the CA private key into an encrypted backup.</p>
+        <p>
+          Store the passphrase safely. Without it the backup is unrecoverable, and anyone with both
+          the file and the passphrase can restore this CA elsewhere.
+        </p>
+      </Notice>
+
+      {done ? (
+        <p className="font-mono text-xs text-success" role="status">
+          Encrypted backup downloaded.
+        </p>
+      ) : (
+        <>
+          <Field
+            error={
+              passphrase.length > 0 && !passphraseLongEnough
+                ? `Passphrase must be at least ${MIN_PASSPHRASE_LENGTH} characters.`
+                : undefined
+            }
+            label={`Passphrase (min ${MIN_PASSPHRASE_LENGTH})`}
+          >
+            <Input
+              autoComplete="new-password"
+              onChange={(e) => setPassphrase(e.target.value)}
+              type="password"
+              value={passphrase}
+            />
+          </Field>
+          <Button
+            onClick={() => setPassphrase(generateStrongPassphrase())}
+            size="sm"
+            type="button"
+            variant="outline"
+          >
+            Generate strong passphrase
+          </Button>
+
+          <TypeToConfirm
+            expected={[nodeName, "EXPORT"]}
+            label={`Type ${nodeName} or EXPORT to confirm`}
+            onChange={setConfirmText}
+            value={confirmText}
+          />
+
+          {error ? (
+            <Notice role="alert" tone="danger">
+              {error}
+            </Notice>
+          ) : null}
+        </>
+      )}
+    </Dialog>
   );
 };

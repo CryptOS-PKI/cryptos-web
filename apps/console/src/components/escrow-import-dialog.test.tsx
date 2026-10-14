@@ -18,6 +18,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { EscrowImportDialog } from "@/components/escrow-import-dialog";
+import { expectNoA11yViolations } from "@/test/axe";
 
 const importCAKey = vi.fn();
 vi.mock("@/lib/escrow", async (importOriginal) => {
@@ -42,6 +43,11 @@ describe("EscrowImportDialog", () => {
   beforeEach(() => {
     importCAKey.mockReset();
     importCAKey.mockResolvedValue({ issuerCn: "ACME Root CA", subjectCn: "ACME Sub CA" });
+  });
+
+  it("has no axe violations", async () => {
+    render(<EscrowImportDialog nodeName="acme-fresh-01" onClose={vi.fn()} />);
+    await expectNoA11yViolations(document.body);
   });
 
   it("requires an uploaded envelope and a >= 18 passphrase before enabling Import", async () => {

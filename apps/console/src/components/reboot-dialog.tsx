@@ -14,9 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import { Button, Dialog, Notice, TypeToConfirm } from "@cryptos-pki/ui";
 import { useState } from "react";
 
-import { Button } from "@/components/ui/button";
 import { rebootNode } from "@/lib/reboot";
 
 // RebootDialog triggers an orderly node reboot or power-off (#61), so a
@@ -68,88 +68,10 @@ export const RebootDialog = ({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-      role="presentation"
-    >
-      <div
-        aria-labelledby="reboot-title"
-        aria-modal="true"
-        className="w-full max-w-md space-y-4 rounded-xl border bg-card p-5 shadow-xl"
-        role="dialog"
-      >
-        <div className="space-y-1">
-          <h2 className="text-lg font-bold" id="reboot-title">
-            Reboot node
-          </h2>
-          <p className="font-mono text-xs text-muted-foreground">{nodeName}</p>
-        </div>
-
-        <div
-          className="space-y-1 rounded-md border border-destructive/40 bg-destructive/10 p-3"
-          role="alert"
-        >
-          {rebootRequired ? (
-            <p className="text-xs font-semibold text-destructive">
-              A reboot is needed for a staged change to take effect.
-            </p>
-          ) : null}
-          <p className="text-xs text-muted-foreground">
-            {powerOff
-              ? "The node shuts down and stays off until the hypervisor or a person powers it back on."
-              : "The node restarts in place."}{" "}
-            Every certificate operation it serves is interrupted until it is back.
-          </p>
-        </div>
-
-        {done ? (
-          <p className="font-mono text-xs text-success" role="status">
-            {nodeName} is {powerOff ? "powering off" : "rebooting"}.
-          </p>
-        ) : (
-          <>
-            <div className="space-y-1">
-              <p className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-                CA CN (for reference)
-              </p>
-              <p className="break-all rounded-md border bg-secondary px-3 py-2 font-mono text-xs">
-                {caCn}
-              </p>
-            </div>
-
-            <label className="block space-y-1">
-              <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-                Type the CA CN to confirm
-              </span>
-              <input
-                className="w-full rounded-md border bg-card px-3 py-2 font-mono text-sm"
-                onChange={(e) => setConfirmCn(e.target.value)}
-                value={confirmCn}
-              />
-            </label>
-
-            <label className="flex items-start gap-2 font-mono text-xs">
-              <input
-                checked={powerOff}
-                className="mt-0.5"
-                onChange={(e) => setPowerOff(e.target.checked)}
-                type="checkbox"
-              />
-              <span>Power off instead of restarting.</span>
-            </label>
-
-            {error ? (
-              <p className="font-mono text-xs text-destructive" role="alert">
-                {error}
-              </p>
-            ) : null}
-          </>
-        )}
-
-        <div className="flex justify-end gap-2">
+    <Dialog
+      description={nodeName}
+      footer={
+        <>
           <Button onClick={onClose} size="sm" variant="outline">
             {done ? "Close" : "Cancel"}
           </Button>
@@ -158,8 +80,64 @@ export const RebootDialog = ({
               {pending ? pendingLabel : actionLabel}
             </Button>
           )}
-        </div>
-      </div>
-    </div>
+        </>
+      }
+      onClose={onClose}
+      open
+      title="Reboot node"
+      variant="destructive"
+    >
+      <Notice tone="danger">
+        {rebootRequired ? (
+          <p className="font-semibold">A reboot is needed for a staged change to take effect.</p>
+        ) : null}
+        <p>
+          {powerOff
+            ? "The node shuts down and stays off until the hypervisor or a person powers it back on."
+            : "The node restarts in place."}{" "}
+          Every certificate operation it serves is interrupted until it is back.
+        </p>
+      </Notice>
+
+      {done ? (
+        <p className="font-mono text-xs text-success" role="status">
+          {nodeName} is {powerOff ? "powering off" : "rebooting"}.
+        </p>
+      ) : (
+        <>
+          <div className="space-y-1">
+            <p className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+              CA CN (for reference)
+            </p>
+            <p className="break-all rounded-md border bg-secondary px-3 py-2 font-mono text-xs">
+              {caCn}
+            </p>
+          </div>
+
+          <TypeToConfirm
+            expected={caCn}
+            label="Type the CA CN to confirm"
+            onChange={setConfirmCn}
+            value={confirmCn}
+          />
+
+          <label className="flex items-start gap-2 font-mono text-xs">
+            <input
+              checked={powerOff}
+              className="mt-0.5"
+              onChange={(e) => setPowerOff(e.target.checked)}
+              type="checkbox"
+            />
+            <span>Power off instead of restarting.</span>
+          </label>
+
+          {error ? (
+            <Notice role="alert" tone="danger">
+              {error}
+            </Notice>
+          ) : null}
+        </>
+      )}
+    </Dialog>
   );
 };

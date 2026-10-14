@@ -14,9 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import { Button, Dialog, Field, Input, Notice } from "@cryptos-pki/ui";
 import { useState } from "react";
 
-import { Button } from "@/components/ui/button";
 import { importCAKey, MIN_PASSPHRASE_LENGTH, type RestoredIdentity } from "@/lib/escrow";
 
 // EscrowImportDialog restores a CA identity onto a fresh node from an uploaded
@@ -72,82 +72,10 @@ export const EscrowImportDialog = ({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-      role="presentation"
-    >
-      <div
-        aria-labelledby="escrow-import-title"
-        aria-modal="true"
-        className="w-full max-w-md space-y-4 rounded-xl border bg-card p-5 shadow-xl"
-        role="dialog"
-      >
-        <div className="space-y-1">
-          <h2 className="text-lg font-bold" id="escrow-import-title">
-            Import CA key
-          </h2>
-          <p className="font-mono text-xs text-muted-foreground">{nodeName}</p>
-        </div>
-
-        <p className="rounded-md border border-primary/40 bg-primary/10 p-3 text-xs text-muted-foreground">
-          Restore a CA identity from an encrypted backup. Import only onto a fresh node with no
-          existing CA identity.
-        </p>
-
-        {restored ? (
-          <div className="space-y-1" role="status">
-            <p className="font-mono text-xs text-success">Restored CA identity.</p>
-            <p className="font-mono text-xs text-muted-foreground">subject: {restored.subjectCn}</p>
-            <p className="font-mono text-xs text-muted-foreground">issuer: {restored.issuerCn}</p>
-          </div>
-        ) : (
-          <>
-            <label className="block space-y-1">
-              <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-                Backup envelope file
-              </span>
-              <input
-                accept=".enc,application/octet-stream"
-                aria-label="Backup envelope file"
-                className="w-full rounded-md border bg-card px-3 py-2 font-mono text-xs"
-                onChange={onFile}
-                type="file"
-              />
-              {fileName ? (
-                <span className="font-mono text-[11px] text-muted-foreground">{fileName}</span>
-              ) : null}
-            </label>
-
-            <label className="block space-y-1">
-              <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-                Passphrase (min {MIN_PASSPHRASE_LENGTH})
-              </span>
-              <input
-                autoComplete="new-password"
-                className="w-full rounded-md border bg-card px-3 py-2 font-mono text-sm"
-                onChange={(e) => setPassphrase(e.target.value)}
-                type="password"
-                value={passphrase}
-              />
-            </label>
-            {passphrase.length > 0 && !passphraseLongEnough ? (
-              <p className="font-mono text-xs text-destructive" role="alert">
-                Passphrase must be at least {MIN_PASSPHRASE_LENGTH} characters.
-              </p>
-            ) : null}
-
-            {error ? (
-              <p className="font-mono text-xs text-destructive" role="alert">
-                {error}
-              </p>
-            ) : null}
-          </>
-        )}
-
-        <div className="flex justify-end gap-2">
+    <Dialog
+      description={nodeName}
+      footer={
+        <>
           <Button onClick={onClose} size="sm" variant="outline">
             {restored ? "Close" : "Cancel"}
           </Button>
@@ -156,8 +84,60 @@ export const EscrowImportDialog = ({
               {pending ? "Importing…" : "Import key"}
             </Button>
           )}
+        </>
+      }
+      onClose={onClose}
+      open
+      title="Import CA key"
+    >
+      <Notice tone="info">
+        Restore a CA identity from an encrypted backup. Import only onto a fresh node with no
+        existing CA identity.
+      </Notice>
+
+      {restored ? (
+        <div className="space-y-1" role="status">
+          <p className="font-mono text-xs text-success">Restored CA identity.</p>
+          <p className="font-mono text-xs text-muted-foreground">subject: {restored.subjectCn}</p>
+          <p className="font-mono text-xs text-muted-foreground">issuer: {restored.issuerCn}</p>
         </div>
-      </div>
-    </div>
+      ) : (
+        <>
+          <Field label="Backup envelope file">
+            <Input
+              accept=".enc,application/octet-stream"
+              mono={false}
+              onChange={onFile}
+              type="file"
+            />
+          </Field>
+          {fileName ? (
+            <span className="font-mono text-[11px] text-muted-foreground">{fileName}</span>
+          ) : null}
+
+          <Field
+            error={
+              passphrase.length > 0 && !passphraseLongEnough
+                ? `Passphrase must be at least ${MIN_PASSPHRASE_LENGTH} characters.`
+                : undefined
+            }
+            label={`Passphrase (min ${MIN_PASSPHRASE_LENGTH})`}
+          >
+            <Input
+              autoComplete="new-password"
+              onChange={(e) => setPassphrase(e.target.value)}
+              type="password"
+              value={passphrase}
+            />
+          </Field>
+
+          {error ? (
+            <Notice role="alert" tone="danger">
+              {error}
+            </Notice>
+          ) : null}
+        </>
+      )}
+    </Dialog>
   );
 };

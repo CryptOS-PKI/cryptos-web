@@ -18,6 +18,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { RebootDialog } from "@/components/reboot-dialog";
+import { expectNoA11yViolations } from "@/test/axe";
 
 const rebootNode = vi.fn();
 vi.mock("@/lib/reboot", () => ({
@@ -42,6 +43,11 @@ describe("RebootDialog", () => {
   beforeEach(() => {
     rebootNode.mockReset();
     rebootNode.mockImplementation(() => Promise.resolve());
+  });
+
+  it("has no axe violations", async () => {
+    renderDialog();
+    await expectNoA11yViolations(document.body);
   });
 
   it("keeps Reboot disabled until the CN matches", () => {
