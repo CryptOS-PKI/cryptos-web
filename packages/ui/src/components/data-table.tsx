@@ -260,9 +260,11 @@ export const DataTable = <T,>({
             {hasFilters ? (
               <tr className="border-t normal-case tracking-normal">
                 {columns.map((c) => (
-                  <th className="px-2.5 py-2 font-normal" key={c.id}>
+                  // A filter control, not a header label -- td keeps a column
+                  // with no filter from being read as an empty header cell.
+                  <td className="px-2.5 py-2 font-normal" key={c.id}>
                     {c.filter}
-                  </th>
+                  </td>
                 ))}
               </tr>
             ) : null}
