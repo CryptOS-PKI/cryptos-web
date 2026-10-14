@@ -19,8 +19,18 @@ import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it } from "vitest";
 
 import { NodesPage } from "@/pages/nodes";
+import { expectNoA11yViolations } from "@/test/axe";
 
 describe("NodesPage", () => {
+  it("has no axe violations", async () => {
+    const { container } = render(
+      <MemoryRouter>
+        <NodesPage />
+      </MemoryRouter>,
+    );
+    await expectNoA11yViolations(container);
+  });
+
   it("lists operational nodes and excludes the root", () => {
     render(
       <MemoryRouter>
