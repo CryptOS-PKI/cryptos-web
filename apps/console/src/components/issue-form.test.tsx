@@ -21,6 +21,7 @@ import { IssueForm } from "@/components/issue-form";
 import { __resetCerts } from "@/lib/certs";
 import { mockNodes } from "@/lib/mock-fixtures";
 import { __resetProfiles } from "@/lib/profiles";
+import { expectNoA11yViolations } from "@/test/axe";
 
 const issuingNode = mockNodes.find((n) => n.name === "acme-issuing-01")!;
 
@@ -54,6 +55,11 @@ describe("IssueForm profile picker", () => {
     issueCert.mockImplementation((_node: string, draft: { eku?: string[]; profile?: string }) =>
       Promise.resolve({ eku: draft.eku ?? [], profile: draft.profile, serial: "ABCD1234" }),
     );
+  });
+
+  it("has no axe violations", async () => {
+    const { container } = render(<IssueForm node={issuingNode} onIssued={vi.fn()} />);
+    await expectNoA11yViolations(container);
   });
 
   it("passes the selected profile's EKU and name to issueCert", async () => {
