@@ -21,6 +21,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { __resetCerts } from "@/lib/certs";
 import { __resetNodes, nodesList } from "@/lib/nodes";
 import { NodeDetailPage } from "@/pages/node-detail";
+import { expectNoA11yViolations } from "@/test/axe";
 
 const renderAt = (path: string) =>
   render(
@@ -35,6 +36,11 @@ describe("NodeDetailPage trust chain", () => {
   beforeEach(() => {
     __resetNodes();
     __resetCerts();
+  });
+
+  it("has no axe violations", async () => {
+    const { container } = renderAt("/nodes/acme-issuing-01");
+    await expectNoA11yViolations(container);
   });
 
   it("shows the trust chain with a link to an ancestor", () => {

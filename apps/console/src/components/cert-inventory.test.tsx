@@ -20,9 +20,19 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { CertInventory } from "@/components/cert-inventory";
 import { __resetCerts, certsFor } from "@/lib/certs";
+import { expectNoA11yViolations } from "@/test/axe";
 
 describe("CertInventory", () => {
   beforeEach(() => __resetCerts());
+
+  it("has no axe violations", async () => {
+    const { container } = render(
+      <MemoryRouter>
+        <CertInventory nodeName="acme-issuing-01" />
+      </MemoryRouter>,
+    );
+    await expectNoA11yViolations(container);
+  });
 
   it("lists the CA's certs by subject CN", () => {
     render(
