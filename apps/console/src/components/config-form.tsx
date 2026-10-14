@@ -16,11 +16,11 @@ limitations under the License.
 
 import type { MachineConfig } from "@cryptos-pki/api-client/cryptos/node/v1/config_pb";
 
+import { Button, Field, Input, inputClasses, Notice } from "@cryptos-pki/ui";
 import { useCallback, useEffect, useState } from "react";
 
 import type { Node } from "@/lib/mock";
 
-import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/auth";
 import {
   applyNodeConfig,
@@ -33,8 +33,6 @@ import { fleetErrorMessage } from "@/lib/fleet/error-copy";
 import { fleetMode } from "@/lib/fleet/mode";
 
 const tiers = ["nodeID (dev)", "TPM-sealed", "HSM"];
-const field = "w-full rounded-md border bg-card px-3 py-2 font-mono text-sm";
-const label = "font-mono text-[11px] uppercase tracking-wider text-muted-foreground";
 
 // stateKeyMode maps a display tier to the node's StateKey.mode token, and back,
 // so the picker edits the real config field without inventing new values.
@@ -60,27 +58,22 @@ const MockConfigDemo = ({ node }: { node: Node }) => {
 
   return (
     <div className="max-w-md space-y-4">
-      <label className="block space-y-1">
-        <span className={label}>CRL distribution point</span>
-        <input className={field} onChange={(e) => setCrl(e.target.value)} value={crl} />
-      </label>
-      <label className="block space-y-1">
-        <span className={label}>OCSP responder</span>
-        <input className={field} onChange={(e) => setOcsp(e.target.value)} value={ocsp} />
-      </label>
-      <label className="block space-y-1">
-        <span className={label}>Key protection tier</span>
-        <select className={field} onChange={(e) => setTier(e.target.value)} value={tier}>
+      <Field label="CRL distribution point">
+        <Input onChange={(e) => setCrl(e.target.value)} value={crl} />
+      </Field>
+      <Field label="OCSP responder">
+        <Input onChange={(e) => setOcsp(e.target.value)} value={ocsp} />
+      </Field>
+      <Field label="Key protection tier">
+        <select className={inputClasses} onChange={(e) => setTier(e.target.value)} value={tier}>
           {tiers.map((t) => (
             <option key={t} value={t}>
               {t}
             </option>
           ))}
         </select>
-      </label>
-      {applied ? (
-        <p className="font-mono text-sm text-success">Config applied to {node.name}.</p>
-      ) : null}
+      </Field>
+      {applied ? <Notice tone="success">Config applied to {node.name}.</Notice> : null}
       <Button onClick={() => setApplied(true)} type="button">
         Apply
       </Button>
@@ -187,9 +180,9 @@ const LiveConfigForm = ({ node }: { node: Node }) => {
 
   if (loadError) {
     return (
-      <p className="max-w-md font-mono text-sm text-destructive" role="alert">
+      <Notice className="max-w-md" role="alert" tone="danger">
         {loadError}
-      </p>
+      </Notice>
     );
   }
 
@@ -199,19 +192,12 @@ const LiveConfigForm = ({ node }: { node: Node }) => {
 
   return (
     <div className="max-w-md space-y-4">
-      <label className="block space-y-1">
-        <span className={label}>Revocation base URL (CRL/OCSP)</span>
-        <input
-          className={field}
-          disabled={!isAdmin}
-          onChange={(e) => setCrl(e.target.value)}
-          value={crl}
-        />
-      </label>
-      <label className="block space-y-1">
-        <span className={label}>Key protection tier</span>
+      <Field label="Revocation base URL (CRL/OCSP)">
+        <Input disabled={!isAdmin} onChange={(e) => setCrl(e.target.value)} value={crl} />
+      </Field>
+      <Field label="Key protection tier">
         <select
-          className={field}
+          className={inputClasses}
           disabled={!isAdmin}
           onChange={(e) => setTier(e.target.value)}
           value={tier}
@@ -222,45 +208,41 @@ const LiveConfigForm = ({ node }: { node: Node }) => {
             </option>
           ))}
         </select>
-      </label>
-      <label className="block space-y-1">
-        <span className={label}>DNS nameservers</span>
-        <input
-          className={field}
+      </Field>
+      <Field label="DNS nameservers">
+        <Input
           disabled={!isAdmin}
           onChange={(e) => setNameservers(e.target.value)}
           placeholder="10.0.0.53, 10.0.1.53"
           value={nameservers}
         />
-      </label>
-      <label className="block space-y-1">
-        <span className={label}>DNS search domains</span>
-        <input
-          className={field}
+      </Field>
+      <Field label="DNS search domains">
+        <Input
           disabled={!isAdmin}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="pki.example.org"
           value={search}
         />
-      </label>
+      </Field>
 
       {result ? (
-        <div className="space-y-1 rounded-md border bg-secondary p-3">
-          <p className="font-mono text-sm text-success">
+        <Notice tone="success">
+          <p>
             Config applied to {node.name} (generation {result.generation}).
           </p>
           {result.requiresReboot ? (
-            <p className="font-mono text-xs text-warning" role="status">
+            <p className="text-warning" role="status">
               This change takes effect only after the node reboots.
             </p>
           ) : null}
-        </div>
+        </Notice>
       ) : null}
 
       {applyError ? (
-        <p className="font-mono text-xs text-destructive" role="alert">
+        <Notice role="alert" tone="danger">
           {applyError}
-        </p>
+        </Notice>
       ) : null}
 
       {isAdmin ? (
