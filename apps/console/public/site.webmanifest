@@ -1,0 +1,13 @@
+{
+  "name": "FleetOS",
+  "short_name": "FleetOS",
+  "description": "FleetOS, the CryptOS-PKI Fleet Manager console.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0C0F16",
+  "theme_color": "#0C0F16",
+  "icons": [
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

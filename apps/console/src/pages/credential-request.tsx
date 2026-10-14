@@ -15,13 +15,12 @@ limitations under the License.
 */
 
 import "reflect-metadata";
+import { Button, Wordmark } from "@cryptos-pki/ui";
 import { X509Certificate } from "@peculiar/x509";
 import { useState } from "react";
 
 import { CopyBlock } from "@/components/copy-block";
 import { KeyBackupStep } from "@/components/key-backup-step";
-import { Wordmark } from "@/components/layout/wordmark";
-import { Button } from "@/components/ui/button";
 import { buildCredentialPkcs12, readCertificateDer } from "@/lib/crypto/key-backup";
 import { downloadBytes, readFileBytes } from "@/lib/download";
 import { fieldClass, labelClass, looksLikeEmail } from "@/lib/form";
@@ -233,7 +232,7 @@ const BuildPkcs12 = () => {
 
 export const CredentialRequestPage = () => (
   <main className="mx-auto flex min-h-screen max-w-2xl flex-col gap-6 bg-background px-6 py-10">
-    <Wordmark className="text-2xl" />
+    <Wordmark className="text-2xl" markSize={28} product="FleetOS" />
     <div className="space-y-2">
       <h1 className="text-2xl font-bold tracking-tight">Make a credential request</h1>
       <p className="text-sm text-muted-foreground">

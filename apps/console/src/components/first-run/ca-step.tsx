@@ -14,12 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import { Button } from "@cryptos-pki/ui";
 import { useEffect, useState } from "react";
 
 import type { RegisterForm, RegisterResult } from "@/lib/operator-cas";
 
 import { OperatorCARegisterForm } from "@/components/operator-ca-register-form";
-import { Button } from "@/components/ui/button";
 import { registerOperatorCABootstrap } from "@/lib/bootstrap";
 import { readCertificateDer } from "@/lib/crypto/key-backup";
 import { colonFingerprint, normalizeFingerprint } from "@/lib/fingerprint";

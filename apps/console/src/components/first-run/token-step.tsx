@@ -14,9 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import { Button } from "@cryptos-pki/ui";
 import { useState } from "react";
 
-import { Button } from "@/components/ui/button";
 import { startBootstrapSession } from "@/lib/bootstrap";
 import { fleetErrorMessage } from "@/lib/fleet/error-copy";
 import { fieldClass, labelClass } from "@/lib/form";

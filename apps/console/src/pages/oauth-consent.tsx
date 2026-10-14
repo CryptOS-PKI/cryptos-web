@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import { Button, Input } from "@cryptos-pki/ui";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
@@ -22,8 +23,6 @@ import type { OperatorLevel } from "@/context/auth";
 import { GateShell } from "@/components/layout/auth-gate";
 import { CertificateHelp } from "@/components/layout/certificate-help";
 import { denialCopy } from "@/components/layout/denial-copy";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   type ConsentLoad,
   type ConsentRequest,

@@ -14,11 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import { Button } from "@cryptos-pki/ui";
 import { useState } from "react";
 
 import { CopyBlock } from "@/components/copy-block";
 import { KeyBackupStep } from "@/components/key-backup-step";
-import { Button } from "@/components/ui/button";
 import { type FirstAdminResult, submitFirstAdminCertificate } from "@/lib/bootstrap";
 import {
   buildCredentialPkcs12,
