@@ -14,10 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import { Button } from "@cryptos-pki/ui";
 import { Link, Navigate, useParams } from "react-router-dom";
 
 import { RekeyWizard } from "@/components/rekey-wizard";
-import { Button } from "@/components/ui/button";
 import { useNode } from "@/lib/nodes";
 
 export const NodeRekeyPage = () => {

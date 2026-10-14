@@ -21,6 +21,7 @@ import type { Node } from "@/lib/mock";
 
 import { RekeyWizard } from "@/components/rekey-wizard";
 import { mockNodes } from "@/lib/mock-fixtures";
+import { expectNoA11yViolations } from "@/test/axe";
 
 const issuingNode = (): Node => mockNodes.find((n) => n.name === "acme-issuing-01")!;
 const rootNode = (): Node => mockNodes.find((n) => n.name === "acme-root-01")!;
@@ -38,6 +39,11 @@ describe("RekeyWizard (mock)", () => {
   beforeEach(() => {
     mode = "mock";
     rekeyNode.mockReset();
+  });
+
+  it("has no axe violations", async () => {
+    const { container } = render(<RekeyWizard node={issuingNode()} />);
+    await expectNoA11yViolations(container);
   });
 
   it("advances through the demo steps to completion without any RPC", () => {
