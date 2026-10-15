@@ -14,32 +14,23 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import { Button, Card, FieldTile, FieldTiles } from "@cryptos-pki/ui";
 import { useState } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 
 import { ConfigForm } from "@/components/config-form";
 import { RekeyWizard } from "@/components/rekey-wizard";
 import { RenameNodeDialog } from "@/components/rename-node-dialog";
-import { Button } from "@/components/ui/button";
 import { useOptionalAuth } from "@/context/auth";
 import { useNode } from "@/lib/nodes";
 
 const Panel = ({ children, label }: { children: React.ReactNode; label: string }) => (
-  <div className="w-full rounded-xl border bg-card">
+  <Card className="w-full overflow-hidden">
     <div className="border-b px-4 py-3 font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
       {label}
     </div>
     <div className="p-4">{children}</div>
-  </div>
-);
-
-const Field = ({ children, label }: { children: React.ReactNode; label: string }) => (
-  <div className="flex flex-col gap-1 rounded-lg border bg-secondary px-3 py-2.5">
-    <span className="font-mono text-[10.5px] uppercase tracking-wider text-muted-foreground">
-      {label}
-    </span>
-    <span className="break-all font-mono text-xs">{children}</span>
-  </div>
+  </Card>
 );
 
 export const RootDetailPage = () => {
@@ -76,10 +67,10 @@ export const RootDetailPage = () => {
       ) : null}
 
       <Panel label="Connection">
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          <Field label="mTLS endpoint">{node.connection?.endpoint ?? "\u2014"}</Field>
-          <Field label="fm client identity">{node.connection?.mtlsIdentity ?? "\u2014"}</Field>
-        </div>
+        <FieldTiles columns={2}>
+          <FieldTile label="mTLS endpoint" value={node.connection?.endpoint ?? null} />
+          <FieldTile label="fm client identity" value={node.connection?.mtlsIdentity ?? null} />
+        </FieldTiles>
       </Panel>
 
       <Panel label="Config">

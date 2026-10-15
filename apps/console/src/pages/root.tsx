@@ -14,41 +14,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import type { ColumnDef } from "@tanstack/react-table";
-
+import { DataTable, type DataTableColumn, IconChev, inputClasses } from "@cryptos-pki/ui";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 
 import type { IdentityState, Node } from "@/lib/mock";
 
-import { DataTable } from "@/components/data-table/data-table";
 import { IdentityBadge } from "@/components/identity-badge";
 import { certsFor, useAllCerts } from "@/lib/certs";
 import { identityStateLabels } from "@/lib/fleet/labels";
 import { useNodes } from "@/lib/nodes";
 
-const rootColumns: ColumnDef<Node, unknown>[] = [
-  {
-    accessorKey: "name",
-    cell: ({ row }) => (
-      <Link className="text-primary hover:underline" to={`/root/${row.original.name}`}>
-        {row.original.name}
-      </Link>
-    ),
-    header: "Name",
-  },
-  {
-    accessorKey: "identityState",
-    cell: ({ row }) => <IdentityBadge state={row.original.identityState} />,
-    header: "Identity",
-  },
-  {
-    accessorFn: (n) => certsFor(n.name).length,
-    enableSorting: true,
-    header: "Certs",
-    id: "certs",
-  },
-  { cell: () => "\u203A", enableSorting: false, header: "", id: "chevron" },
-];
+type SortId = "certs" | "identityState" | "name";
 
 // The fleet's root CAs. Each root is an independent trust anchor the manager
 // reaches over its own mTLS identity; a row opens that root's config + ceremony.
@@ -58,6 +35,95 @@ export const RootPage = () => {
   useAllCerts();
   const roots = useNodes().filter((n) => n.role === "root");
 
+  const [identity, setIdentity] = useState("");
+  const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<{ desc: boolean; id: SortId } | null>({
+    desc: false,
+    id: "name",
+  });
+
+  const identities = [...new Set(roots.map((n) => n.identityState))];
+  const certsOf = (n: Node) => certsFor(n.name).length;
+
+  const filtered = roots
+    .filter((n) => !identity || n.identityState === identity)
+    .filter((n) => !query || n.name.toLowerCase().includes(query.toLowerCase()));
+  const rows = sort
+    ? // eslint-disable-next-line unicorn/no-array-sort -- Array#toSorted needs ES2023 lib
+      [...filtered].sort((a, b) => {
+        const dir = sort.desc ? -1 : 1;
+        if (sort.id === "certs") return (certsOf(a) - certsOf(b)) * dir;
+        return String(a[sort.id]).localeCompare(String(b[sort.id])) * dir;
+      })
+    : filtered;
+
+  const sortOf = (id: SortId) => (sort?.id === id ? (sort.desc ? "desc" : "asc") : false);
+  const toggleSort = (id: SortId) =>
+    setSort((previous) => {
+      if (!previous || previous.id !== id) return { desc: false, id };
+      if (!previous.desc) return { desc: true, id };
+      return null;
+    });
+
+  const columns: DataTableColumn<Node>[] = [
+    {
+      cell: (n) => (
+        <Link className="text-primary hover:underline" to={`/root/${n.name}`}>
+          {n.name}
+        </Link>
+      ),
+      filter: (
+        <input
+          aria-label="Filter name"
+          className={inputClasses}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Filter…"
+          value={query}
+        />
+      ),
+      header: "Name",
+      id: "name",
+      mobile: "title",
+      onSort: () => toggleSort("name"),
+      sort: sortOf("name"),
+    },
+    {
+      cell: (n) => <IdentityBadge state={n.identityState} />,
+      filter: (
+        <select
+          aria-label="Filter Identity"
+          className={inputClasses}
+          onChange={(event) => setIdentity(event.target.value)}
+          value={identity}
+        >
+          <option value="">All</option>
+          {identities.map((s) => (
+            <option key={s} value={s}>
+              {identityStateLabels[s as IdentityState]}
+            </option>
+          ))}
+        </select>
+      ),
+      header: "Identity",
+      id: "identityState",
+      onSort: () => toggleSort("identityState"),
+      sort: sortOf("identityState"),
+    },
+    {
+      cell: (n) => certsOf(n),
+      header: "Certs",
+      id: "certs",
+      onSort: () => toggleSort("certs"),
+      sort: sortOf("certs"),
+    },
+    {
+      cell: () => <IconChev className="size-3.5 text-muted-foreground" />,
+      header: <span className="sr-only">Open</span>,
+      id: "chevron",
+      mobile: "action",
+    },
+  ];
+
   return (
     <section className="space-y-5">
       <div className="space-y-1">
@@ -66,17 +132,11 @@ export const RootPage = () => {
       </div>
 
       <DataTable
-        columns={rootColumns}
-        data={roots}
-        facets={[
-          {
-            columnId: "identityState",
-            optionLabel: (value) => identityStateLabels[value as IdentityState],
-            title: "Identity",
-          },
-        ]}
-        initialSort={[{ desc: false, id: "name" }]}
-        searchKeys={["name"]}
+        columns={columns}
+        filtered={identity !== "" || query !== ""}
+        label="Root CAs"
+        rowKey={(n) => n.name}
+        rows={rows}
       />
     </section>
   );
