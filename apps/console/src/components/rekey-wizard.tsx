@@ -19,6 +19,7 @@ import { useState } from "react";
 
 import type { Node } from "@/lib/mock";
 
+import { useAuth } from "@/context/auth";
 import { fleetMode } from "@/lib/fleet/mode";
 import { DEFAULT_REKEY_PROFILE, rekeyNode, type RekeyResult } from "@/lib/rekey";
 
@@ -55,6 +56,8 @@ const MockRekeyDemo = ({ node }: { node: Node }) => {
 // reports the re-keyed identity. An RPC failure surfaces inline (no native
 // popup) and does not advance to the done state, so the operator can retry.
 const LiveRekey = ({ node }: { node: Node }) => {
+  const { operator } = useAuth();
+  const canSubmit = operator ? operator.level !== "viewer" : false;
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<null | RekeyResult>(null);
@@ -110,7 +113,12 @@ const LiveRekey = ({ node }: { node: Node }) => {
           {error}
         </Notice>
       ) : null}
-      <Button disabled={pending} onClick={() => void submit()} type="button">
+      <Button
+        disabled={canSubmit && pending}
+        lockedReason={canSubmit ? undefined : "Needs the operator role"}
+        onClick={() => void submit()}
+        type="button"
+      >
         {pending ? "Re-keying…" : `Re-key ${node.name}`}
       </Button>
     </div>

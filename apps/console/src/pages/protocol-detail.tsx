@@ -56,10 +56,6 @@ const ToggleCell = ({
     );
   }
 
-  if (!isAdmin) {
-    return <span className="font-mono text-[11px] text-muted-foreground">admin only</span>;
-  }
-
   const toggle = async () => {
     setError("");
     setPending(true);
@@ -75,7 +71,8 @@ const ToggleCell = ({
   return (
     <div className="space-y-1">
       <Button
-        disabled={pending}
+        disabled={isAdmin && pending}
+        lockedReason={isAdmin ? undefined : "Needs the admin role"}
         onClick={() => void toggle()}
         size="sm"
         type="button"

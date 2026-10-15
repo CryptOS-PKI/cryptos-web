@@ -60,6 +60,17 @@ const levelAllowsApprove = (level: "admin" | "operator" | "viewer", req: Enrollm
   return true;
 };
 
+// The lock tooltip for a role-blocked Approve: a viewer always needs operator
+// level; an operator blocked on a LINK request needs admin specifically.
+const approveLockReasonFor = (
+  allowed: boolean,
+  level: "admin" | "operator" | "viewer",
+): string | undefined => {
+  if (allowed) return undefined;
+  if (level === "viewer") return "Needs the operator role";
+  return "Needs the admin role for a LINK request";
+};
+
 // Attestation panel: SUBORDINATE keeps the existing TPM/CSR display (the CA
 // signs a CSR from an attested TPM identity); LINK has neither -- the trust
 // anchor is the manager's TOFU-pinned SHA-256 of the node's admin key,
@@ -164,6 +175,8 @@ export const EnrollmentDetailPage = () => {
   const approvable = canApprove(req);
   const allowedByLevel = levelAllowsApprove(level, req);
   const canApproveNow = approvable.ok && allowedByLevel;
+  const approveLockReason = approveLockReasonFor(allowedByLevel, level);
+  const rejectLockReason = level === "viewer" ? "Needs the operator role" : undefined;
 
   const runApprove = async (link?: LinkApprovalMaterial) => {
     setPending(true);
@@ -206,13 +219,6 @@ export const EnrollmentDetailPage = () => {
         {approvable.ok ? null : (
           <p className="font-mono text-xs text-destructive">{approvable.reason}</p>
         )}
-        {allowedByLevel ? null : (
-          <p className="font-mono text-xs text-muted-foreground">
-            {level === "viewer"
-              ? "Read-only — your operator level cannot approve or reject."
-              : "Approving a LINK request requires the admin level."}
-          </p>
-        )}
         {error ? (
           <Notice role="alert" tone="danger">
             {error}
@@ -226,11 +232,17 @@ export const EnrollmentDetailPage = () => {
           />
         ) : (
           <div className="flex gap-2">
-            <Button disabled={!canApproveNow || pending} onClick={handleApproveClick} size="sm">
+            <Button
+              disabled={!approveLockReason && (!canApproveNow || pending)}
+              lockedReason={approveLockReason}
+              onClick={handleApproveClick}
+              size="sm"
+            >
               {pending ? "Approving…" : "Approve"}
             </Button>
             <Button
-              disabled={level === "viewer" || pending}
+              disabled={!rejectLockReason && pending}
+              lockedReason={rejectLockReason}
               onClick={() => setRejecting(true)}
               size="sm"
               variant="destructive"

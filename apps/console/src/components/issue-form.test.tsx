@@ -47,8 +47,19 @@ vi.mock("@/lib/certs", async (importOriginal) => {
   return { ...actual, issueCert: (...args: unknown[]) => issueCert(...args) };
 });
 
+// Issuing needs operator level or above; every other test here runs as an
+// operator so the gate itself is exercised separately below.
+let operatorLevel: "admin" | "operator" | "viewer" = "operator";
+vi.mock("@/context/auth", () => ({
+  useAuth: () => ({
+    operator: { commonName: "op@acme.example", level: operatorLevel, serial: "AA" },
+    status: "authenticated",
+  }),
+}));
+
 describe("IssueForm profile picker", () => {
   beforeEach(() => {
+    operatorLevel = "operator";
     __resetCerts();
     __resetProfiles();
     fleetMode.mockReturnValue("mock");
@@ -80,12 +91,28 @@ describe("IssueForm profile picker", () => {
     );
     await waitFor(() => expect(onIssued).toHaveBeenCalled());
   });
+
+  // Issuing was never gated in the console at all, even though the manager
+  // requires operator level; #183 catches the presentation up with the kit's
+  // lock pattern so a viewer sees why before submitting, not after.
+  it("locks Issue for a viewer and makes no issue RPC", () => {
+    operatorLevel = "viewer";
+    render(<IssueForm node={issuingNode} onIssued={vi.fn()} />);
+    const button = screen.getByRole("button", { name: /^issue/i });
+    expect(button).not.toBeDisabled();
+    expect(button).toHaveAttribute("aria-disabled", "true");
+    expect(button).toHaveAccessibleDescription(/needs the operator role/i);
+    issueCert.mockClear();
+    fireEvent.click(button);
+    expect(issueCert).not.toHaveBeenCalled();
+  });
 });
 
 describe("IssueForm live keygen and guarded export", () => {
   const fakePrivateKey = { extractable: true } as unknown as CryptoKey;
 
   beforeEach(() => {
+    operatorLevel = "operator";
     __resetCerts();
     __resetProfiles();
     fleetMode.mockReturnValue("live");

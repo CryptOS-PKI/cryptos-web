@@ -41,10 +41,11 @@ const catalog: CertProfile[] = [
   },
 ];
 
+let operatorLevel: "admin" | "viewer" = "admin";
 vi.mock("@/lib/fleet/mode", () => ({ fleetMode: () => "live" }));
 vi.mock("@/context/auth", () => ({
   useAuth: () => ({
-    operator: { commonName: "admin@acme.example", level: "admin", serial: "AA" },
+    operator: { commonName: "admin@acme.example", level: operatorLevel, serial: "AA" },
     status: "authenticated",
   }),
 }));
@@ -95,6 +96,7 @@ const renderAt = (path: string) =>
 
 describe("NodeProfilesPage drift view", () => {
   beforeEach(() => {
+    operatorLevel = "admin";
     getNodeConfig.mockReset().mockResolvedValue(driftedConfig());
     applyProfileToNode.mockReset().mockResolvedValue({ generation: 3, requiresReboot: false });
   });
@@ -117,5 +119,20 @@ describe("NodeProfilesPage drift view", () => {
     );
     // Reconcile refetches the node config to reflect the applied state.
     await waitFor(() => expect(getNodeConfig).toHaveBeenCalledTimes(2));
+  });
+
+  // Was hidden, replaced by a "Reconcile requires admin level" note; #183
+  // moves it to the kit's lock pattern instead.
+  it("locks Apply catalog version for a non-admin instead of hiding it", async () => {
+    operatorLevel = "viewer";
+    renderAt("/nodes/acme-issuing-01/profiles");
+
+    expect(await screen.findByText("Drifted")).toBeInTheDocument();
+    const apply = screen.getByRole("button", { name: /apply catalog version/i });
+    expect(apply).not.toBeDisabled();
+    expect(apply).toHaveAttribute("aria-disabled", "true");
+    expect(apply).toHaveAccessibleDescription(/needs the admin role/i);
+    fireEvent.click(apply);
+    expect(applyProfileToNode).not.toHaveBeenCalled();
   });
 });

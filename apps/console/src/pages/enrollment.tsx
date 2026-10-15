@@ -352,17 +352,16 @@ export const EnrollmentPage = () => {
           >
             Simulate incoming request
           </Button>
-          <Button disabled={!canCreate} onClick={() => setCreating(true)} size="sm">
+          <Button
+            lockedReason={canCreate ? undefined : "Needs the operator role"}
+            onClick={() => setCreating(true)}
+            size="sm"
+          >
             New enrollment
           </Button>
         </div>
       </div>
 
-      {canCreate ? null : (
-        <p className="font-mono text-xs text-muted-foreground">
-          Read-only — your operator level cannot create enrollment requests.
-        </p>
-      )}
       {error ? (
         <Notice role="alert" tone="danger">
           {error}

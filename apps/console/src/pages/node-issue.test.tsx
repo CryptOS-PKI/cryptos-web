@@ -16,11 +16,20 @@ limitations under the License.
 
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { __resetCerts, certsFor } from "@/lib/certs";
 import { NodeIssuePage } from "@/pages/node-issue";
 import { expectNoA11yViolations } from "@/test/axe";
+
+// IssueForm needs operator level or above; this page's own gating is covered
+// in issue-form.test.tsx, so every test here runs as an operator.
+vi.mock("@/context/auth", () => ({
+  useAuth: () => ({
+    operator: { commonName: "op@acme.example", level: "operator", serial: "AA" },
+    status: "authenticated",
+  }),
+}));
 
 const renderAt = (path: string) =>
   render(

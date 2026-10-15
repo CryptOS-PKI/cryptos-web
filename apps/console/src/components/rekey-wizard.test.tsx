@@ -35,6 +35,16 @@ vi.mock("@/lib/rekey", async () => {
 });
 vi.mock("@/lib/fleet/mode", () => ({ fleetMode: () => mode }));
 
+// Re-keying needs operator level or above; the live describe block below runs
+// as an operator so the gate itself is exercised separately.
+let operatorLevel: "admin" | "operator" | "viewer" = "operator";
+vi.mock("@/context/auth", () => ({
+  useAuth: () => ({
+    operator: { commonName: "op@acme.example", level: operatorLevel, serial: "AA" },
+    status: "authenticated",
+  }),
+}));
+
 describe("RekeyWizard (mock)", () => {
   beforeEach(() => {
     mode = "mock";
@@ -60,6 +70,7 @@ describe("RekeyWizard (mock)", () => {
 describe("RekeyWizard (live)", () => {
   beforeEach(() => {
     mode = "live";
+    operatorLevel = "operator";
     rekeyNode.mockReset().mockResolvedValue({
       chainLen: 2,
       issuerCn: "ACME Intermediate CA",
@@ -91,6 +102,20 @@ describe("RekeyWizard (live)", () => {
     render(<RekeyWizard node={rootNode()} />);
     expect(screen.getByText(/only for subordinate CAs/i)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /re-key/i })).not.toBeInTheDocument();
+    expect(rekeyNode).not.toHaveBeenCalled();
+  });
+
+  // Re-keying was never gated in the console at all, even though the manager
+  // requires operator level; #183 catches the presentation up with the kit's
+  // lock pattern so a viewer sees why before submitting, not after.
+  it("locks Re-key for a viewer and makes no RPC", () => {
+    operatorLevel = "viewer";
+    render(<RekeyWizard node={issuingNode()} />);
+    const button = screen.getByRole("button", { name: /^re-key/i });
+    expect(button).not.toBeDisabled();
+    expect(button).toHaveAttribute("aria-disabled", "true");
+    expect(button).toHaveAccessibleDescription(/needs the operator role/i);
+    fireEvent.click(button);
     expect(rekeyNode).not.toHaveBeenCalled();
   });
 });
