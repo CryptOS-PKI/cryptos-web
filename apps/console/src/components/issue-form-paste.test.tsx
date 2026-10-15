@@ -18,10 +18,19 @@ import "reflect-metadata";
 import { Pkcs10CertificateRequestGenerator } from "@peculiar/x509";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { beforeAll, describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import { IssueForm } from "@/components/issue-form";
 import { nodesList } from "@/lib/nodes";
+
+// IssueForm needs operator level or above; the gate itself is covered in
+// issue-form.test.tsx, so this file runs as an operator throughout.
+vi.mock("@/context/auth", () => ({
+  useAuth: () => ({
+    operator: { commonName: "op@acme.example", level: "operator", serial: "AA" },
+    status: "authenticated",
+  }),
+}));
 
 let csrPem = "";
 

@@ -149,13 +149,18 @@ describe("ConfigForm (live) whole-config-replace safety", () => {
     expect(screen.getByText(/error 1108/)).toBeInTheDocument();
   });
 
-  it("does not offer Apply to a non-admin and makes no apply RPC", async () => {
+  // Was hidden entirely, replaced by a "requires admin level" note; #183
+  // moves it to the kit's lock pattern instead.
+  it("locks Apply for a non-admin and makes no apply RPC", async () => {
     level = "viewer";
     render(<ConfigForm node={issuingNode()} />);
 
     await screen.findByLabelText(/revocation base url/i);
-    expect(screen.queryByRole("button", { name: /apply/i })).not.toBeInTheDocument();
-    expect(screen.getByText(/requires admin level/i)).toBeInTheDocument();
+    const button = screen.getByRole("button", { name: /apply/i });
+    expect(button).not.toBeDisabled();
+    expect(button).toHaveAttribute("aria-disabled", "true");
+    expect(button).toHaveAccessibleDescription(/needs the admin role/i);
+    fireEvent.click(button);
     expect(applyNodeConfig).not.toHaveBeenCalled();
   });
 });

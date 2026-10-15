@@ -121,10 +121,11 @@ const DriftView = ({ nodeName }: { nodeName: string }) => {
                 ))}
               </ul>
             ) : null}
-            {canReconcile && isAdmin ? (
+            {canReconcile ? (
               <div className="mt-2">
                 <Button
-                  disabled={pending === row.name}
+                  disabled={isAdmin && pending === row.name}
+                  lockedReason={isAdmin ? undefined : "Needs the admin role"}
                   onClick={() => void reconcile(row.name)}
                   size="sm"
                   type="button"
@@ -132,11 +133,6 @@ const DriftView = ({ nodeName }: { nodeName: string }) => {
                   {pending === row.name ? "Applying…" : "Apply catalog version"}
                 </Button>
               </div>
-            ) : null}
-            {canReconcile && !isAdmin ? (
-              <p className="mt-2 font-mono text-xs text-muted-foreground">
-                Reconcile requires admin level.
-              </p>
             ) : null}
           </Card>
         );
