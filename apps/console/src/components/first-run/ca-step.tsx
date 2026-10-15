@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { Button } from "@cryptos-pki/ui";
+import { Button, FingerprintConfirm, Notice } from "@cryptos-pki/ui";
 import { useEffect, useState } from "react";
 
 import type { RegisterForm, RegisterResult } from "@/lib/operator-cas";
@@ -22,9 +22,7 @@ import type { RegisterForm, RegisterResult } from "@/lib/operator-cas";
 import { OperatorCARegisterForm } from "@/components/operator-ca-register-form";
 import { registerOperatorCABootstrap } from "@/lib/bootstrap";
 import { readCertificateDer } from "@/lib/crypto/key-backup";
-import { colonFingerprint, normalizeFingerprint } from "@/lib/fingerprint";
 import { fleetErrorMessage } from "@/lib/fleet/error-copy";
-import { fieldClass, labelClass } from "@/lib/form";
 
 const EMPTY_FORM: RegisterForm = {
   caCertDer: new Uint8Array(),
@@ -57,7 +55,7 @@ export const CaStep = ({
     inProgress ? null : "none",
   );
   const [replace, setReplace] = useState(false);
-  const [pasted, setPasted] = useState("");
+  const [matches, setMatches] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<null | string>(null);
 
@@ -86,7 +84,6 @@ export const CaStep = ({
 
   if (current !== "none" && !replace) {
     const ca = current.operatorCa;
-    const matches = normalizeFingerprint(pasted) === ca.sha256;
     const reconfirm = async () => {
       setPending(true);
       setError(null);
@@ -104,42 +101,37 @@ export const CaStep = ({
     };
     return (
       <div className="space-y-3">
-        <p className="text-sm">
-          An operator CA is already registered: <span className="font-mono">{ca.subject}</span>.
-          Confirm it is yours before you continue.
-        </p>
-        <code className="block break-all rounded-md border bg-secondary/40 p-2 font-mono text-xs">
-          {colonFingerprint(ca.sha256)}
-        </code>
-        <p className="text-xs text-muted-foreground">
-          On the CA machine, run{" "}
+        <FingerprintConfirm
+          actions={
+            <>
+              <Button onClick={() => setReplace(true)} size="sm" variant="outline">
+                Register a different CA
+              </Button>
+              <Button disabled={!matches || pending} onClick={() => void reconfirm()} size="sm">
+                Confirm this CA
+              </Button>
+            </>
+          }
+          compare
+          fingerprint={ca.sha256}
+          fingerprintLabel="sha256"
+          onCompare={setMatches}
+          subject={[["subject", ca.subject]]}
+          title="An operator CA is already registered"
+          tone="warning"
+        >
+          Confirm it is yours before you continue. On the CA machine, run{" "}
           <code className="font-mono">
             openssl x509 -in operator-ca.crt -noout -fingerprint -sha256
           </code>{" "}
-          and paste the output. If it doesn&apos;t match, register your own CA: that retires this
-          one immediately.
-        </p>
-        <label className="block space-y-1">
-          <span className={labelClass}>Paste the fingerprint from the CA machine</span>
-          <input
-            className={fieldClass}
-            onChange={(e) => setPasted(e.target.value)}
-            value={pasted}
-          />
-        </label>
+          and paste the output below. If it doesn&apos;t match, register your own CA: that retires
+          this one immediately.
+        </FingerprintConfirm>
         {error ? (
-          <p className="font-mono text-xs text-destructive" role="alert">
+          <Notice role="alert" tone="danger">
             {error}
-          </p>
+          </Notice>
         ) : null}
-        <div className="flex justify-end gap-2">
-          <Button onClick={() => setReplace(true)} size="sm" variant="outline">
-            Register a different CA
-          </Button>
-          <Button disabled={!matches || pending} onClick={() => void reconfirm()} size="sm">
-            Confirm this CA
-          </Button>
-        </div>
       </div>
     );
   }

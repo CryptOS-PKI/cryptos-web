@@ -14,12 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { Button } from "@cryptos-pki/ui";
+import { Button, Field, Input, Notice } from "@cryptos-pki/ui";
 import { useState } from "react";
 
 import { startBootstrapSession } from "@/lib/bootstrap";
 import { fleetErrorMessage } from "@/lib/fleet/error-copy";
-import { fieldClass, labelClass } from "@/lib/form";
+
+const legendClass = "font-mono text-[10.5px] uppercase tracking-[0.08em] text-muted-foreground";
 
 const Command = ({ children }: { children: string }) => (
   <code className="block break-all rounded-md border bg-secondary/40 px-2 py-1 font-mono text-[11px]">
@@ -60,27 +61,20 @@ export const TokenStep = ({
 
   return (
     <div className="space-y-4">
-      <div
-        className="space-y-1 rounded-md border border-destructive/40 bg-destructive/5 p-3"
-        role="note"
-      >
-        <p className="text-sm font-semibold text-foreground">Check the fingerprint first</p>
-        <p className="text-xs text-muted-foreground">
-          This Fleet Manager serves a self-signed certificate until you give it one. Before you type
-          the token, open the certificate details from the browser&apos;s address bar and compare
-          its SHA-256 fingerprint with the{" "}
-          <code className="font-mono">server certificate SHA-256</code> line in the Fleet
-          Manager&apos;s log. If they differ, stop: someone may be intercepting the connection, and
-          the token would be theirs.
-        </p>
-      </div>
+      <Notice role="note" title="Check the fingerprint first" tone="danger">
+        This Fleet Manager serves a self-signed certificate until you give it one. Before you type
+        the token, open the certificate details from the browser&apos;s address bar and compare its
+        SHA-256 fingerprint with the <code className="font-mono">server certificate SHA-256</code>{" "}
+        line in the Fleet Manager&apos;s log. If they differ, stop: someone may be intercepting the
+        connection, and the token would be theirs.
+      </Notice>
 
       {inProgress ? (
-        <p className="rounded-md border border-warning/40 bg-warning/10 p-3 text-xs text-muted-foreground">
+        <Notice tone="warning">
           First run was already started. If that wasn&apos;t you, continue with the newest token
           from the log. That ends the earlier session, and replacing the registered CA retires
           anything it trusted.
-        </p>
+        </Notice>
       ) : null}
 
       <div className="space-y-1 rounded-md border p-3">
@@ -98,10 +92,10 @@ export const TokenStep = ({
           The Fleet Manager prints a single-use token in its log at start, and a new one each time
           one is used or expires. Take the newest.
         </p>
-        <p className={labelClass}>Linux / macOS</p>
+        <p className={legendClass}>Linux / macOS</p>
         <Command>{"docker logs <container> 2>&1 | grep 'bootstrap token'"}</Command>
         <Command>{"journalctl -u fleet-manager | grep 'bootstrap token'"}</Command>
-        <p className={labelClass}>Windows (PowerShell)</p>
+        <p className={legendClass}>Windows (PowerShell)</p>
         <Command>{"docker logs <container> 2>&1 | Select-String 'bootstrap token'"}</Command>
         {tokenExpiresAt ? (
           <p className="text-xs text-muted-foreground">
@@ -110,21 +104,19 @@ export const TokenStep = ({
         ) : null}
       </div>
 
-      <label className="block space-y-1">
-        <span className={labelClass}>Bootstrap token</span>
-        <input
+      <Field label="Bootstrap token">
+        <Input
           autoComplete="off"
-          className={fieldClass}
           onChange={(e) => setToken(e.target.value)}
           placeholder="fos_boot_..."
           spellCheck={false}
           value={token}
         />
-      </label>
+      </Field>
       {error ? (
-        <p className="font-mono text-xs text-destructive" role="alert">
+        <Notice role="alert" tone="danger">
           {error}
-        </p>
+        </Notice>
       ) : null}
       <div className="flex justify-end">
         <Button disabled={token.trim() === "" || pending} onClick={() => void start()} size="sm">

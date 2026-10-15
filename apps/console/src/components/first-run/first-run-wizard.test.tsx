@@ -29,6 +29,7 @@ import { __resetBootstrap } from "@/lib/bootstrap";
 import { base64 } from "@/lib/crypto/leaf-key";
 import { colonFingerprint } from "@/lib/fingerprint";
 import * as modeMod from "@/lib/fleet/mode";
+import { expectNoA11yViolations } from "@/test/axe";
 
 const { buildCredentialPkcs12, downloadBytes, downloadText } = vi.hoisted(() => ({
   buildCredentialPkcs12: vi.fn(),
@@ -157,6 +158,13 @@ afterEach(() => {
 });
 
 describe("FirstRunWizard token step", () => {
+  it("has no axe violations", async () => {
+    const { container } = render(
+      <FirstRunWizard inProgress={false} tokenExpiresAt="2026-09-30T13:00:00Z" />,
+    );
+    await expectNoA11yViolations(container);
+  });
+
   it("leads with the fingerprint check and shows where the token is on each OS", () => {
     render(<FirstRunWizard inProgress={false} tokenExpiresAt="2026-09-30T13:00:00Z" />);
     const danger = screen.getAllByRole("note")[0];
@@ -193,6 +201,22 @@ describe("FirstRunWizard (mock mode)", () => {
   beforeEach(() => {
     vi.spyOn(modeMod, "fleetMode").mockReturnValue("mock");
   });
+
+  it("has no axe violations once the admin key backup step is showing", async () => {
+    const ca = await makeCA();
+    const { container } = render(<FirstRunWizard inProgress={false} tokenExpiresAt="" />);
+    await startSession();
+    await registerCA(ca);
+    fill(/full name/i, "Ada Admin");
+    fill(/^email/i, EMAIL);
+    fireEvent.click(screen.getByRole("button", { name: /make my admin key/i }));
+    await screen.findByLabelText(
+      /key backup passphrase/i,
+      { selector: "code" },
+      { timeout: 10_000 },
+    );
+    await expectNoA11yViolations(container);
+  }, 30_000);
 
   it("path A: token, CA with fingerprint confirm, key backup before the CSR, upload, PKCS#12, install", async () => {
     const generated = captureKeys();

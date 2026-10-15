@@ -14,10 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import { Button } from "@cryptos-pki/ui";
 import { useState } from "react";
 import { useLocation } from "react-router-dom";
 
-import { Button } from "@/components/ui/button";
 import { useOptionalAuth } from "@/context/auth";
 import { buildReport, fetchBuildInfo } from "@/lib/diagnostics";
 import { fleetMode } from "@/lib/fleet/mode";
