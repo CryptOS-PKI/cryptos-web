@@ -81,6 +81,7 @@ vi.mock("@/lib/fleet/client", () => ({
   fleetClient: () => ({
     listCertificates: () => Promise.resolve(listCertificatesResult),
     listNodes: () => Promise.resolve(listNodesResult),
+    listNodeTsaCertificates: () => Promise.resolve({ certificates: [] }),
   }),
 }));
 
@@ -107,11 +108,13 @@ describe("NodeDetailPage live", () => {
     expect(await screen.findByRole("heading", { name: "lab-sub" })).toBeInTheDocument();
     expect(screen.getByText("Pending")).toBeInTheDocument();
     expect(screen.getByText("Certificates")).toBeInTheDocument();
+    await screen.findByText(/not running/i);
   });
 
   it("renders an established node", async () => {
     renderAt("/nodes/lab-issuing");
     expect(await screen.findByRole("heading", { name: "lab-issuing" })).toBeInTheDocument();
     expect(await screen.findByRole("link", { name: "AA11" })).toBeInTheDocument();
+    await screen.findByText(/not running/i);
   });
 });
