@@ -14,10 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import { Button, Dialog, Field, Input, inputClasses, Notice } from "@cryptos-pki/ui";
 import { useState } from "react";
 
-import { DialogFrame } from "@/components/dialog-frame";
-import { Button } from "@/components/ui/button";
 import {
   buildCredentialPkcs12,
   keyMatchesCertificate,
@@ -27,7 +26,6 @@ import {
 import { base64 } from "@/lib/crypto/leaf-key";
 import { downloadBytes, readFileBytes } from "@/lib/download";
 import { fleetErrorMessage } from "@/lib/fleet/error-copy";
-import { fieldClass, labelClass } from "@/lib/form";
 import {
   type CredentialRequestRow,
   type OperatorCredentialRow,
@@ -35,6 +33,8 @@ import {
 } from "@/lib/operators";
 
 type KeySource = "file" | "held" | "holder";
+
+const legendClass = "font-mono text-[10.5px] uppercase tracking-[0.08em] text-muted-foreground";
 
 // CredentialCompleteDialog records a certificate the operator CA signed, for
 // a pending request or (with no request) as an out-of-band import. When this
@@ -141,11 +141,28 @@ export const CredentialCompleteDialog = ({
     : "Record an operator certificate";
 
   return (
-    <DialogFrame labelId="credential-complete-title" onClose={onClose} wide>
-      <h2 className="text-lg font-bold" id="credential-complete-title">
-        {title}
-      </h2>
-
+    <Dialog
+      footer={
+        recorded ? (
+          <Button onClick={onClose} size="sm">
+            Close
+          </Button>
+        ) : (
+          <>
+            <Button onClick={onClose} size="sm" variant="outline">
+              Cancel
+            </Button>
+            <Button disabled={!ready} onClick={() => void complete()} size="sm">
+              {submitLabel}
+            </Button>
+          </>
+        )
+      }
+      onClose={onClose}
+      open
+      title={title}
+      variant="wide"
+    >
       {recorded ? (
         <div className="space-y-2">
           <p className="text-sm" role="status">
@@ -172,26 +189,20 @@ export const CredentialCompleteDialog = ({
               </code>
             </p>
           )}
-          <div className="flex justify-end">
-            <Button onClick={onClose} size="sm">
-              Close
-            </Button>
-          </div>
         </div>
       ) : (
         <>
-          <label className="block space-y-1">
-            <span className={labelClass}>Signed certificate (PEM)</span>
+          <Field label="Signed certificate (PEM)">
             <textarea
-              className={`${fieldClass} h-32`}
+              className={`${inputClasses} h-32`}
               onChange={(e) => setCertText(e.target.value)}
               value={certText}
             />
-          </label>
-          <label className="block space-y-1 text-xs">
-            <span className={`${labelClass} block`}>Or choose the certificate file</span>
-            <input
+          </Field>
+          <Field label="Or choose the certificate file">
+            <Input
               accept=".crt,.pem,.cer,.der"
+              mono={false}
               onChange={(e) => {
                 const chosen = e.target.files?.[0];
                 if (chosen) {
@@ -209,21 +220,16 @@ export const CredentialCompleteDialog = ({
               }}
               type="file"
             />
-          </label>
+          </Field>
 
           {request ? null : (
-            <label className="block space-y-1">
-              <span className={labelClass}>Holder&apos;s full name</span>
-              <input
-                className={fieldClass}
-                onChange={(e) => setFullName(e.target.value)}
-                value={fullName}
-              />
-            </label>
+            <Field label="Holder's full name">
+              <Input onChange={(e) => setFullName(e.target.value)} value={fullName} />
+            </Field>
           )}
 
           <fieldset className="space-y-2">
-            <legend className={labelClass}>The private key</legend>
+            <legend className={legendClass}>The private key</legend>
             {heldBackup ? (
               <label className="flex items-center gap-2 text-sm">
                 <input
@@ -256,57 +262,45 @@ export const CredentialCompleteDialog = ({
           </fieldset>
 
           {keySource === "file" ? (
-            <label className="block space-y-1 text-xs">
-              <span className={`${labelClass} block`}>Key backup file</span>
-              <input
+            <Field label="Key backup file">
+              <Input
                 accept=".pem,.key"
+                mono={false}
                 onChange={(e) => {
                   const chosen = e.target.files?.[0];
                   if (chosen) void readFileBytes(chosen).then(setBackupFile);
                 }}
                 type="file"
               />
-            </label>
+            </Field>
           ) : null}
           {needsKey ? (
             <>
-              <label className="block space-y-1">
-                <span className={labelClass}>Key backup passphrase</span>
-                <input
+              <Field label="Key backup passphrase">
+                <Input
                   autoComplete="off"
-                  className={fieldClass}
                   onChange={(e) => setPassphrase(e.target.value)}
                   type="password"
                   value={passphrase}
                 />
-              </label>
-              <label className="block space-y-1">
-                <span className={labelClass}>Operator CA certificate for the chain (optional)</span>
+              </Field>
+              <Field label="Operator CA certificate for the chain (optional)">
                 <textarea
-                  className={`${fieldClass} h-20`}
+                  className={`${inputClasses} h-20`}
                   onChange={(e) => setChainText(e.target.value)}
                   value={chainText}
                 />
-              </label>
+              </Field>
             </>
           ) : null}
 
           {error ? (
-            <p className="font-mono text-xs text-destructive" role="alert">
+            <Notice role="alert" tone="danger">
               {error}
-            </p>
+            </Notice>
           ) : null}
-
-          <div className="flex justify-end gap-2">
-            <Button onClick={onClose} size="sm" variant="outline">
-              Cancel
-            </Button>
-            <Button disabled={!ready} onClick={() => void complete()} size="sm">
-              {submitLabel}
-            </Button>
-          </div>
         </>
       )}
-    </DialogFrame>
+    </Dialog>
   );
 };

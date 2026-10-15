@@ -21,11 +21,21 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { __resetCerts, allCerts, canIssue } from "@/lib/certs";
 import { __resetNodes, nodesList } from "@/lib/nodes";
 import { CertificatesPage } from "@/pages/certificates";
+import { expectNoA11yViolations } from "@/test/axe";
 
 describe("CertificatesPage", () => {
   beforeEach(() => {
     __resetNodes();
     __resetCerts();
+  });
+
+  it("has no axe violations", async () => {
+    const { container } = render(
+      <MemoryRouter>
+        <CertificatesPage />
+      </MemoryRouter>,
+    );
+    await expectNoA11yViolations(container);
   });
 
   it("lists seeded certs and links the subject to the cert detail", () => {

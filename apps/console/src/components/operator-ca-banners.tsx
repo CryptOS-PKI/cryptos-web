@@ -14,9 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import type { OperatorCABanner } from "@/lib/operator-cas";
+import { Notice } from "@cryptos-pki/ui";
 
-import { cn } from "@/lib/utils";
+import type { OperatorCABanner } from "@/lib/operator-cas";
 
 // OperatorCABanners shows what an admin has to act on for the trusted
 // operator CAs: no view of the CA's revocations, a CRL near or past its
@@ -25,19 +25,14 @@ export const OperatorCABanners = ({ banners }: { banners: OperatorCABanner[] }) 
   banners.length === 0 ? null : (
     <section aria-label="Operator CAs: needs attention" className="space-y-2">
       {banners.map((b) => (
-        <div
-          className={cn(
-            "rounded-md border p-3",
-            b.tone === "danger"
-              ? "border-destructive/40 bg-destructive/5"
-              : "border-warning/40 bg-warning/10",
-          )}
+        <Notice
           key={`${b.sha256}/${b.title}`}
           role="status"
+          title={b.title}
+          tone={b.tone === "danger" ? "danger" : "warning"}
         >
-          <p className="text-sm font-semibold text-foreground">{b.title}</p>
-          <p className="text-xs text-muted-foreground">{b.detail}</p>
-        </div>
+          {b.detail}
+        </Notice>
       ))}
     </section>
   );

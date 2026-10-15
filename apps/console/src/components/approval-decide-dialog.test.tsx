@@ -18,6 +18,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ApprovalDecideDialog } from "@/components/approval-decide-dialog";
+import { expectNoA11yViolations } from "@/test/axe";
 
 const decideApproval = vi.fn();
 vi.mock("@/lib/approvals", async (importOriginal) => ({
@@ -37,6 +38,11 @@ const target = {
 
 describe("ApprovalDecideDialog", () => {
   beforeEach(() => decideApproval.mockReset());
+
+  it("has no axe violations", async () => {
+    render(<ApprovalDecideDialog approve onClose={vi.fn()} onDecided={vi.fn()} target={target} />);
+    await expectNoA11yViolations(document.body);
+  });
 
   it("repeats the approval ID and summary to check, and the digest as an audit detail", async () => {
     decideApproval.mockResolvedValue({ ...target, status: "approved" });

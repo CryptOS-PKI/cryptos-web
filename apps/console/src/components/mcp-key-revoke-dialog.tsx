@@ -14,9 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import { Button, Dialog, Notice } from "@cryptos-pki/ui";
 import { useState } from "react";
 
-import { Button } from "@/components/ui/button";
 import { revokeMcpKey } from "@/lib/mcp-keys";
 
 // McpKeyRevokeDialog confirms an agent key revocation. The manager refuses the
@@ -48,45 +48,32 @@ export const McpKeyRevokeDialog = ({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-      role="presentation"
-    >
-      <div
-        aria-labelledby="mcp-key-revoke-title"
-        aria-modal="true"
-        className="w-full max-w-sm space-y-4 rounded-xl border bg-card p-5 shadow-xl"
-        role="dialog"
-      >
-        <div className="space-y-1">
-          <h2 className="text-lg font-bold" id="mcp-key-revoke-title">
-            Revoke agent key
-          </h2>
-          <p className="font-mono text-xs text-muted-foreground">
-            {target.label || target.id} &middot; {target.operatorCn}
-          </p>
-        </div>
-        <p className="text-sm text-muted-foreground">
-          Any agent using this key loses access on its next request. This cannot be undone; the
-          agent has to sign in again for a new key.
-        </p>
-        {error ? (
-          <p className="font-mono text-xs text-destructive" role="alert">
-            {error}
-          </p>
-        ) : null}
-        <div className="flex justify-end gap-2">
+    <Dialog
+      description={`${target.label || target.id} · ${target.operatorCn}`}
+      footer={
+        <>
           <Button disabled={pending} onClick={onClose} size="sm" variant="outline">
             Cancel
           </Button>
           <Button disabled={pending} onClick={confirm} size="sm" variant="destructive">
             {pending ? "Revoking…" : "Revoke"}
           </Button>
-        </div>
-      </div>
-    </div>
+        </>
+      }
+      onClose={onClose}
+      open
+      title="Revoke agent key"
+      variant="destructive"
+    >
+      <p className="text-sm text-muted-foreground">
+        Any agent using this key loses access on its next request. This cannot be undone; the agent
+        has to sign in again for a new key.
+      </p>
+      {error ? (
+        <Notice role="alert" tone="danger">
+          {error}
+        </Notice>
+      ) : null}
+    </Dialog>
   );
 };

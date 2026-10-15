@@ -14,14 +14,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import type { ColumnDef } from "@tanstack/react-table";
-
-import { useState } from "react";
+import {
+  Badge,
+  Button,
+  cn,
+  DataTable,
+  type DataTableColumn,
+  Dialog,
+  Field,
+  inputClasses,
+  Notice,
+} from "@cryptos-pki/ui";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
-import { DataTable } from "@/components/data-table/data-table";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/auth";
 import {
   createEnrollment,
@@ -52,37 +58,6 @@ const simulated = (n: number) => ({
   role: "issuing" as const,
 });
 
-const enrollmentColumns: ColumnDef<EnrollmentRequest, unknown>[] = [
-  {
-    accessorKey: "proposedName",
-    cell: ({ row }) => (
-      <Link className="text-primary hover:underline" to={`/enrollment/${row.original.id}`}>
-        {row.original.proposedName}
-      </Link>
-    ),
-    header: "Proposed name",
-  },
-  {
-    accessorKey: "kind",
-    cell: ({ row }) => <Badge variant="outline">{row.original.kind}</Badge>,
-    header: "Kind",
-  },
-  { accessorFn: (r) => roleLabels[r.role], header: "Role", id: "role" },
-  { accessorKey: "parentCn", header: "Parent CA" },
-  {
-    accessorFn: (r) => r.requestedAt.slice(0, 10),
-    header: "Requested",
-    id: "requested",
-  },
-  {
-    accessorKey: "status",
-    cell: ({ row }) => (
-      <span className={STATUS_TONE[row.original.status]}>{row.original.status}</span>
-    ),
-    header: "Status",
-  },
-];
-
 const EMPTY_LINK_DRAFT = { adminCertPem: "", adminKeyPem: "", caPem: "", nodeEndpoint: "" };
 const EMPTY_SUBORDINATE_DRAFT = { childNode: "", parentCn: "", profile: "" };
 
@@ -91,7 +66,7 @@ const EMPTY_SUBORDINATE_DRAFT = { childNode: "", parentCn: "", profile: "" };
 // directly; SUBORDINATE carries the child/parent/profile for a CSR-ferried
 // provision. Kept as one component (rather than two pages) so switching kind
 // mid-form does not lose the operator's place.
-const CreateEnrollmentForm = ({
+const CreateEnrollmentDialog = ({
   onCancel,
   onSubmit,
 }: {
@@ -127,124 +102,67 @@ const CreateEnrollmentForm = ({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onCancel();
-      }}
-      role="presentation"
-    >
-      <div
-        aria-labelledby="create-enrollment-title"
-        aria-modal="true"
-        className="w-full max-w-md space-y-4 rounded-xl border bg-card p-5 shadow-xl"
-        role="dialog"
-      >
-        <h2 className="text-lg font-bold" id="create-enrollment-title">
-          New enrollment
-        </h2>
-
-        <label className="block space-y-1">
-          <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-            Kind
-          </span>
-          <select
-            className="w-full rounded-md border bg-card px-3 py-2 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-            onChange={(e) => setKind(e.target.value as EnrollmentKind)}
-            value={kind}
-          >
-            <option value="SUBORDINATE">Subordinate (CSR)</option>
-            <option value="LINK">Link (agentless)</option>
-          </select>
-        </label>
-
-        {kind === "LINK" ? (
-          <>
-            <label className="block space-y-1">
-              <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-                Node endpoint
-              </span>
-              <input
-                className="w-full rounded-md border bg-card px-3 py-2 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                {...linkField("nodeEndpoint")}
-              />
-            </label>
-            <label className="block space-y-1">
-              <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-                Admin cert (PEM)
-              </span>
-              <textarea
-                className="h-16 w-full rounded-md border bg-card px-3 py-2 font-mono text-xs focus:outline-none focus:ring-2 focus:ring-ring"
-                {...linkField("adminCertPem")}
-              />
-            </label>
-            <label className="block space-y-1">
-              <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-                Admin key (PEM)
-              </span>
-              <textarea
-                className="h-16 w-full rounded-md border bg-card px-3 py-2 font-mono text-xs focus:outline-none focus:ring-2 focus:ring-ring"
-                {...linkField("adminKeyPem")}
-              />
-            </label>
-            <label className="block space-y-1">
-              <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-                CA (PEM)
-              </span>
-              <textarea
-                aria-describedby="link-ca-hint"
-                className="h-16 w-full rounded-md border bg-card px-3 py-2 font-mono text-xs focus:outline-none focus:ring-2 focus:ring-ring"
-                {...linkField("caPem")}
-              />
-            </label>
-            <p className="text-xs text-muted-foreground" id="link-ca-hint">
-              {LINK_CA_HINT}
-            </p>
-          </>
-        ) : (
-          <>
-            <label className="block space-y-1">
-              <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-                Child node
-              </span>
-              <input
-                className="w-full rounded-md border bg-card px-3 py-2 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                {...subordinateField("childNode")}
-              />
-            </label>
-            <label className="block space-y-1">
-              <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-                Parent CN
-              </span>
-              <input
-                className="w-full rounded-md border bg-card px-3 py-2 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                {...subordinateField("parentCn")}
-              />
-            </label>
-            <label className="block space-y-1">
-              <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-                Profile
-              </span>
-              <input
-                className="w-full rounded-md border bg-card px-3 py-2 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                {...subordinateField("profile")}
-              />
-            </label>
-          </>
-        )}
-
-        <div className="flex justify-end gap-2">
+    <Dialog
+      footer={
+        <>
           <Button onClick={onCancel} size="sm" variant="outline">
             Cancel
           </Button>
           <Button disabled={!complete} onClick={submit} size="sm">
             Submit
           </Button>
-        </div>
+        </>
+      }
+      onClose={onCancel}
+      open
+      title="New enrollment"
+    >
+      <div className="space-y-4">
+        <Field label="Kind">
+          <select
+            className={inputClasses}
+            onChange={(e) => setKind(e.target.value as EnrollmentKind)}
+            value={kind}
+          >
+            <option value="SUBORDINATE">Subordinate (CSR)</option>
+            <option value="LINK">Link (agentless)</option>
+          </select>
+        </Field>
+
+        {kind === "LINK" ? (
+          <>
+            <Field label="Node endpoint">
+              <input className={inputClasses} {...linkField("nodeEndpoint")} />
+            </Field>
+            <Field label="Admin cert (PEM)">
+              <textarea className={cn(inputClasses, "h-16")} {...linkField("adminCertPem")} />
+            </Field>
+            <Field label="Admin key (PEM)">
+              <textarea className={cn(inputClasses, "h-16")} {...linkField("adminKeyPem")} />
+            </Field>
+            <Field help={LINK_CA_HINT} label="CA (PEM)">
+              <textarea className={cn(inputClasses, "h-16")} {...linkField("caPem")} />
+            </Field>
+          </>
+        ) : (
+          <>
+            <Field label="Child node">
+              <input className={inputClasses} {...subordinateField("childNode")} />
+            </Field>
+            <Field label="Parent CN">
+              <input className={inputClasses} {...subordinateField("parentCn")} />
+            </Field>
+            <Field label="Profile">
+              <input className={inputClasses} {...subordinateField("profile")} />
+            </Field>
+          </>
+        )}
       </div>
-    </div>
+    </Dialog>
   );
 };
+
+type SortId = "kind" | "parentCn" | "proposedName" | "requested" | "role" | "status";
 
 export const EnrollmentPage = () => {
   const { operator } = useAuth();
@@ -254,7 +172,59 @@ export const EnrollmentPage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<null | string>(null);
 
+  const [status, setStatus] = useState("");
+  const [role, setRole] = useState("");
+  const [kind, setKind] = useState("");
+  const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<{ desc: boolean; id: SortId } | null>({
+    desc: true,
+    id: "requested",
+  });
+
   const canCreate = operator ? operator.level !== "viewer" : false;
+
+  const statuses = useMemo(
+    // eslint-disable-next-line unicorn/no-array-sort
+    () => [...new Set(requests.map((r) => r.status))].sort((a, b) => a.localeCompare(b)),
+    [requests],
+  );
+  const roles = useMemo(
+    // eslint-disable-next-line unicorn/no-array-sort
+    () => [...new Set(requests.map((r) => r.role))].sort((a, b) => a.localeCompare(b)),
+    [requests],
+  );
+  const kinds = useMemo(
+    // eslint-disable-next-line unicorn/no-array-sort
+    () => [...new Set(requests.map((r) => r.kind))].sort((a, b) => a.localeCompare(b)),
+    [requests],
+  );
+
+  const filtered = requests
+    .filter((r) => !status || r.status === status)
+    .filter((r) => !role || r.role === role)
+    .filter((r) => !kind || r.kind === kind)
+    .filter(
+      (r) =>
+        !query ||
+        r.proposedName.toLowerCase().includes(query.toLowerCase()) ||
+        r.parentCn.toLowerCase().includes(query.toLowerCase()),
+    );
+  const rows = sort
+    ? // eslint-disable-next-line unicorn/no-array-sort -- Array#toSorted needs ES2023 lib
+      [...filtered].sort((a, b) => {
+        const dir = sort.desc ? -1 : 1;
+        if (sort.id === "requested") return a.requestedAt.localeCompare(b.requestedAt) * dir;
+        return a[sort.id].localeCompare(b[sort.id]) * dir;
+      })
+    : filtered;
+
+  const sortOf = (id: SortId) => (sort?.id === id ? (sort.desc ? "desc" : "asc") : false);
+  const toggleSort = (id: SortId) =>
+    setSort((previous) => {
+      if (!previous || previous.id !== id) return { desc: false, id };
+      if (!previous.desc) return { desc: true, id };
+      return null;
+    });
 
   const handleCreate = async (draft: EnrollmentCreateDraft) => {
     setSubmitting(true);
@@ -268,6 +238,104 @@ export const EnrollmentPage = () => {
       setSubmitting(false);
     }
   };
+
+  const columns: DataTableColumn<EnrollmentRequest>[] = [
+    {
+      cell: (r) => (
+        <Link className="text-primary hover:underline" to={`/enrollment/${r.id}`}>
+          {r.proposedName}
+        </Link>
+      ),
+      filter: (
+        <input
+          aria-label="Filter proposedName"
+          className={inputClasses}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Filter…"
+          value={query}
+        />
+      ),
+      header: "Proposed name",
+      id: "proposedName",
+      mobile: "title",
+      onSort: () => toggleSort("proposedName"),
+      sort: sortOf("proposedName"),
+    },
+    {
+      cell: (r) => <Badge variant="outline">{r.kind}</Badge>,
+      filter: (
+        <select
+          aria-label="Filter Kind"
+          className={inputClasses}
+          onChange={(event) => setKind(event.target.value)}
+          value={kind}
+        >
+          <option value="">All</option>
+          {kinds.map((k) => (
+            <option key={k} value={k}>
+              {k}
+            </option>
+          ))}
+        </select>
+      ),
+      header: "Kind",
+      id: "kind",
+      onSort: () => toggleSort("kind"),
+      sort: sortOf("kind"),
+    },
+    {
+      cell: (r) => roleLabels[r.role],
+      filter: (
+        <select
+          aria-label="Filter Role"
+          className={inputClasses}
+          onChange={(event) => setRole(event.target.value)}
+          value={role}
+        >
+          <option value="">All</option>
+          {roles.map((r) => (
+            <option key={r} value={r}>
+              {roleLabels[r]}
+            </option>
+          ))}
+        </select>
+      ),
+      header: "Role",
+      id: "role",
+      onSort: () => toggleSort("role"),
+      sort: sortOf("role"),
+    },
+    {
+      cell: (r) => r.parentCn,
+      header: "Parent CA",
+      id: "parentCn",
+      onSort: () => toggleSort("parentCn"),
+      sort: sortOf("parentCn"),
+    },
+    { cell: (r) => r.requestedAt.slice(0, 10), header: "Requested", id: "requested" },
+    {
+      cell: (r) => <span className={STATUS_TONE[r.status]}>{r.status}</span>,
+      filter: (
+        <select
+          aria-label="Filter Status"
+          className={inputClasses}
+          onChange={(event) => setStatus(event.target.value)}
+          value={status}
+        >
+          <option value="">All</option>
+          {statuses.map((s) => (
+            <option key={s} value={s}>
+              {s}
+            </option>
+          ))}
+        </select>
+      ),
+      header: "Status",
+      id: "status",
+      onSort: () => toggleSort("status"),
+      sort: sortOf("status"),
+    },
+  ];
 
   return (
     <section className="space-y-5">
@@ -295,22 +363,22 @@ export const EnrollmentPage = () => {
           Read-only — your operator level cannot create enrollment requests.
         </p>
       )}
-      {error ? <p className="font-mono text-xs text-destructive">{error}</p> : null}
+      {error ? (
+        <Notice role="alert" tone="danger">
+          {error}
+        </Notice>
+      ) : null}
 
       <DataTable
-        columns={enrollmentColumns}
-        data={requests}
-        facets={[
-          { columnId: "status", title: "Status" },
-          { columnId: "role", title: "Role" },
-          { columnId: "kind", title: "Kind" },
-        ]}
-        initialSort={[{ desc: true, id: "requested" }]}
-        searchKeys={["proposedName", "parentCn"]}
+        columns={columns}
+        filtered={status !== "" || role !== "" || kind !== "" || query !== ""}
+        label="Enrollment requests"
+        rowKey={(r) => r.id}
+        rows={rows}
       />
 
       {creating ? (
-        <CreateEnrollmentForm
+        <CreateEnrollmentDialog
           onCancel={() => setCreating(false)}
           onSubmit={(draft) => void handleCreate(draft)}
         />

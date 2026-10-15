@@ -14,11 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import type { ColumnDef } from "@tanstack/react-table";
-
+import { DataTable, type DataTableColumn, Notice } from "@cryptos-pki/ui";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 
-import { DataTable } from "@/components/data-table/data-table";
 import { useNodes } from "@/lib/nodes";
 import {
   eligibleForProtocols,
@@ -49,55 +48,88 @@ const summarize = (nodes: ReturnType<typeof useNodes>): ProtocolSummary[] =>
     };
   });
 
-const columns: ColumnDef<ProtocolSummary, unknown>[] = [
-  {
-    accessorKey: "name",
-    cell: ({ row }) => (
-      <Link className="text-primary hover:underline" to={`/protocols/${row.original.kind}`}>
-        {row.original.name} ({row.original.rfc})
-      </Link>
-    ),
-    header: "Protocol",
-  },
-  {
-    cell: ({ row }) =>
-      row.original.implemented ? (
-        <span>
-          {row.original.running} of {row.original.eligible} eligible nodes
-        </span>
-      ) : (
-        <span className="text-muted-foreground">not wired up</span>
-      ),
-    header: "Serving",
-    id: "serving",
-  },
-  {
-    cell: ({ row }) =>
-      row.original.implemented ? (
-        <span className={row.original.rebootPending > 0 ? "text-warning" : "text-muted-foreground"}>
-          {row.original.rebootPending} reboot pending
-        </span>
-      ) : (
-        <span className="text-muted-foreground">—</span>
-      ),
-    header: "Reboot",
-    id: "reboot",
-  },
-  {
-    accessorFn: (p) => (p.implemented ? "implemented" : "unavailable"),
-    cell: ({ row }) => (
-      <span className={row.original.implemented ? "text-success" : "text-muted-foreground"}>
-        {row.original.implemented ? "implemented" : "unavailable"}
-      </span>
-    ),
-    header: "Status",
-    id: "status",
-  },
-];
+type SortId = "name" | "status";
 
 export const ProtocolsPage = () => {
   const nodes = useNodes();
-  const rows = summarize(nodes);
+  const summary = summarize(nodes);
+  const [sort, setSort] = useState<{ desc: boolean; id: SortId } | null>({
+    desc: false,
+    id: "name",
+  });
+
+  const sortOf = (id: SortId) => (sort?.id === id ? (sort.desc ? "desc" : "asc") : false);
+  const toggleSort = (id: SortId) =>
+    setSort((previous) => {
+      if (!previous || previous.id !== id) return { desc: false, id };
+      if (!previous.desc) return { desc: true, id };
+      return null;
+    });
+
+  const rows = sort
+    ? // eslint-disable-next-line unicorn/no-array-sort -- Array#toSorted needs ES2023 lib
+      [...summary].sort((a, b) => {
+        const dir = sort.desc ? -1 : 1;
+        if (sort.id === "status")
+          return (
+            ((a.implemented ? "implemented" : "unavailable") <
+            (b.implemented ? "implemented" : "unavailable")
+              ? -1
+              : 1) * dir
+          );
+        return a.name.localeCompare(b.name) * dir;
+      })
+    : summary;
+
+  const columns: DataTableColumn<ProtocolSummary>[] = [
+    {
+      cell: (p) => (
+        <Link className="text-primary hover:underline" to={`/protocols/${p.kind}`}>
+          {p.name} ({p.rfc})
+        </Link>
+      ),
+      header: "Protocol",
+      id: "name",
+      mobile: "title",
+      onSort: () => toggleSort("name"),
+      sort: sortOf("name"),
+    },
+    {
+      cell: (p) =>
+        p.implemented ? (
+          <span>
+            {p.running} of {p.eligible} eligible nodes
+          </span>
+        ) : (
+          <span className="text-muted-foreground">not wired up</span>
+        ),
+      header: "Serving",
+      id: "serving",
+    },
+    {
+      cell: (p) =>
+        p.implemented ? (
+          <span className={p.rebootPending > 0 ? "text-warning" : "text-muted-foreground"}>
+            {p.rebootPending} reboot pending
+          </span>
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        ),
+      header: "Reboot",
+      id: "reboot",
+    },
+    {
+      cell: (p) => (
+        <span className={p.implemented ? "text-success" : "text-muted-foreground"}>
+          {p.implemented ? "implemented" : "unavailable"}
+        </span>
+      ),
+      header: "Status",
+      id: "status",
+      onSort: () => toggleSort("status"),
+      sort: sortOf("status"),
+    },
+  ];
 
   return (
     <section className="space-y-5">
@@ -113,19 +145,21 @@ export const ProtocolsPage = () => {
           operator their configured protocols did not exist. This page now
           reads a node's own reported state instead of a local catalog, so the
           note only needs to explain what "eligible" and "wired up" mean. */}
-      <p
-        className="max-w-3xl rounded-md border border-warning/40 bg-warning/5 p-3 text-sm text-muted-foreground"
-        role="note"
-      >
+      <Notice className="max-w-3xl" tone="warning">
         <span className="text-foreground">ACME (RFC 8555) and EST (RFC 7030)</span> are served by
         the nodes themselves, under <span className="font-mono">pki.acme</span> and{" "}
         <span className="font-mono">pki.est</span>. Only an ESTABLISHED issuing node is eligible to
         serve either; a switch here takes effect at that node&apos;s next reboot. SCEP and Windows
         autoenrollment are not implemented yet and have no node to reflect, so this page does not
         offer a switch for them.
-      </p>
+      </Notice>
 
-      <DataTable columns={columns} data={rows} initialSort={[{ desc: false, id: "name" }]} />
+      <DataTable
+        columns={columns}
+        label="Enrollment protocols"
+        rowKey={(p) => p.kind}
+        rows={rows}
+      />
     </section>
   );
 };

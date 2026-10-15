@@ -20,6 +20,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { __resetNodes } from "@/lib/nodes";
 import { ProtocolsPage } from "@/pages/protocols";
+import { expectNoA11yViolations } from "@/test/axe";
 
 // The auth gate is mocked to an admin so the page's admin-only affordances
 // would render if the list page offered any (the switch itself lives on the
@@ -35,6 +36,15 @@ const rowFor = (name: RegExp) => screen.getByRole("link", { name }).closest("tr"
 
 describe("ProtocolsPage", () => {
   beforeEach(() => __resetNodes());
+
+  it("has no axe violations", async () => {
+    const { container } = render(
+      <MemoryRouter>
+        <ProtocolsPage />
+      </MemoryRouter>,
+    );
+    await expectNoA11yViolations(container);
+  });
 
   it("lists every protocol, linking to its detail page", () => {
     render(

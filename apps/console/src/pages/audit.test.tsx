@@ -20,9 +20,19 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { __resetAudit, auditList } from "@/lib/audit";
 import { AuditPage } from "@/pages/audit";
+import { expectNoA11yViolations } from "@/test/axe";
 
 describe("AuditPage", () => {
   beforeEach(() => __resetAudit());
+
+  it("has no axe violations", async () => {
+    const { container } = render(
+      <MemoryRouter>
+        <AuditPage />
+      </MemoryRouter>,
+    );
+    await expectNoA11yViolations(container);
+  });
 
   it("renders seeded events newest-first and a target link", () => {
     render(
