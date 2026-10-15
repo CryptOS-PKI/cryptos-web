@@ -19,6 +19,7 @@ import { useEffect, useState } from "react";
 
 import type { Node } from "@/lib/mock";
 
+import { useAuth } from "@/context/auth";
 import { canIssue, type Cert, type CertKind, issueCert } from "@/lib/certs";
 import { parseCsr, type ParsedCsr } from "@/lib/crypto/csr";
 import {
@@ -133,6 +134,8 @@ const KeyExport = ({ privateKey, subjectCn }: { privateKey: CryptoKey; subjectCn
 };
 
 export const IssueForm = ({ node, onIssued }: { node: Node; onIssued: (cert: Cert) => void }) => {
+  const { operator } = useAuth();
+  const canSubmit = operator ? operator.level !== "viewer" : false;
   const kinds = canIssue(node);
   const profiles = useProfiles();
   const [kind, setKind] = useState<CertKind>(kinds[0]);
@@ -384,7 +387,12 @@ export const IssueForm = ({ node, onIssued }: { node: Node; onIssued: (cert: Cer
       </Field>
 
       {error ? <Notice tone="danger">{error}</Notice> : null}
-      <Button disabled={pending} onClick={() => void submit()} type="button">
+      <Button
+        disabled={canSubmit && pending}
+        lockedReason={canSubmit ? undefined : "Needs the operator role"}
+        onClick={() => void submit()}
+        type="button"
+      >
         {pending ? "Issuing…" : "Issue"}
       </Button>
     </div>

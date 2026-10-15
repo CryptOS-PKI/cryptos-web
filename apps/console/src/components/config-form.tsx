@@ -245,15 +245,14 @@ const LiveConfigForm = ({ node }: { node: Node }) => {
         </Notice>
       ) : null}
 
-      {isAdmin ? (
-        <Button disabled={pending} onClick={() => void submit()} type="button">
-          {pending ? "Applying…" : "Apply"}
-        </Button>
-      ) : (
-        <p className="font-mono text-xs text-muted-foreground">
-          Read-only — applying config requires admin level.
-        </p>
-      )}
+      <Button
+        disabled={isAdmin && pending}
+        lockedReason={isAdmin ? undefined : "Needs the admin role"}
+        onClick={() => void submit()}
+        type="button"
+      >
+        {pending ? "Applying…" : "Apply"}
+      </Button>
     </div>
   );
 };

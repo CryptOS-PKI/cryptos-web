@@ -118,12 +118,20 @@ describe("EnrollmentDetailPage", () => {
   });
 
   describe("operator level gating", () => {
-    it("viewer: approve and reject are disabled with a read-only note", () => {
+    // Was toBeDisabled() plus a shared "read-only" note; #183 moves both
+    // buttons to the kit's lock pattern (focusable, each with its own reason).
+    it("viewer: approve and reject are locked for the operator role", () => {
       mockOperator.mockReturnValue({ level: "viewer" });
       renderAt("/enrollment/enr-0001");
-      expect(screen.getByRole("button", { name: /^approve$/i })).toBeDisabled();
-      expect(screen.getByRole("button", { name: /^reject$/i })).toBeDisabled();
-      expect(screen.getByText(/read-only/i)).toBeInTheDocument();
+      const approve = screen.getByRole("button", { name: /^approve/i });
+      const reject = screen.getByRole("button", { name: /^reject/i });
+      for (const button of [approve, reject]) {
+        expect(button).not.toBeDisabled();
+        expect(button).toHaveAttribute("aria-disabled", "true");
+        expect(button).toHaveAccessibleDescription(/needs the operator role/i);
+      }
+      fireEvent.click(approve);
+      expect(screen.queryByText(/link approval material/i)).not.toBeInTheDocument();
     });
 
     it("operator: SUBORDINATE approve is enabled", () => {
@@ -132,11 +140,15 @@ describe("EnrollmentDetailPage", () => {
       expect(screen.getByRole("button", { name: /^approve$/i })).not.toBeDisabled();
     });
 
-    it("operator: LINK approve is disabled with an admin-required note", () => {
+    // Was toBeDisabled() plus an admin-required note; #183 moves it to the
+    // kit's lock pattern.
+    it("operator: LINK approve is locked for the admin role", () => {
       mockOperator.mockReturnValue({ level: "operator" });
       renderAt("/enrollment/enr-link-01");
-      expect(screen.getByRole("button", { name: /^approve$/i })).toBeDisabled();
-      expect(screen.getByText(/requires the admin level/i)).toBeInTheDocument();
+      const approve = screen.getByRole("button", { name: /^approve/i });
+      expect(approve).not.toBeDisabled();
+      expect(approve).toHaveAttribute("aria-disabled", "true");
+      expect(approve).toHaveAccessibleDescription(/needs the admin role/i);
     });
 
     it("admin: LINK approve is enabled and reveals the material form", () => {
