@@ -14,14 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import {
-  Button,
-  Card,
-  type IconComponent,
-  IconEstablished,
-  IconPending,
-  IconRevoked,
-} from "@cryptos-pki/ui";
+import { Button, Card, type ChainStatus, TrustChain, type TrustChainItem } from "@cryptos-pki/ui";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 
 import type { IdentityState } from "@/lib/mock";
@@ -31,24 +24,18 @@ import { NodeAuditLog } from "@/components/node-audit-log";
 import { NodeChainValidate } from "@/components/node-chain-validate";
 import { NodeDetailPanel } from "@/components/node-detail-panel";
 import { NodeImageLifecycle } from "@/components/node-image-lifecycle";
+import { NodeScepChallenges } from "@/components/node-scep-challenges";
 import { NodeScepEnrollments } from "@/components/node-scep-enrollments";
 import { NodeTsaCertificates } from "@/components/node-tsa-certificates";
 import { roleLabels } from "@/lib/fleet/labels";
 import { chainToRoot, useNode } from "@/lib/nodes";
-import { cn } from "@/lib/utils";
 
-const stateTone: Record<IdentityState, string> = {
-  AWAITING_CERT: "text-warning",
-  ESTABLISHED: "text-success",
-  REVOKED: "text-destructive",
-};
-
-// A state is never shown by colour alone: each trust-chain link also carries a
-// distinct icon shape (established/pending/revoked).
-const stateIcon: Record<IdentityState, IconComponent> = {
-  AWAITING_CERT: IconPending,
-  ESTABLISHED: IconEstablished,
-  REVOKED: IconRevoked,
+// A state is never shown by colour alone: TrustChainChip already carries a
+// distinct icon shape per status (established/pending/revoked).
+const chainStatus: Record<IdentityState, ChainStatus> = {
+  AWAITING_CERT: "pending",
+  ESTABLISHED: "established",
+  REVOKED: "revoked",
 };
 
 export const NodeDetailPage = () => {
@@ -93,42 +80,20 @@ export const NodeDetailPage = () => {
         <div className="border-b px-4 py-3 font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
           Trust chain
         </div>
-        <div className="flex flex-wrap items-center gap-2 p-4 font-mono text-xs">
-          {chainToRoot(node).map((n, i) => {
-            const Icon = stateIcon[n.identityState];
-            const content = (
-              <>
-                <Icon className="size-3.5" />
-                {n.name}
-              </>
-            );
-            return (
-              <span className="flex items-center gap-2" key={n.name}>
-                {i > 0 ? <span className="text-muted-foreground">{"\u2192"}</span> : null}
-                {n.name === node.name ? (
-                  <span
-                    aria-current="true"
-                    className={cn(
-                      "inline-flex items-center gap-1.5 rounded-md border bg-secondary px-2.5 py-1 font-semibold",
-                      stateTone[n.identityState],
-                    )}
-                  >
-                    {content}
-                  </span>
-                ) : (
-                  <Link
-                    className={cn(
-                      "inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 hover:bg-accent",
-                      stateTone[n.identityState],
-                    )}
-                    to={`/nodes/${n.name}`}
-                  >
-                    {content}
-                  </Link>
-                )}
-              </span>
-            );
-          })}
+        <div className="p-4">
+          <TrustChain
+            items={chainToRoot(node).map((n): TrustChainItem => {
+              const item: TrustChainItem = {
+                id: n.name,
+                label: n.name,
+                role: n.role === "root" ? "root" : undefined,
+                status: chainStatus[n.identityState],
+              };
+              if (n.name === node.name) return item;
+              return { ...item, asChild: true, children: <Link to={`/nodes/${n.name}`} /> };
+            })}
+            label="Trust chain"
+          />
         </div>
       </Card>
       <Card className="w-full overflow-hidden">
@@ -169,6 +134,14 @@ export const NodeDetailPage = () => {
         </div>
         <div className="p-4">
           <NodeImageLifecycle caCn={node.cn} nodeName={node.name} />
+        </div>
+      </Card>
+      <Card className="w-full overflow-hidden">
+        <div className="border-b px-4 py-3 font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
+          SCEP challenges
+        </div>
+        <div className="p-4">
+          <NodeScepChallenges nodeName={node.name} />
         </div>
       </Card>
       <Card className="w-full overflow-hidden">
