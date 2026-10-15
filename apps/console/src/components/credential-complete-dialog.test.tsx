@@ -27,6 +27,7 @@ import { generateBackupPassphrase, keyBackupPem } from "@/lib/crypto/key-backup"
 import { base64 } from "@/lib/crypto/leaf-key";
 import * as modeMod from "@/lib/fleet/mode";
 import * as operators from "@/lib/operators";
+import { expectNoA11yViolations } from "@/test/axe";
 
 const { buildCredentialPkcs12, downloadBytes } = vi.hoisted(() => ({
   buildCredentialPkcs12: vi.fn(),
@@ -90,6 +91,11 @@ afterEach(() => {
 });
 
 describe("CredentialCompleteDialog", () => {
+  it("has no axe violations", async () => {
+    render(<CredentialCompleteDialog onClose={vi.fn()} onRecorded={vi.fn()} request={request} />);
+    await expectNoA11yViolations(document.body);
+  });
+
   it("records the certificate, then builds the PKCS#12 with the key backup's passphrase", async () => {
     const { backup, certPem, passphrase } = await material();
     const record = vi.spyOn(operators, "recordOperatorCredential");

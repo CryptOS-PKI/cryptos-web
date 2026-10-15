@@ -23,6 +23,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CredentialRequestRow, OperatorCredentialRow } from "@/lib/operators";
 
 import { OperatorsPage } from "@/pages/operators";
+import { expectNoA11yViolations } from "@/test/axe";
 
 const useAuth = vi.fn();
 vi.mock("@/context/auth", () => ({ useAuth: () => useAuth() }));
@@ -135,6 +136,13 @@ beforeEach(() => {
 });
 
 describe("OperatorsPage credentials", () => {
+  it("has no axe violations", async () => {
+    useAuth.mockReturnValue({ operator: admin });
+    const { container } = render(<OperatorsPage />);
+    await screen.findByText("admin@example.org");
+    await expectNoA11yViolations(container);
+  });
+
   it("shows kind, issuer, denylisted, CRL-revoked and last seen for each credential", async () => {
     useAuth.mockReturnValue({ operator: admin });
     render(<OperatorsPage />);

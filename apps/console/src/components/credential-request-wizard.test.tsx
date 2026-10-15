@@ -22,6 +22,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CredentialRequestWizard } from "@/components/credential-request-wizard";
 import { base64 } from "@/lib/crypto/leaf-key";
 import * as modeMod from "@/lib/fleet/mode";
+import { expectNoA11yViolations } from "@/test/axe";
 
 const downloadText = vi.fn();
 vi.mock("@/lib/download", async (importOriginal) => ({
@@ -66,6 +67,11 @@ afterEach(() => {
 beforeEach(() => downloadText.mockReset());
 
 describe("CredentialRequestWizard (mock mode)", () => {
+  it("has no axe violations", async () => {
+    render(<CredentialRequestWizard onClose={vi.fn()} onCreated={vi.fn()} />);
+    await expectNoA11yViolations(document.body);
+  });
+
   it("makes the key here, forces the backup, then shows the CSR and the signing recipe", async () => {
     const onCreated = vi.fn();
     render(<CredentialRequestWizard onClose={vi.fn()} onCreated={onCreated} />);
