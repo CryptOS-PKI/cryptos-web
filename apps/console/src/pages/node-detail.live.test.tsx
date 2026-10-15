@@ -79,6 +79,16 @@ const listCertificatesResult = {
 // every read.
 vi.mock("@/lib/fleet/client", () => ({
   fleetClient: () => ({
+    getNodeImageStatus: () =>
+      Promise.resolve({
+        status: {
+          activeSha256: "aaaa",
+          previousSha256: "",
+          rebootPending: false,
+          runningSha256: "aaaa",
+          runningVersion: "0.1.0",
+        },
+      }),
     listCertificates: () => Promise.resolve(listCertificatesResult),
     listNodeAuditEvents: () => Promise.resolve({ entries: [], nextPageToken: "" }),
     listNodes: () => Promise.resolve(listNodesResult),
@@ -113,6 +123,7 @@ describe("NodeDetailPage live", () => {
     expect(screen.getByText("Certificates")).toBeInTheDocument();
     await screen.findByRole("button", { name: "Verify chain" });
     await screen.findByText(/not running/i);
+    await screen.findByText(/0\.1\.0/);
   });
 
   it("renders an established node", async () => {
@@ -121,5 +132,6 @@ describe("NodeDetailPage live", () => {
     expect(await screen.findByRole("link", { name: "AA11" })).toBeInTheDocument();
     await screen.findByRole("button", { name: "Verify chain" });
     await screen.findByText(/not running/i);
+    await screen.findByText(/0\.1\.0/);
   });
 });

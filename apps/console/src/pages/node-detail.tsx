@@ -29,6 +29,7 @@ import type { IdentityState } from "@/lib/mock";
 import { CertInventory } from "@/components/cert-inventory";
 import { NodeAuditLog } from "@/components/node-audit-log";
 import { NodeDetailPanel } from "@/components/node-detail-panel";
+import { NodeImageLifecycle } from "@/components/node-image-lifecycle";
 import { NodeTsaCertificates } from "@/components/node-tsa-certificates";
 import { roleLabels } from "@/lib/fleet/labels";
 import { chainToRoot, useNode } from "@/lib/nodes";
@@ -150,6 +151,14 @@ export const NodeDetailPage = () => {
         </div>
         <div className="p-4">
           <NodeTsaCertificates nodeName={node.name} />
+        </div>
+      </Card>
+      <Card className="w-full overflow-hidden">
+        <div className="border-b px-4 py-3 font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
+          OS image
+        </div>
+        <div className="p-4">
+          <NodeImageLifecycle caCn={node.cn} nodeName={node.name} />
         </div>
       </Card>
       <Button asChild variant="outline">
