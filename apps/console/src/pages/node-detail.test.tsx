@@ -45,6 +45,7 @@ describe("NodeDetailPage trust chain", () => {
     await screen.findByText("0a1b2c3d");
     await screen.findByText(/7c3a9e2f1b6d \u00B7 0\.1\.0/);
     await screen.findByText("ch-mock-1");
+    await screen.findByText("CN=switch-1.example.org");
     await expectNoA11yViolations(container);
   });
 
@@ -56,6 +57,7 @@ describe("NodeDetailPage trust chain", () => {
     await screen.findByText("0a1b2c3d");
     await screen.findByText(/7c3a9e2f1b6d \u00B7 0\.1\.0/);
     await screen.findByText("ch-mock-1");
+    await screen.findByText("CN=switch-1.example.org");
     const chain = screen.getByText(/trust chain/i).closest("div")?.parentElement as HTMLElement;
     expect(within(chain).getByRole("link", { name: "acme-root-01" })).toHaveAttribute(
       "href",
