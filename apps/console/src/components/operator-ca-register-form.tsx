@@ -15,13 +15,12 @@ limitations under the License.
 */
 
 import { OcspSigner } from "@cryptos-pki/api-client/cryptos/fleet/v1/operator_ca_pb";
+import { Button, Field, inputClasses, Notice } from "@cryptos-pki/ui";
 import { useState } from "react";
 
-import { Button } from "@/components/ui/button";
 import { readFileBytes } from "@/lib/download";
 import { colonFingerprint, normalizeFingerprint } from "@/lib/fingerprint";
 import { fleetErrorMessage } from "@/lib/fleet/error-copy";
-import { fieldClass, labelClass } from "@/lib/form";
 import {
   buildCrlChoice,
   type CrlChoice,
@@ -32,6 +31,8 @@ import {
 } from "@/lib/operator-cas";
 
 type CrlKind = CrlChoice["kind"];
+
+const legendClass = "font-mono text-[10.5px] uppercase tracking-[0.08em] text-muted-foreground";
 
 export const NO_CRL_NOTICE =
   "Revocations you make at your CA won't be seen by the Fleet Manager. Revoke operators in the Fleet Manager as well (its denylist is always enforced). MCP is unavailable for certificates under a CA without a CRL.";
@@ -58,7 +59,7 @@ export const CrlSourceFields = ({
   url: string;
 }) => (
   <fieldset className="space-y-2">
-    <legend className={labelClass}>CRL source</legend>
+    <legend className={legendClass}>CRL source</legend>
     {(
       [
         ["url", "URL", "The Fleet Manager fetches the CA's CRL from an http or https URL."],
@@ -80,19 +81,18 @@ export const CrlSourceFields = ({
       </label>
     ))}
     {kind === "url" ? (
-      <label className="block space-y-1">
-        <span className={labelClass}>CRL URL</span>
+      <Field label="CRL URL">
         <input
-          className={fieldClass}
+          className={inputClasses}
           onChange={(e) => onUrl(e.target.value)}
           placeholder="http://pki.example.org/fleetos-operator.crl"
           value={url}
         />
-      </label>
+      </Field>
     ) : null}
     {kind === "upload" ? (
       <label className="block space-y-1 text-xs">
-        <span className={`${labelClass} block`}>CRL file (PEM or DER)</span>
+        <span className={`${legendClass} block`}>CRL file (PEM or DER)</span>
         <input
           accept=".crl,.pem,.der"
           onChange={(e) => {
@@ -105,13 +105,13 @@ export const CrlSourceFields = ({
       </label>
     ) : null}
     {kind === "none" ? (
-      <div className="space-y-2 rounded-md border border-warning/40 bg-warning/10 p-3" role="note">
-        <p className="text-xs text-muted-foreground">{NO_CRL_NOTICE}</p>
-        <label className="flex items-start gap-2 text-xs">
+      <Notice role="note" tone="warning">
+        <p>{NO_CRL_NOTICE}</p>
+        <label className="mt-1 flex items-start gap-2 text-xs">
           <input checked={ack} onChange={(e) => onAck(e.target.checked)} type="checkbox" />I
           understand revocations made at the CA won&apos;t be seen, and MCP is refused under this CA
         </label>
-      </div>
+      </Notice>
     ) : null}
   </fieldset>
 );
@@ -130,10 +130,9 @@ export const OcspFields = ({
   url: string;
 }) => (
   <div className="space-y-2">
-    <label className="block space-y-1">
-      <span className={labelClass}>OCSP mode</span>
+    <Field label="OCSP mode">
       <select
-        className={fieldClass}
+        className={inputClasses}
         onChange={(e) => onMode(e.target.value as OcspChoice)}
         value={mode}
       >
@@ -141,17 +140,16 @@ export const OcspFields = ({
         <option value="url">url: a responder you name</option>
         <option value="off">off: no OCSP</option>
       </select>
-    </label>
+    </Field>
     {mode === "url" ? (
-      <label className="block space-y-1">
-        <span className={labelClass}>Responder URL</span>
+      <Field label="Responder URL">
         <input
-          className={fieldClass}
+          className={inputClasses}
           onChange={(e) => onUrl(e.target.value)}
           placeholder="http://ocsp.example.org/"
           value={url}
         />
-      </label>
+      </Field>
     ) : null}
     {mode === "off" ? null : (
       <p className="text-xs text-muted-foreground">
@@ -255,32 +253,26 @@ export const OperatorCARegisterForm = ({
           </p>
         ))}
         <div className="space-y-1">
-          <span className={labelClass}>SHA-256 fingerprint</span>
+          <span className={legendClass}>SHA-256 fingerprint</span>
           <code className="block break-all rounded-md border bg-secondary/40 p-2 font-mono text-xs">
             {colonFingerprint(ca.sha256)}
           </code>
         </div>
-        <div
-          className="space-y-1 rounded-md border border-destructive/40 bg-destructive/5 p-3"
-          role="note"
-        >
-          <p className="text-xs text-muted-foreground">
-            Trusting this CA lets anyone holding its key sign in as an admin. On the CA machine, run{" "}
-            <code className="font-mono">
-              openssl x509 -in operator-ca.crt -noout -fingerprint -sha256
-            </code>{" "}
-            and paste the output below. Confirm only if it matches.
-          </p>
-        </div>
-        <label className="block space-y-1">
-          <span className={labelClass}>Paste the fingerprint from the CA machine</span>
+        <Notice role="note" tone="danger">
+          Trusting this CA lets anyone holding its key sign in as an admin. On the CA machine, run{" "}
+          <code className="font-mono">
+            openssl x509 -in operator-ca.crt -noout -fingerprint -sha256
+          </code>{" "}
+          and paste the output below. Confirm only if it matches.
+        </Notice>
+        <Field label="Paste the fingerprint from the CA machine">
           <input
             autoComplete="off"
-            className={fieldClass}
+            className={inputClasses}
             onChange={(e) => setPasted(e.target.value)}
             value={pasted}
           />
-        </label>
+        </Field>
         {pasted !== "" && !matches ? (
           <p className="font-mono text-xs text-destructive">
             That fingerprint doesn&apos;t match. Don&apos;t confirm: check you uploaded the right
@@ -288,9 +280,9 @@ export const OperatorCARegisterForm = ({
           </p>
         ) : null}
         {error ? (
-          <p className="font-mono text-xs text-destructive" role="alert">
+          <Notice role="alert" tone="danger">
             {error}
-          </p>
+          </Notice>
         ) : null}
         <div className="flex justify-end gap-2">
           <Button onClick={() => setPreview(null)} size="sm" variant="outline">
@@ -306,19 +298,18 @@ export const OperatorCARegisterForm = ({
 
   return (
     <div className="space-y-3">
-      <label className="block space-y-1">
-        <span className={labelClass}>Operator CA certificate (PEM)</span>
+      <Field label="Operator CA certificate (PEM)">
         <textarea
-          className={`${fieldClass} h-28`}
+          className={`${inputClasses} h-28`}
           onChange={(e) => {
             setCaFile(null);
             setCaText(e.target.value);
           }}
           value={caText}
         />
-      </label>
+      </Field>
       <label className="block space-y-1 text-xs">
-        <span className={`${labelClass} block`}>Or choose the certificate file (PEM or DER)</span>
+        <span className={`${legendClass} block`}>Or choose the certificate file (PEM or DER)</span>
         <input
           accept=".crt,.pem,.cer,.der"
           onChange={(e) => {
@@ -343,9 +334,9 @@ export const OperatorCARegisterForm = ({
       />
       <OcspFields mode={ocspMode} onMode={setOcspMode} onUrl={setOcspUrl} url={ocspUrl} />
       {error ? (
-        <p className="font-mono text-xs text-destructive" role="alert">
+        <Notice role="alert" tone="danger">
           {error}
-        </p>
+        </Notice>
       ) : null}
       <div className="flex justify-end">
         <Button disabled={!ready} onClick={() => void run("")} size="sm">
