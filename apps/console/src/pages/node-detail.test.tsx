@@ -40,6 +40,9 @@ describe("NodeDetailPage trust chain", () => {
 
   it("has no axe violations", async () => {
     const { container } = renderAt("/nodes/acme-issuing-01");
+    // Lets the TSA certificates panel's async fetch settle under act() instead
+    // of resolving after the test returns.
+    await screen.findByText("0a1b2c3d");
     await expectNoA11yViolations(container);
   });
 
@@ -48,6 +51,7 @@ describe("NodeDetailPage trust chain", () => {
     // Lets the node audit log panel's async fetch settle under act() instead
     // of resolving after the test returns.
     await screen.findByRole("button", { name: "Verify chain" });
+    await screen.findByText("0a1b2c3d");
     const chain = screen.getByText(/trust chain/i).closest("div")?.parentElement as HTMLElement;
     expect(within(chain).getByRole("link", { name: "acme-root-01" })).toHaveAttribute(
       "href",
