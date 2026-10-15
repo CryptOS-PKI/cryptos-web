@@ -18,6 +18,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { McpKeyRevokeDialog } from "@/components/mcp-key-revoke-dialog";
+import { expectNoA11yViolations } from "@/test/axe";
 
 const revokeMcpKey = vi.fn();
 vi.mock("@/lib/mcp-keys", async (importOriginal) => ({
@@ -29,6 +30,11 @@ const target = { id: "key-1", label: "build agent", operatorCn: "operator@exampl
 
 describe("McpKeyRevokeDialog", () => {
   beforeEach(() => revokeMcpKey.mockReset());
+
+  it("has no axe violations", async () => {
+    render(<McpKeyRevokeDialog onClose={vi.fn()} onRevoked={vi.fn()} target={target} />);
+    await expectNoA11yViolations(document.body);
+  });
 
   it("revokes only after the operator confirms", async () => {
     revokeMcpKey.mockResolvedValue(null);

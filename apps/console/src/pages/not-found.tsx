@@ -14,9 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import { Button } from "@cryptos-pki/ui";
 import { Link } from "react-router-dom";
-
-import { Button } from "@/components/ui/button";
 
 export const NotFoundPage = () => {
   return (

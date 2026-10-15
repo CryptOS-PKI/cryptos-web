@@ -22,6 +22,7 @@ import type { OperatorCredentialRow } from "@/lib/operators";
 
 import { OperatorDenyDialog } from "@/components/operator-deny-dialog";
 import * as operators from "@/lib/operators";
+import { expectNoA11yViolations } from "@/test/axe";
 
 const target: OperatorCredentialRow = {
   commonName: "bob@example.org",
@@ -42,6 +43,11 @@ const target: OperatorCredentialRow = {
 afterEach(() => vi.restoreAllMocks());
 
 describe("OperatorDenyDialog", () => {
+  it("has no axe violations", async () => {
+    render(<OperatorDenyDialog credential={target} onClose={vi.fn()} onDenied={vi.fn()} />);
+    await expectNoA11yViolations(document.body);
+  });
+
   it("offers reason codes 0 to 10 except 7", () => {
     render(<OperatorDenyDialog credential={target} onClose={vi.fn()} onDenied={vi.fn()} />);
     const values = Array.from(

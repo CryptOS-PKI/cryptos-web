@@ -18,6 +18,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { McpKeyCreateDialog } from "@/components/mcp-key-create-dialog";
+import { expectNoA11yViolations } from "@/test/axe";
 
 const createMcpKey = vi.fn();
 vi.mock("@/lib/mcp-keys", async (importOriginal) => ({
@@ -34,6 +35,11 @@ describe("McpKeyCreateDialog", () => {
       key: { id: "key-9", label: "build agent" },
       plaintextKey: PLAINTEXT,
     });
+  });
+
+  it("has no axe violations", async () => {
+    render(<McpKeyCreateDialog level="operator" onClose={vi.fn()} onCreated={vi.fn()} />);
+    await expectNoA11yViolations(document.body);
   });
 
   it("says MCP needs a current CRL from the operator CA", () => {

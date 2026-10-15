@@ -20,6 +20,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AgentKeysPage } from "@/pages/agent-keys";
+import { expectNoA11yViolations } from "@/test/axe";
 
 const useAuth = vi.fn();
 vi.mock("@/context/auth", () => ({ useAuth: () => useAuth() }));
@@ -67,6 +68,13 @@ describe("AgentKeysPage", () => {
     listMcpKeys.mockImplementation(({ all }: { all: boolean }) =>
       Promise.resolve(all ? [own, revoked, other] : [own, revoked]),
     );
+  });
+
+  it("has no axe violations", async () => {
+    useAuth.mockReturnValue({ operator: { level: "operator" } });
+    const { container } = render(<AgentKeysPage />);
+    await screen.findByText("build agent");
+    await expectNoA11yViolations(container);
   });
 
   it("lists the caller's keys with client, ceiling, last use and status", async () => {
