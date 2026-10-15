@@ -21,6 +21,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { __resetNodes, getNode } from "@/lib/nodes";
 import * as protocolsMod from "@/lib/protocols";
 import { ProtocolDetailPage } from "@/pages/protocol-detail";
+import { expectNoA11yViolations } from "@/test/axe";
 
 // switchNodeProtocol is exercised directly in lib/protocols.test.ts (mock and
 // live paths); here it is spied on so this page's error rendering can be
@@ -56,6 +57,11 @@ describe("ProtocolDetailPage", () => {
     __resetNodes();
   });
   afterEach(() => vi.restoreAllMocks());
+
+  it("has no axe violations", async () => {
+    const { container } = renderAt("/protocols/acme");
+    await expectNoA11yViolations(container);
+  });
 
   it("redirects an unknown protocol to the list", () => {
     renderAt("/protocols/nope");

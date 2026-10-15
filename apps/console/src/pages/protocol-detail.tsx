@@ -14,16 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import type { ColumnDef } from "@tanstack/react-table";
-
-import { useState } from "react";
+import { Button, DataTable, type DataTableColumn, inputClasses, Notice } from "@cryptos-pki/ui";
+import { useMemo, useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 
 import type { IdentityState } from "@/lib/mock";
 
-import { DataTable } from "@/components/data-table/data-table";
 import { IdentityBadge } from "@/components/identity-badge";
-import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/auth";
 import { fleetErrorMessage } from "@/lib/fleet/error-copy";
 import { identityStateLabels, roleLabels } from "@/lib/fleet/labels";
@@ -77,14 +74,15 @@ const ToggleCell = ({
 
   return (
     <div className="space-y-1">
-      <button
-        className="rounded-md border px-2.5 py-1 text-xs hover:bg-secondary disabled:opacity-50"
+      <Button
         disabled={pending}
         onClick={() => void toggle()}
+        size="sm"
         type="button"
+        variant="outline"
       >
         {pending ? "Saving…" : `${row.configured ? "Disable" : "Enable"} on ${row.node.name}`}
-      </button>
+      </Button>
       {error ? (
         <p className="font-mono text-[11px] text-destructive" role="alert">
           {error}
@@ -111,35 +109,7 @@ const stateCell = (row: NodeProtocolRow) => {
   return <span className="text-muted-foreground">not configured</span>;
 };
 
-const buildColumns = (
-  isAdmin: boolean,
-  kind: "acme" | "est",
-): ColumnDef<NodeProtocolRow, unknown>[] => [
-  {
-    accessorFn: (r) => r.node.name,
-    cell: ({ row }) => (
-      <Link className="text-primary hover:underline" to={`/nodes/${row.original.node.name}`}>
-        {row.original.node.name}
-      </Link>
-    ),
-    header: "Node",
-    id: "name",
-  },
-  { accessorFn: (r) => roleLabels[r.node.role], header: "Role", id: "role" },
-  {
-    accessorFn: (r) => r.node.identityState,
-    cell: ({ row }) => <IdentityBadge state={row.original.node.identityState} />,
-    header: "Identity",
-    id: "identity",
-  },
-  { cell: ({ row }) => stateCell(row.original), header: "Served", id: "served" },
-  {
-    cell: ({ row }) => <ToggleCell isAdmin={isAdmin} kind={kind} row={row.original} />,
-    enableSorting: false,
-    header: "",
-    id: "actions",
-  },
-];
+type SortId = "identity" | "name" | "role";
 
 export const ProtocolDetailPage = () => {
   const { kind } = useParams<{ kind: string }>();
@@ -148,9 +118,126 @@ export const ProtocolDetailPage = () => {
   const isAdmin = operator?.level === "admin";
   const info = kind ? protocolInfo(kind) : undefined;
 
+  const [role, setRole] = useState("");
+  const [identity, setIdentity] = useState("");
+  const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<{ desc: boolean; id: SortId } | null>({
+    desc: false,
+    id: "name",
+  });
+
+  const allRows = useMemo(() => (info ? nodeProtocolRows(nodes, info.kind) : []), [info, nodes]);
+  const roles = useMemo(
+    // eslint-disable-next-line unicorn/no-array-sort
+    () => [...new Set(allRows.map((r) => r.node.role))].sort((a, b) => a.localeCompare(b)),
+    [allRows],
+  );
+  const identities = useMemo(
+    // eslint-disable-next-line unicorn/no-array-sort
+    () => [...new Set(allRows.map((r) => r.node.identityState))].sort((a, b) => a.localeCompare(b)),
+    [allRows],
+  );
+
   if (!info) {
     return <Navigate replace to="/protocols" />;
   }
+
+  const filtered = allRows
+    .filter((r) => !role || r.node.role === role)
+    .filter((r) => !identity || r.node.identityState === identity)
+    .filter((r) => !query || r.node.name.toLowerCase().includes(query.toLowerCase()));
+  const rows = sort
+    ? // eslint-disable-next-line unicorn/no-array-sort -- Array#toSorted needs ES2023 lib
+      [...filtered].sort((a, b) => {
+        const dir = sort.desc ? -1 : 1;
+        if (sort.id === "name") return a.node.name.localeCompare(b.node.name) * dir;
+        if (sort.id === "role") return a.node.role.localeCompare(b.node.role) * dir;
+        return a.node.identityState.localeCompare(b.node.identityState) * dir;
+      })
+    : filtered;
+
+  const sortOf = (id: SortId) => (sort?.id === id ? (sort.desc ? "desc" : "asc") : false);
+  const toggleSort = (id: SortId) =>
+    setSort((previous) => {
+      if (!previous || previous.id !== id) return { desc: false, id };
+      if (!previous.desc) return { desc: true, id };
+      return null;
+    });
+
+  const columns: DataTableColumn<NodeProtocolRow>[] = [
+    {
+      cell: (r) => (
+        <Link className="text-primary hover:underline" to={`/nodes/${r.node.name}`}>
+          {r.node.name}
+        </Link>
+      ),
+      filter: (
+        <input
+          aria-label="Filter name"
+          className={inputClasses}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Filter…"
+          value={query}
+        />
+      ),
+      header: "Node",
+      id: "name",
+      mobile: "title",
+      onSort: () => toggleSort("name"),
+      sort: sortOf("name"),
+    },
+    {
+      cell: (r) => roleLabels[r.node.role],
+      filter: (
+        <select
+          aria-label="Filter Role"
+          className={inputClasses}
+          onChange={(event) => setRole(event.target.value)}
+          value={role}
+        >
+          <option value="">All</option>
+          {roles.map((r) => (
+            <option key={r} value={r}>
+              {roleLabels[r]}
+            </option>
+          ))}
+        </select>
+      ),
+      header: "Role",
+      id: "role",
+      onSort: () => toggleSort("role"),
+      sort: sortOf("role"),
+    },
+    {
+      cell: (r) => <IdentityBadge state={r.node.identityState} />,
+      filter: (
+        <select
+          aria-label="Filter Identity"
+          className={inputClasses}
+          onChange={(event) => setIdentity(event.target.value)}
+          value={identity}
+        >
+          <option value="">All</option>
+          {identities.map((s) => (
+            <option key={s} value={s}>
+              {identityStateLabels[s as IdentityState]}
+            </option>
+          ))}
+        </select>
+      ),
+      header: "Identity",
+      id: "identity",
+      onSort: () => toggleSort("identity"),
+      sort: sortOf("identity"),
+    },
+    { cell: (r) => stateCell(r), header: "Served", id: "served" },
+    {
+      cell: (r) => <ToggleCell isAdmin={isAdmin} kind={info.kind as "acme" | "est"} row={r} />,
+      header: <span className="sr-only">Actions</span>,
+      id: "actions",
+      mobile: "action",
+    },
+  ];
 
   return (
     <section className="space-y-5">
@@ -163,28 +250,17 @@ export const ProtocolDetailPage = () => {
 
       {info.implemented ? (
         <DataTable
-          columns={buildColumns(isAdmin, info.kind as "acme" | "est")}
-          data={nodeProtocolRows(nodes, info.kind)}
-          facets={[
-            { columnId: "role", title: "Role" },
-            {
-              columnId: "identity",
-              optionLabel: (value) => identityStateLabels[value as IdentityState],
-              title: "Identity",
-            },
-          ]}
-          initialSort={[{ desc: false, id: "name" }]}
-          pageSize={50}
-          searchKeys={["name"]}
+          columns={columns}
+          filtered={role !== "" || identity !== "" || query !== ""}
+          label={`${info.name} nodes`}
+          rowKey={(r) => r.node.name}
+          rows={rows}
         />
       ) : (
-        <p
-          className="max-w-md rounded-md border border-warning/40 bg-warning/5 p-3 text-sm text-muted-foreground"
-          role="note"
-        >
+        <Notice className="max-w-md" tone="warning">
           {info.name} is not implemented. No CryptOS node has a config block for it yet, so there is
           nothing here to switch or report.
-        </p>
+        </Notice>
       )}
 
       <Button asChild variant="outline">
