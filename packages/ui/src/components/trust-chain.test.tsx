@@ -75,4 +75,68 @@ describe("TrustChain", () => {
       "border-destructive/40",
     );
   });
+
+  it("renders a plain anchor when given an href", () => {
+    render(<TrustChainChip href="/nodes/node-01" label="node-01" status="established" />);
+    const link = screen.getByRole("link", { name: "node-01" });
+    expect(link).toHaveAttribute("href", "/nodes/node-01");
+    expect(link.tagName).toBe("A");
+  });
+
+  it("has no axe violations for an href chip", async () => {
+    const { container } = render(
+      <TrustChainChip href="/nodes/node-01" label="node-01" status="established" />,
+    );
+    await expectNoA11yViolations(container);
+  });
+
+  it("renders asChild into the caller's link element, replacing its children with the chip's look", () => {
+    const rootChipProps = { label: "node-01", role: "root" as const };
+    render(
+      <TrustChainChip asChild {...rootChipProps}>
+        <a data-testid="router-link" href="/nodes/node-01">
+          ignored
+        </a>
+      </TrustChainChip>,
+    );
+    const link = screen.getByTestId("router-link");
+    expect(link.tagName).toBe("A");
+    expect(link).toHaveAttribute("href", "/nodes/node-01");
+    expect(link).toHaveAttribute("data-status", "root");
+    expect(link).toHaveTextContent("node-01");
+    expect(link).not.toHaveTextContent("ignored");
+  });
+
+  it("has no axe violations for an asChild chip", async () => {
+    const { container } = render(
+      <TrustChainChip asChild label="node-01" status="established">
+        <a href="/nodes/node-01">ignored</a>
+      </TrustChainChip>,
+    );
+    await expectNoA11yViolations(container);
+  });
+
+  it("marks the current link in a chain built from asChild items", () => {
+    render(
+      <TrustChain
+        items={[
+          {
+            asChild: true,
+            children: <a href="/nodes/root-01">ignored</a>,
+            id: "root-01",
+            label: "root-01",
+            role: "root",
+          },
+          { id: "node-01", label: "node-01", status: "established" },
+        ]}
+        label="Trust chain"
+      />,
+    );
+    const link = screen.getByRole("link", { name: "root-01" });
+    expect(link).toHaveAttribute("href", "/nodes/root-01");
+    expect(screen.getByText("node-01").closest("[data-current]")).toHaveAttribute(
+      "aria-current",
+      "true",
+    );
+  });
 });

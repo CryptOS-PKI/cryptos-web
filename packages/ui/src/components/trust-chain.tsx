@@ -23,7 +23,12 @@ import { CryptosMark } from "./brand";
 export type ChainStatus = "established" | "pending" | "revoked";
 
 export interface TrustChainChipProps {
+  /** Render into the single child (a router link); its own children are replaced. */
+  asChild?: boolean;
+  children?: React.ReactElement<Record<string, unknown>>;
   current?: boolean;
+  /** Render a plain `<a>` with this href; ignored when `asChild` is set. */
+  href?: string;
   label: React.ReactNode;
   onClick?: () => void;
   role?: "root";
@@ -52,7 +57,10 @@ const iconFor = (role?: "root", status?: ChainStatus) => {
 };
 
 export const TrustChainChip = ({
+  asChild = false,
+  children,
   current = false,
+  href,
   label,
   onClick,
   role,
@@ -75,13 +83,20 @@ export const TrustChainChip = ({
     "data-current": current ? "" : undefined,
     "data-status": role ?? status,
   };
+  const linkClasses = cn(classes, "hover:brightness-110");
+
+  if (asChild && children) {
+    return React.cloneElement(children, { ...attrs, children: inner, className: linkClasses });
+  }
+  if (href !== undefined) {
+    return (
+      <a className={linkClasses} href={href} {...attrs}>
+        {inner}
+      </a>
+    );
+  }
   return onClick ? (
-    <button
-      className={cn(classes, "hover:brightness-110")}
-      onClick={onClick}
-      type="button"
-      {...attrs}
-    >
+    <button className={linkClasses} onClick={onClick} type="button" {...attrs}>
       {inner}
     </button>
   ) : (
