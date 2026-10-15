@@ -103,12 +103,19 @@ describe("ProtocolDetailPage", () => {
     expect(within(row).queryByRole("button")).not.toBeInTheDocument();
   });
 
-  it("hides the switch for a non-admin", () => {
+  // Was hidden entirely ("admin only" text, no button) for a non-admin;
+  // #183 moves it to the kit's lock pattern so the control is still reachable.
+  it("locks the switch for a non-admin instead of hiding it", () => {
     operatorLevel = "viewer";
     renderAt("/protocols/acme");
     const row = rowFor(/^acme-issuing-01/);
-    expect(within(row).queryByRole("button")).not.toBeInTheDocument();
-    expect(within(row).getByText(/admin only/i)).toBeInTheDocument();
+    const toggle = within(row).getByRole("button");
+    expect(toggle).not.toBeDisabled();
+    expect(toggle).toHaveAttribute("aria-disabled", "true");
+    expect(toggle).toHaveAccessibleDescription(/needs the admin role/i);
+    vi.mocked(protocolsMod.switchNodeProtocol).mockClear();
+    fireEvent.click(toggle);
+    expect(protocolsMod.switchNodeProtocol).not.toHaveBeenCalled();
   });
 
   it("shows the manager's refusal reason inline on a failed switch", async () => {

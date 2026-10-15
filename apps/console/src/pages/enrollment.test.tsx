@@ -109,15 +109,23 @@ describe("EnrollmentPage", () => {
     expect(screen.queryByText(approved.proposedName)).not.toBeInTheDocument();
   });
 
-  it("disables New enrollment for a viewer", () => {
+  // Was toBeDisabled()/a plain "Read-only" notice; #183 moves this to the
+  // kit's lock pattern so a viewer still sees and can reach the control.
+  it("locks New enrollment for a viewer, with a reason a screen reader announces", () => {
     mockOperator.mockReturnValue({ level: "viewer" });
     render(
       <MemoryRouter>
         <EnrollmentPage />
       </MemoryRouter>,
     );
-    expect(screen.getByRole("button", { name: /new enrollment/i })).toBeDisabled();
-    expect(screen.getByText(/read-only/i)).toBeInTheDocument();
+    const button = screen.getByRole("button", { name: /new enrollment/i });
+    expect(button).not.toBeDisabled();
+    expect(button).toHaveAttribute("aria-disabled", "true");
+    expect(button).toHaveAccessibleDescription(/needs the operator role/i);
+    button.focus();
+    expect(button).toHaveFocus();
+    fireEvent.click(button);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
   it("submits a SUBORDINATE create draft", async () => {

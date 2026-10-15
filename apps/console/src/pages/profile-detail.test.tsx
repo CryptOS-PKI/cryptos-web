@@ -22,11 +22,13 @@ import { __resetProfiles, getProfile } from "@/lib/profiles";
 import { ProfileDetailPage } from "@/pages/profile-detail";
 import { expectNoA11yViolations } from "@/test/axe";
 
-// mock mode keeps the in-memory catalog; the auth gate is mocked to an admin so
-// the edit/delete controls render without an AuthProvider.
+// mock mode keeps the in-memory catalog; the auth gate is mocked so the
+// edit/delete controls render without an AuthProvider. Mutable so a non-admin
+// level can be exercised for the Delete profile lock.
+let operatorLevel: "admin" | "viewer" = "admin";
 vi.mock("@/context/auth", () => ({
   useAuth: () => ({
-    operator: { commonName: "admin@acme.example", level: "admin", serial: "AA" },
+    operator: { commonName: "admin@acme.example", level: operatorLevel, serial: "AA" },
     status: "authenticated",
   }),
 }));
@@ -42,7 +44,10 @@ const renderAt = (path: string) =>
   );
 
 describe("ProfileDetailPage", () => {
-  beforeEach(() => __resetProfiles());
+  beforeEach(() => {
+    operatorLevel = "admin";
+    __resetProfiles();
+  });
 
   it("has no axe violations", async () => {
     const { container } = renderAt("/profiles/Code Signing");
@@ -68,5 +73,18 @@ describe("ProfileDetailPage", () => {
   it("redirects an unknown profile to the list", () => {
     renderAt("/profiles/Nope");
     expect(screen.getByText("profiles list")).toBeInTheDocument();
+  });
+
+  // Was hidden entirely for a non-admin; #183 moves it to the kit's lock
+  // pattern so a viewer still sees the danger zone and why it's unavailable.
+  it("locks Delete profile for a non-admin instead of hiding it", () => {
+    operatorLevel = "viewer";
+    renderAt("/profiles/Code Signing");
+    const button = screen.getByRole("button", { name: /delete profile/i });
+    expect(button).not.toBeDisabled();
+    expect(button).toHaveAttribute("aria-disabled", "true");
+    expect(button).toHaveAccessibleDescription(/needs the admin role/i);
+    fireEvent.click(button);
+    expect(screen.queryByRole("button", { name: /confirm delete/i })).not.toBeInTheDocument();
   });
 });

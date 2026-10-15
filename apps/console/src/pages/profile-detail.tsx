@@ -62,40 +62,43 @@ export const ProfileDetailPage = () => {
       </div>
       <ProfileForm initial={profile} mode="edit" onDone={() => navigate("/profiles")} />
 
-      {isAdmin ? (
-        <div className="max-w-lg space-y-2 rounded-md border border-destructive/40 p-3">
-          <p className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-            Danger zone
-          </p>
-          {error ? (
-            <Notice role="alert" tone="danger">
-              {error}
-            </Notice>
-          ) : null}
-          {confirming ? (
-            <div className="flex items-center gap-2">
-              <span className="font-mono text-xs text-muted-foreground">
-                Delete this catalog profile? Node copies are untouched.
-              </span>
-              <Button
-                disabled={pending}
-                onClick={() => void remove()}
-                type="button"
-                variant="destructive"
-              >
-                {pending ? "Deleting…" : "Confirm delete"}
-              </Button>
-              <Button onClick={() => setConfirming(false)} type="button" variant="outline">
-                Cancel
-              </Button>
-            </div>
-          ) : (
-            <Button onClick={() => setConfirming(true)} type="button" variant="destructive">
-              Delete profile
+      <div className="max-w-lg space-y-2 rounded-md border border-destructive/40 p-3">
+        <p className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+          Danger zone
+        </p>
+        {error ? (
+          <Notice role="alert" tone="danger">
+            {error}
+          </Notice>
+        ) : null}
+        {confirming ? (
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-xs text-muted-foreground">
+              Delete this catalog profile? Node copies are untouched.
+            </span>
+            <Button
+              disabled={pending}
+              onClick={() => void remove()}
+              type="button"
+              variant="destructive"
+            >
+              {pending ? "Deleting…" : "Confirm delete"}
             </Button>
-          )}
-        </div>
-      ) : null}
+            <Button onClick={() => setConfirming(false)} type="button" variant="outline">
+              Cancel
+            </Button>
+          </div>
+        ) : (
+          <Button
+            lockedReason={isAdmin ? undefined : "Needs the admin role"}
+            onClick={() => setConfirming(true)}
+            type="button"
+            variant="destructive"
+          >
+            Delete profile
+          </Button>
+        )}
+      </div>
 
       <Button asChild variant="outline">
         <Link to="/profiles">Back to profiles</Link>
