@@ -110,35 +110,46 @@ export const NodeDetailPanel = ({
             <Link to={`/nodes/${node.name}/rekey`}>{"Re-key\u2026"}</Link>
           </Button>
         )}
-        {isAdmin ? (
-          <Button onClick={() => setDialog("rename")} size="sm" variant="outline">
-            {"Rename\u2026"}
-          </Button>
-        ) : null}
-        {isAdmin ? (
-          <Button onClick={() => setDialog("export")} size="sm" variant="outline">
-            {"Export key\u2026"}
-          </Button>
-        ) : null}
-        {isAdmin ? (
-          <Button onClick={() => setDialog("import")} size="sm" variant="outline">
-            {"Import key\u2026"}
-          </Button>
-        ) : null}
-        {isAdmin ? (
-          <Button onClick={() => setDialog("decommission")} size="sm" variant="destructive">
-            {"Decommission\u2026"}
-          </Button>
-        ) : null}
-        {isAdmin ? (
-          <Button
-            onClick={() => setDialog("reboot")}
-            size="sm"
-            variant={node.rebootRequired ? "default" : "outline"}
-          >
-            {node.rebootRequired ? "Reboot needed\u2026" : "Reboot\u2026"}
-          </Button>
-        ) : null}
+        <Button
+          lockedReason={isAdmin ? undefined : "Needs the admin role"}
+          onClick={() => setDialog("rename")}
+          size="sm"
+          variant="outline"
+        >
+          {"Rename\u2026"}
+        </Button>
+        <Button
+          lockedReason={isAdmin ? undefined : "Needs the admin role"}
+          onClick={() => setDialog("export")}
+          size="sm"
+          variant="outline"
+        >
+          {"Export key\u2026"}
+        </Button>
+        <Button
+          lockedReason={isAdmin ? undefined : "Needs the admin role"}
+          onClick={() => setDialog("import")}
+          size="sm"
+          variant="outline"
+        >
+          {"Import key\u2026"}
+        </Button>
+        <Button
+          lockedReason={isAdmin ? undefined : "Needs the admin role"}
+          onClick={() => setDialog("decommission")}
+          size="sm"
+          variant="destructive"
+        >
+          {"Decommission\u2026"}
+        </Button>
+        <Button
+          lockedReason={isAdmin ? undefined : "Needs the admin role"}
+          onClick={() => setDialog("reboot")}
+          size="sm"
+          variant={node.rebootRequired ? "default" : "outline"}
+        >
+          {node.rebootRequired ? "Reboot needed\u2026" : "Reboot\u2026"}
+        </Button>
       </div>
 
       {dialog === "rename" ? (

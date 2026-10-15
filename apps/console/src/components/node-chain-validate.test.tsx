@@ -57,10 +57,16 @@ describe("NodeChainValidate", () => {
     ).toBeInTheDocument();
   });
 
-  it("disables the form for a viewer", () => {
+  // Was toBeDisabled() plus a "Read-only" note; #196 moves it to the kit's
+  // lock pattern so a viewer still sees and can reach the control.
+  it("locks Validate for a viewer instead of disabling it", () => {
     mockOperator.mockReturnValue({ level: "viewer" });
     render(<NodeChainValidate nodeName="acme-issuing-01" />);
-    expect(screen.getByRole("button", { name: "Validate" })).toBeDisabled();
-    expect(screen.getByText(/read-only/i)).toBeInTheDocument();
+    const button = screen.getByRole("button", { name: /validate/i });
+    expect(button).not.toBeDisabled();
+    expect(button).toHaveAttribute("aria-disabled", "true");
+    expect(button).toHaveAccessibleDescription(/needs the operator role/i);
+    fireEvent.click(button);
+    expect(screen.queryByText(/chains to/i)).not.toBeInTheDocument();
   });
 });

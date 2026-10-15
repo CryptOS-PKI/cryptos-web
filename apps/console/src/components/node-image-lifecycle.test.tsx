@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { NodeImageLifecycle } from "@/components/node-image-lifecycle";
@@ -54,12 +54,22 @@ describe("NodeImageLifecycle", () => {
     expect(screen.getByRole("button", { name: /roll back/i })).toBeInTheDocument();
   });
 
-  it("hides every action from a non-admin operator", async () => {
+  // Was hidden entirely for a non-admin; #196 moves it to the kit's lock
+  // pattern so a non-admin operator still sees the actions and why they're
+  // unavailable.
+  it("locks every action for a non-admin operator instead of hiding it", async () => {
     level = "operator";
     render(<NodeImageLifecycle caCn="ACME Issuing CA G1" nodeName="acme-issuing-01" />);
     await screen.findByText(/running/i);
-    expect(screen.queryByRole("button", { name: /stage image/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /activate image/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /roll back/i })).not.toBeInTheDocument();
+    const stage = screen.getByRole("button", { name: /stage image/i });
+    const activate = screen.getByRole("button", { name: /activate image/i });
+    const rollback = screen.getByRole("button", { name: /roll back/i });
+    for (const button of [stage, activate, rollback]) {
+      expect(button).not.toBeDisabled();
+      expect(button).toHaveAttribute("aria-disabled", "true");
+      expect(button).toHaveAccessibleDescription(/needs the admin role/i);
+      fireEvent.click(button);
+    }
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 });

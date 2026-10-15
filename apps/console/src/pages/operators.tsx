@@ -14,7 +14,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { Button, DataTable, type DataTableColumn, EmptyState, Notice } from "@cryptos-pki/ui";
+import {
+  Button,
+  DataTable,
+  type DataTableColumn,
+  EmptyState,
+  Notice,
+  type Role,
+  RoleGate,
+  TooltipProvider,
+} from "@cryptos-pki/ui";
 import { useCallback, useEffect, useState } from "react";
 
 import { CredentialCompleteDialog } from "@/components/credential-complete-dialog";
@@ -46,6 +55,7 @@ type Tab = "credentials" | "requests";
 export const OperatorsPage = () => {
   const { operator } = useAuth();
   const isAdmin = operator?.level === "admin";
+  const level: Role = operator?.level ?? "viewer";
 
   const [tab, setTab] = useState<Tab>("credentials");
   const [rows, setRows] = useState<OperatorCredentialRow[]>([]);
@@ -163,10 +173,12 @@ export const OperatorsPage = () => {
     { cell: (r) => r.lastSeenAt || "-", header: "Last seen", id: "lastSeen" },
     {
       cell: (r) =>
-        isAdmin && !r.denylisted && r.kind !== "legacy_node" ? (
-          <button className={actionButton} onClick={() => setDenyTarget(r)} type="button">
-            {"Deny…"}
-          </button>
+        !r.denylisted && r.kind !== "legacy_node" ? (
+          <RoleGate have={level} need="admin">
+            <button className={actionButton} onClick={() => setDenyTarget(r)} type="button">
+              {"Deny…"}
+            </button>
+          </RoleGate>
         ) : null,
       header: <span className="sr-only">Actions</span>,
       id: "actions",
@@ -194,17 +206,20 @@ export const OperatorsPage = () => {
     { cell: (q) => q.createdByCn, header: "By", id: "createdByCn" },
     { cell: (q) => q.expiresAt, header: "Expires", id: "expiresAt" },
     {
-      cell: (q) =>
-        isAdmin ? (
-          <div className="space-x-2 text-right">
+      cell: (q) => (
+        <div className="space-x-2 text-right">
+          <RoleGate have={level} need="admin">
             <button className={actionButton} onClick={() => setCompleteTarget(q)} type="button">
               {"Complete…"}
             </button>
+          </RoleGate>
+          <RoleGate have={level} need="admin">
             <button className={actionButton} onClick={() => cancel(q)} type="button">
               Cancel
             </button>
-          </div>
-        ) : null,
+          </RoleGate>
+        </div>
+      ),
       header: <span className="sr-only">Actions</span>,
       id: "actions",
       mobile: "action",
@@ -212,122 +227,133 @@ export const OperatorsPage = () => {
   ];
 
   return (
-    <section className="space-y-5">
-      <div className="flex items-start justify-between gap-4">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-bold tracking-tight">Operators</h1>
-          <p className="text-sm text-muted-foreground">
-            {rows.filter((r) => !r.revoked).length} usable of {rows.length} operator credentials
-            &middot; {requests.length} pending requests
-          </p>
-        </div>
-        {isAdmin && !caUnconfigured ? (
-          <div className="flex gap-2">
-            <Button onClick={() => setCompleteTarget(null)} size="sm" variant="outline">
-              {"Record certificate…"}
-            </Button>
-            <Button onClick={() => setShowRequest(true)} size="sm">
-              {"Request credential…"}
-            </Button>
+    <TooltipProvider>
+      <section className="space-y-5">
+        <div className="flex items-start justify-between gap-4">
+          <div className="space-y-1">
+            <h1 className="text-2xl font-bold tracking-tight">Operators</h1>
+            <p className="text-sm text-muted-foreground">
+              {rows.filter((r) => !r.revoked).length} usable of {rows.length} operator credentials
+              &middot; {requests.length} pending requests
+            </p>
           </div>
+          {caUnconfigured ? null : (
+            <div className="flex gap-2">
+              <Button
+                lockedReason={isAdmin ? undefined : "Needs the admin role"}
+                onClick={() => setCompleteTarget(null)}
+                size="sm"
+                variant="outline"
+              >
+                {"Record certificate…"}
+              </Button>
+              <Button
+                lockedReason={isAdmin ? undefined : "Needs the admin role"}
+                onClick={() => setShowRequest(true)}
+                size="sm"
+              >
+                {"Request credential…"}
+              </Button>
+            </div>
+          )}
+        </div>
+
+        <OperatorCABanners banners={banners} />
+
+        <Notice className="max-w-3xl" role="note" tone="warning">
+          Operator credentials are signed by your external operator CA, never by the Fleet Manager.
+          Denying one here stops it at this Fleet Manager from its next request; revoke it at your
+          CA as well so other systems stop trusting it.
+        </Notice>
+
+        {loadError ? (
+          <Notice role="alert" tone="danger">
+            {loadError}
+          </Notice>
         ) : null}
-      </div>
+        {actionError ? (
+          <Notice role="alert" tone="danger">
+            {actionError}
+          </Notice>
+        ) : null}
 
-      <OperatorCABanners banners={banners} />
+        <div className="flex gap-2" role="tablist">
+          {tabButton("credentials", "Credentials")}
+          {tabButton("requests", "Pending requests")}
+        </div>
 
-      <Notice className="max-w-3xl" role="note" tone="warning">
-        Operator credentials are signed by your external operator CA, never by the Fleet Manager.
-        Denying one here stops it at this Fleet Manager from its next request; revoke it at your CA
-        as well so other systems stop trusting it.
-      </Notice>
-
-      {loadError ? (
-        <Notice role="alert" tone="danger">
-          {loadError}
-        </Notice>
-      ) : null}
-      {actionError ? (
-        <Notice role="alert" tone="danger">
-          {actionError}
-        </Notice>
-      ) : null}
-
-      <div className="flex gap-2" role="tablist">
-        {tabButton("credentials", "Credentials")}
-        {tabButton("requests", "Pending requests")}
-      </div>
-
-      {tab === "credentials" ? (
-        <DataTable
-          columns={credentialColumns}
-          empty={
-            caUnconfigured ? (
-              <EmptyState
-                body={
-                  <>
-                    The Fleet Manager trusts no operator CA yet. Set{" "}
-                    <span className="font-mono">operatorCAPath</span> in its configuration, or
-                    register your CA during first run.
-                  </>
-                }
-                footnote={signedInAs}
-                title="No operator CA is configured."
-              />
-            ) : (
-              <EmptyState
-                body="This lists credentials recorded here and every credential the Fleet Manager has seen sign in, including ones made entirely at your CA."
-                footnote={signedInAs}
-                title="No operator credentials are recorded or seen yet."
-              />
-            )
-          }
-          label="Operator credentials"
-          rowKey={(r) => `${r.issuerSha256}/${r.serialHex}`}
-          rows={rows}
-        />
-      ) : (
-        <DataTable
-          columns={requestColumns}
-          empty={<EmptyState title="No pending credential requests." />}
-          label="Pending credential requests"
-          rowKey={(q) => q.id}
-          rows={requests}
-        />
-      )}
-
-      {showRequest ? (
-        <CredentialRequestWizard
-          onClose={() => setShowRequest(false)}
-          onCreated={(requestId, backup) => {
-            if (backup) setHeldBackups((m) => new Map(m).set(requestId, backup));
-            void load();
-          }}
-        />
-      ) : null}
-      {completeTarget === undefined ? null : (
-        <CredentialCompleteDialog
-          heldBackup={completeTarget ? heldBackups.get(completeTarget.id) : undefined}
-          onClose={() => setCompleteTarget(undefined)}
-          onRecorded={() => {
-            if (completeTarget) {
-              setHeldBackups((m) => {
-                const next = new Map(m);
-                next.delete(completeTarget.id);
-                return next;
-              });
+        {tab === "credentials" ? (
+          <DataTable
+            columns={credentialColumns}
+            empty={
+              caUnconfigured ? (
+                <EmptyState
+                  body={
+                    <>
+                      The Fleet Manager trusts no operator CA yet. Set{" "}
+                      <span className="font-mono">operatorCAPath</span> in its configuration, or
+                      register your CA during first run.
+                    </>
+                  }
+                  footnote={signedInAs}
+                  title="No operator CA is configured."
+                />
+              ) : (
+                <EmptyState
+                  body="This lists credentials recorded here and every credential the Fleet Manager has seen sign in, including ones made entirely at your CA."
+                  footnote={signedInAs}
+                  title="No operator credentials are recorded or seen yet."
+                />
+              )
             }
-            void load();
-          }}
-          request={completeTarget}
-        />
-      )}
-      {denyTarget ? (
-        <OperatorDenyDialog
-          credential={denyTarget}
-          onClose={() => setDenyTarget(null)}
-          onDenied={() => void load()}
-        />
-      ) : null}
-    </section>
+            label="Operator credentials"
+            rowKey={(r) => `${r.issuerSha256}/${r.serialHex}`}
+            rows={rows}
+          />
+        ) : (
+          <DataTable
+            columns={requestColumns}
+            empty={<EmptyState title="No pending credential requests." />}
+            label="Pending credential requests"
+            rowKey={(q) => q.id}
+            rows={requests}
+          />
+        )}
+
+        {showRequest ? (
+          <CredentialRequestWizard
+            onClose={() => setShowRequest(false)}
+            onCreated={(requestId, backup) => {
+              if (backup) setHeldBackups((m) => new Map(m).set(requestId, backup));
+              void load();
+            }}
+          />
+        ) : null}
+        {completeTarget === undefined ? null : (
+          <CredentialCompleteDialog
+            heldBackup={completeTarget ? heldBackups.get(completeTarget.id) : undefined}
+            onClose={() => setCompleteTarget(undefined)}
+            onRecorded={() => {
+              if (completeTarget) {
+                setHeldBackups((m) => {
+                  const next = new Map(m);
+                  next.delete(completeTarget.id);
+                  return next;
+                });
+              }
+              void load();
+            }}
+            request={completeTarget}
+          />
+        )}
+        {denyTarget ? (
+          <OperatorDenyDialog
+            credential={denyTarget}
+            onClose={() => setDenyTarget(null)}
+            onDenied={() => void load()}
+          />
+        ) : null}
+      </section>
+    </TooltipProvider>
   );
 };

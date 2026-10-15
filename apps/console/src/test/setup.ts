@@ -22,6 +22,16 @@ import "@testing-library/jest-dom/vitest";
 // tests override it explicitly via vi.mock("@/lib/fleet/mode").
 import.meta.env.VITE_FLEET_MODE = "mock";
 
+// jsdom has no ResizeObserver; Radix Tooltip content (RoleGate's lock
+// pattern) measures itself with one on mount.
+if (!globalThis.ResizeObserver) {
+  globalThis.ResizeObserver = class {
+    disconnect() {}
+    observe() {}
+    unobserve() {}
+  };
+}
+
 // jsdom has no matchMedia. Stub it as reduce=true so the topology's staged
 // reveal takes its instant path in tests (no rAF), keeping focus behavior
 // deterministic.

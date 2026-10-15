@@ -55,14 +55,26 @@ describe("NodeDetailPanel escrow actions", () => {
     expect(screen.getByRole("button", { name: /^reboot/i })).toBeInTheDocument();
   });
 
-  it("hides rename, escrow, decommission and reboot actions from a non-admin operator", () => {
+  // Was hidden entirely for a non-admin; #196 moves all five to the kit's
+  // lock pattern so a non-admin operator still sees them and why they're
+  // unavailable.
+  it("locks rename, escrow, decommission and reboot actions for a non-admin operator instead of hiding them", () => {
     level = "operator";
     renderPanel();
-    expect(screen.queryByRole("button", { name: /^rename/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /export key/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /import key/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /decommission/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /^reboot/i })).not.toBeInTheDocument();
+    const locked = [
+      screen.getByRole("button", { name: /^rename/i }),
+      screen.getByRole("button", { name: /export key/i }),
+      screen.getByRole("button", { name: /import key/i }),
+      screen.getByRole("button", { name: /decommission/i }),
+      screen.getByRole("button", { name: /^reboot/i }),
+    ];
+    for (const button of locked) {
+      expect(button).not.toBeDisabled();
+      expect(button).toHaveAttribute("aria-disabled", "true");
+      expect(button).toHaveAccessibleDescription(/needs the admin role/i);
+      fireEvent.click(button);
+    }
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
   it("labels the reboot action plainly when no reboot is pending", () => {

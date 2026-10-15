@@ -74,12 +74,16 @@ export const NodeScepChallenges = ({ nodeName }: { nodeName: string }) => {
     { cell: (c) => c.expiresAt.slice(0, 16).replace("T", " "), header: "Expires", id: "expiresAt" },
     { cell: (c) => c.createdByCn, header: "Minted by", id: "createdByCn" },
     {
-      cell: (c) =>
-        isOperator ? (
-          <Button onClick={() => setRevokeTarget(c)} size="sm" variant="outline">
-            Revoke
-          </Button>
-        ) : null,
+      cell: (c) => (
+        <Button
+          lockedReason={isOperator ? undefined : "Needs the operator role"}
+          onClick={() => setRevokeTarget(c)}
+          size="sm"
+          variant="outline"
+        >
+          Revoke
+        </Button>
+      ),
       header: <span className="sr-only">Actions</span>,
       id: "actions",
       mobile: "action",
@@ -88,13 +92,15 @@ export const NodeScepChallenges = ({ nodeName }: { nodeName: string }) => {
 
   return (
     <div className="space-y-3">
-      {isOperator ? (
-        <div className="flex justify-end">
-          <Button onClick={() => setShowMint(true)} size="sm">
-            {"Mint challenge…"}
-          </Button>
-        </div>
-      ) : null}
+      <div className="flex justify-end">
+        <Button
+          lockedReason={isOperator ? undefined : "Needs the operator role"}
+          onClick={() => setShowMint(true)}
+          size="sm"
+        >
+          {"Mint challenge…"}
+        </Button>
+      </div>
 
       <DataTable
         columns={columns}

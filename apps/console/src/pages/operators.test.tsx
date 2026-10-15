@@ -176,19 +176,42 @@ describe("OperatorsPage credentials", () => {
     );
   });
 
+  // Was hidden entirely for a non-admin; #196 moves both header actions to
+  // the kit's lock pattern so a non-admin still sees them and why they're
+  // unavailable.
+  it("locks Request credential and Record certificate for a non-admin instead of hiding them", async () => {
+    useAuth.mockReturnValue({ operator: { ...admin, level: "operator" } });
+    render(<OperatorsPage />);
+    await screen.findByText("admin@example.org");
+    const request = screen.getByRole("button", { name: /request credential/i });
+    const record = screen.getByRole("button", { name: /record certificate/i });
+    for (const button of [request, record]) {
+      expect(button).not.toBeDisabled();
+      expect(button).toHaveAttribute("aria-disabled", "true");
+      expect(button).toHaveAccessibleDescription(/needs the admin role/i);
+    }
+    fireEvent.click(request);
+    expect(dialogs.request).not.toHaveBeenCalled();
+  });
+
+  // Was hidden entirely for a non-admin; #196 moves it to the kit's RoleGate
+  // lock pattern (a plain table-row button, not the kit's Button) so a
+  // non-admin still sees it and why it's unavailable.
+  it("locks Deny for a non-admin instead of hiding it", async () => {
+    useAuth.mockReturnValue({ operator: { ...admin, level: "operator" } });
+    render(<OperatorsPage />);
+    await screen.findByText("admin@example.org");
+    const [deny] = screen.getAllByRole("button", { name: /^deny/i });
+    expect(deny).toHaveAttribute("aria-disabled", "true");
+    fireEvent.click(deny);
+    expect(dialogs.deny).not.toHaveBeenCalled();
+  });
+
   it("shows the operator CA banners to an admin", async () => {
     useAuth.mockReturnValue({ operator: admin });
     render(<OperatorsPage />);
     const banners = await screen.findByRole("region", { name: /needs attention/i });
     expect(within(banners).getByText("CA revocations not observed")).toBeInTheDocument();
-  });
-
-  it("hides every action from a non-admin", async () => {
-    useAuth.mockReturnValue({ operator: { ...admin, level: "operator" } });
-    render(<OperatorsPage />);
-    await screen.findByText("admin@example.org");
-    expect(screen.queryByRole("button", { name: /request credential/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /^deny/i })).not.toBeInTheDocument();
   });
 
   it("explains an empty list without saying the fleet has no operators", async () => {
@@ -257,12 +280,21 @@ describe("OperatorsPage pending requests", () => {
     );
   });
 
-  it("gives no cancel or complete to a non-admin", async () => {
+  // Was hidden entirely for a non-admin; #196 moves both row actions to the
+  // kit's RoleGate lock pattern so a non-admin still sees them and why
+  // they're unavailable.
+  it("locks Cancel and Complete for a non-admin instead of hiding them", async () => {
     useAuth.mockReturnValue({ operator: { ...admin, level: "viewer" } });
     render(<OperatorsPage />);
     fireEvent.click(await screen.findByRole("tab", { name: /pending requests/i }));
     await screen.findByText("new@example.org");
-    expect(screen.queryByRole("button", { name: /cancel/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /complete/i })).not.toBeInTheDocument();
+    const cancel = screen.getByRole("button", { name: /cancel/i });
+    const complete = screen.getByRole("button", { name: /complete/i });
+    expect(cancel).toHaveAttribute("aria-disabled", "true");
+    expect(complete).toHaveAttribute("aria-disabled", "true");
+    fireEvent.click(cancel);
+    expect(lib.cancelCredentialRequest).not.toHaveBeenCalled();
+    fireEvent.click(complete);
+    expect(dialogs.complete).not.toHaveBeenCalled();
   });
 });

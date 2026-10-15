@@ -181,17 +181,6 @@ export const AdoptPage = () => {
     }
   };
 
-  if (!isAdmin) {
-    return (
-      <section className="space-y-4">
-        <h1 className="text-2xl font-bold tracking-tight">Adopt node</h1>
-        <p className="font-mono text-sm text-muted-foreground">
-          Adopting a node requires admin level.
-        </p>
-      </section>
-    );
-  }
-
   const runPreview = async () => {
     setError("");
     setPending(true);
@@ -310,14 +299,15 @@ export const AdoptPage = () => {
         </h2>
         <Field label="Endpoint (host:port)">
           <Input
-            disabled={!!confirmedPin}
+            disabled={!!confirmedPin || !isAdmin}
             onChange={(e) => setEndpoint(e.target.value)}
             value={endpoint}
           />
         </Field>
         {confirmedPin ? null : (
           <Button
-            disabled={pending || !endpoint.trim()}
+            disabled={isAdmin && (pending || !endpoint.trim())}
+            lockedReason={isAdmin ? undefined : "Needs the admin role"}
             onClick={() => void runPreview()}
             size="sm"
           >

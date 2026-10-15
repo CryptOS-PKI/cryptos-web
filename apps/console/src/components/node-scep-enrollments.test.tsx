@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { NodeScepEnrollments } from "@/components/node-scep-enrollments";
@@ -51,11 +51,20 @@ describe("NodeScepEnrollments", () => {
     expect(screen.getByRole("button", { name: /^reject$/i })).toBeInTheDocument();
   });
 
-  it("hides Approve and Reject from a viewer", async () => {
+  // Was hidden entirely for a viewer; #196 moves both to the kit's lock
+  // pattern so a viewer still sees them and why they're unavailable.
+  it("locks Approve and Reject for a viewer instead of hiding them", async () => {
     level = "viewer";
     render(<NodeScepEnrollments nodeName="acme-issuing-01" />);
     await screen.findByText("CN=switch-1.example.org");
-    expect(screen.queryByRole("button", { name: /^approve$/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /^reject$/i })).not.toBeInTheDocument();
+    const approve = screen.getByRole("button", { name: /^approve/i });
+    const reject = screen.getByRole("button", { name: /^reject/i });
+    for (const button of [approve, reject]) {
+      expect(button).not.toBeDisabled();
+      expect(button).toHaveAttribute("aria-disabled", "true");
+      expect(button).toHaveAccessibleDescription(/needs the operator role/i);
+      fireEvent.click(button);
+    }
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 });
