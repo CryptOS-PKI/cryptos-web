@@ -48,6 +48,9 @@ describe("NodeDetailPage trust chain", () => {
 
   it("shows the trust chain with a link to an ancestor", async () => {
     renderAt("/nodes/acme-issuing-01");
+    // Lets the node audit log panel's async fetch settle under act() instead
+    // of resolving after the test returns.
+    await screen.findByRole("button", { name: "Verify chain" });
     await screen.findByText("0a1b2c3d");
     const chain = screen.getByText(/trust chain/i).closest("div")?.parentElement as HTMLElement;
     expect(within(chain).getByRole("link", { name: "acme-root-01" })).toHaveAttribute(

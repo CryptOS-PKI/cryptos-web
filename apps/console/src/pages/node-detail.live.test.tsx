@@ -80,8 +80,11 @@ const listCertificatesResult = {
 vi.mock("@/lib/fleet/client", () => ({
   fleetClient: () => ({
     listCertificates: () => Promise.resolve(listCertificatesResult),
+    listNodeAuditEvents: () => Promise.resolve({ entries: [], nextPageToken: "" }),
     listNodes: () => Promise.resolve(listNodesResult),
     listNodeTsaCertificates: () => Promise.resolve({ certificates: [] }),
+    verifyNodeAuditChain: () =>
+      Promise.resolve({ entryCount: 0n, firstBrokenSequence: 0n, intact: true, reason: "" }),
   }),
 }));
 
@@ -108,6 +111,7 @@ describe("NodeDetailPage live", () => {
     expect(await screen.findByRole("heading", { name: "lab-sub" })).toBeInTheDocument();
     expect(screen.getByText("Pending")).toBeInTheDocument();
     expect(screen.getByText("Certificates")).toBeInTheDocument();
+    await screen.findByRole("button", { name: "Verify chain" });
     await screen.findByText(/not running/i);
   });
 
@@ -115,6 +119,7 @@ describe("NodeDetailPage live", () => {
     renderAt("/nodes/lab-issuing");
     expect(await screen.findByRole("heading", { name: "lab-issuing" })).toBeInTheDocument();
     expect(await screen.findByRole("link", { name: "AA11" })).toBeInTheDocument();
+    await screen.findByRole("button", { name: "Verify chain" });
     await screen.findByText(/not running/i);
   });
 });
