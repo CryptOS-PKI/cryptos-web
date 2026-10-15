@@ -14,12 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import { Button, Dialog, Field, inputClasses, Notice } from "@cryptos-pki/ui";
 import { useState } from "react";
 
-import { DialogFrame } from "@/components/dialog-frame";
-import { Button } from "@/components/ui/button";
 import { fleetErrorMessage } from "@/lib/fleet/error-copy";
-import { fieldClass, labelClass } from "@/lib/form";
 import {
   CA_REVOKE_REMINDER,
   DENY_REASONS,
@@ -66,49 +64,45 @@ export const OperatorDenyDialog = ({
   };
 
   return (
-    <DialogFrame labelId="operator-deny-title" onClose={onClose}>
-      <div className="space-y-1">
-        <h2 className="text-lg font-bold" id="operator-deny-title">
-          Deny at the Fleet Manager
-        </h2>
-        <p className="font-mono text-xs text-muted-foreground">
-          {credential.commonName} &middot; {credential.serialHex}
-        </p>
-      </div>
-
-      {warnings ? (
-        <>
-          <div
-            className="space-y-1 rounded-md border border-warning/40 bg-warning/10 p-3"
-            role="status"
-          >
-            <p className="text-xs font-semibold text-foreground">Denied at the Fleet Manager.</p>
-            {warnings.map((w) => (
-              <p className="text-xs text-muted-foreground" key={w}>
-                {w}
-              </p>
-            ))}
-          </div>
-          <div className="flex justify-end">
-            <Button onClick={onClose} size="sm">
-              Close
+    <Dialog
+      description={`${credential.commonName} · ${credential.serialHex}`}
+      footer={
+        warnings ? (
+          <Button onClick={onClose} size="sm">
+            Close
+          </Button>
+        ) : (
+          <>
+            <Button disabled={pending} onClick={onClose} size="sm" variant="outline">
+              Cancel
             </Button>
-          </div>
-        </>
+            <Button disabled={pending} onClick={confirm} size="sm" variant="destructive">
+              {pending ? "Denying…" : "Deny at the Fleet Manager"}
+            </Button>
+          </>
+        )
+      }
+      onClose={onClose}
+      open
+      title="Deny at the Fleet Manager"
+    >
+      {warnings ? (
+        <Notice role="status" tone="warning">
+          <p className="font-semibold">Denied at the Fleet Manager.</p>
+          {warnings.map((w) => (
+            <p key={w}>{w}</p>
+          ))}
+        </Notice>
       ) : (
         <>
-          <p
-            className="rounded-md border border-warning/40 bg-warning/10 p-3 text-xs text-muted-foreground"
-            role="note"
-          >
+          <Notice role="note" tone="warning">
             The Fleet Manager refuses this credential from its next request. It does not revoke at
             your CA: other systems that trust the CA still accept it. Also revoke it at your CA and
             publish a new CRL.
-          </p>
-          <label className="block space-y-1">
-            <span className={labelClass}>Reason</span>
+          </Notice>
+          <Field label="Reason">
             <select
-              className={fieldClass}
+              className={inputClasses}
               onChange={(e) => setReasonCode(Number(e.target.value))}
               value={reasonCode}
             >
@@ -118,31 +112,22 @@ export const OperatorDenyDialog = ({
                 </option>
               ))}
             </select>
-          </label>
-          <label className="block space-y-1">
-            <span className={labelClass}>Note (kept with the denylist entry)</span>
+          </Field>
+          <Field label="Note (kept with the denylist entry)">
             <textarea
-              className={`${fieldClass} h-16`}
+              className={`${inputClasses} h-16`}
               maxLength={500}
               onChange={(e) => setNote(e.target.value)}
               value={note}
             />
-          </label>
+          </Field>
           {error ? (
-            <p className="font-mono text-xs text-destructive" role="alert">
+            <Notice role="alert" tone="danger">
               {error}
-            </p>
+            </Notice>
           ) : null}
-          <div className="flex justify-end gap-2">
-            <Button disabled={pending} onClick={onClose} size="sm" variant="outline">
-              Cancel
-            </Button>
-            <Button disabled={pending} onClick={confirm} size="sm" variant="destructive">
-              {pending ? "Denying…" : "Deny at the Fleet Manager"}
-            </Button>
-          </div>
         </>
       )}
-    </DialogFrame>
+    </Dialog>
   );
 };
