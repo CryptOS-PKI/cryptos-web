@@ -51,11 +51,14 @@ export const RootDetailPage = () => {
           <h1 className="text-2xl font-bold tracking-tight">{node.name}</h1>
           <p className="font-mono text-sm text-muted-foreground">Root CA · {node.address}</p>
         </div>
-        {isAdmin ? (
-          <Button onClick={() => setRenaming(true)} size="sm" variant="outline">
-            {"Rename…"}
-          </Button>
-        ) : null}
+        <Button
+          lockedReason={isAdmin ? undefined : "Needs the admin role"}
+          onClick={() => setRenaming(true)}
+          size="sm"
+          variant="outline"
+        >
+          {"Rename…"}
+        </Button>
       </div>
 
       {renaming ? (
