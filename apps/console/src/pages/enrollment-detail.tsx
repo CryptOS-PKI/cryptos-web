@@ -14,11 +14,21 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import {
+  Badge,
+  Button,
+  cn,
+  Dialog,
+  Field,
+  FieldTile,
+  FieldTiles,
+  Input,
+  inputClasses,
+  Notice,
+} from "@cryptos-pki/ui";
 import { useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/auth";
 import {
   approveEnrollment,
@@ -32,15 +42,6 @@ import {
 } from "@/lib/enrollment";
 import { fleetErrorMessage } from "@/lib/fleet/error-copy";
 import { roleLabels } from "@/lib/fleet/labels";
-
-const Field = ({ children, label }: { children: React.ReactNode; label: string }) => (
-  <div className="flex flex-col gap-1 rounded-lg border bg-secondary px-3 py-2.5">
-    <span className="font-mono text-[10.5px] uppercase tracking-wider text-muted-foreground">
-      {label}
-    </span>
-    <span className="break-all font-mono text-xs">{children}</span>
-  </div>
-);
 
 const EMPTY_LINK_MATERIAL: LinkApprovalMaterial = {
   adminCertPem: "",
@@ -72,23 +73,26 @@ const AttestationPanel = ({ req }: { req: EnrollmentRequest }) => (
       <Badge variant="outline">{req.kind}</Badge>
     </div>
     {req.kind === "LINK" ? (
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <Field label="pinned key sha-256">{req.pinnedKeySha256 ?? "not yet pinned"}</Field>
-        <Field label="attested">
-          {req.pinnedKeySha256 ? (
-            <span className="text-success">TOFU-pinned</span>
-          ) : (
-            <span className="text-warning">awaiting pin</span>
-          )}
-        </Field>
-      </div>
+      <FieldTiles columns={2}>
+        <FieldTile label="pinned key sha-256" value={req.pinnedKeySha256 ?? "not yet pinned"} />
+        <FieldTile
+          label="attested"
+          value={
+            req.pinnedKeySha256 ? (
+              <span className="text-success">TOFU-pinned</span>
+            ) : (
+              <span className="text-warning">awaiting pin</span>
+            )
+          }
+        />
+      </FieldTiles>
     ) : (
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <Field label="tpm attestation">{req.attestation.tpm}</Field>
-        <Field label="node id">{req.attestation.nodeId}</Field>
-        <Field label="csr subject cn">{req.csr.subjectCn}</Field>
-        <Field label="key type">{req.csr.keyType}</Field>
-      </div>
+      <FieldTiles columns={4}>
+        <FieldTile label="tpm attestation" value={req.attestation.tpm} />
+        <FieldTile label="node id" value={req.attestation.nodeId} />
+        <FieldTile label="csr subject cn" value={req.csr.subjectCn} />
+        <FieldTile label="key type" value={req.csr.keyType} />
+      </FieldTiles>
     )}
   </div>
 );
@@ -117,46 +121,18 @@ const LinkMaterialForm = ({
       <h3 className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
         Link approval material
       </h3>
-      <label className="block space-y-1">
-        <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-          Node endpoint
-        </span>
-        <input
-          className="w-full rounded-md border bg-card px-3 py-2 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-          {...field("nodeEndpoint")}
-        />
-      </label>
-      <label className="block space-y-1">
-        <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-          Admin cert (PEM)
-        </span>
-        <textarea
-          className="h-20 w-full rounded-md border bg-card px-3 py-2 font-mono text-xs focus:outline-none focus:ring-2 focus:ring-ring"
-          {...field("adminCertPem")}
-        />
-      </label>
-      <label className="block space-y-1">
-        <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-          Admin key (PEM)
-        </span>
-        <textarea
-          className="h-20 w-full rounded-md border bg-card px-3 py-2 font-mono text-xs focus:outline-none focus:ring-2 focus:ring-ring"
-          {...field("adminKeyPem")}
-        />
-      </label>
-      <label className="block space-y-1">
-        <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-          CA (PEM)
-        </span>
-        <textarea
-          aria-describedby="link-approve-ca-hint"
-          className="h-20 w-full rounded-md border bg-card px-3 py-2 font-mono text-xs focus:outline-none focus:ring-2 focus:ring-ring"
-          {...field("caPem")}
-        />
-      </label>
-      <p className="text-xs text-muted-foreground" id="link-approve-ca-hint">
-        {LINK_CA_HINT}
-      </p>
+      <Field label="Node endpoint">
+        <Input {...field("nodeEndpoint")} />
+      </Field>
+      <Field label="Admin cert (PEM)">
+        <textarea className={cn(inputClasses, "h-20")} {...field("adminCertPem")} />
+      </Field>
+      <Field label="Admin key (PEM)">
+        <textarea className={cn(inputClasses, "h-20")} {...field("adminKeyPem")} />
+      </Field>
+      <Field help={LINK_CA_HINT} label="CA (PEM)">
+        <textarea className={cn(inputClasses, "h-20")} {...field("caPem")} />
+      </Field>
       <div className="flex justify-end gap-2">
         <Button disabled={busy} onClick={onCancel} size="sm" variant="outline">
           Cancel
@@ -237,7 +213,11 @@ export const EnrollmentDetailPage = () => {
               : "Approving a LINK request requires the admin level."}
           </p>
         )}
-        {error ? <p className="font-mono text-xs text-destructive">{error}</p> : null}
+        {error ? (
+          <Notice role="alert" tone="danger">
+            {error}
+          </Notice>
+        ) : null}
         {showLinkForm ? (
           <LinkMaterialForm
             busy={pending}
@@ -286,14 +266,14 @@ export const EnrollmentDetailPage = () => {
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <Field label="proposed name">{req.proposedName}</Field>
-        <Field label="role">{roleLabels[req.role]}</Field>
-        <Field label="parent ca">{req.parentCn}</Field>
-        <Field label="address">{req.address}</Field>
-        <Field label="requested">{req.requestedAt.slice(0, 10)}</Field>
-        <Field label="status">{req.status}</Field>
-      </div>
+      <FieldTiles columns={4}>
+        <FieldTile label="proposed name" value={req.proposedName} />
+        <FieldTile label="role" value={roleLabels[req.role]} />
+        <FieldTile label="parent ca" value={req.parentCn} />
+        <FieldTile label="address" value={req.address} />
+        <FieldTile label="requested" value={req.requestedAt.slice(0, 10)} />
+        <FieldTile label="status" value={req.status} />
+      </FieldTiles>
 
       <AttestationPanel req={req} />
 
@@ -304,33 +284,9 @@ export const EnrollmentDetailPage = () => {
       </Button>
 
       {rejecting ? (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setRejecting(false);
-          }}
-          role="presentation"
-        >
-          <div
-            aria-labelledby="reject-title"
-            aria-modal="true"
-            className="w-full max-w-sm space-y-4 rounded-xl border bg-card p-5 shadow-xl"
-            role="dialog"
-          >
-            <h2 className="text-lg font-bold" id="reject-title">
-              Reject request
-            </h2>
-            <label className="block space-y-1">
-              <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-                Reason
-              </span>
-              <input
-                className="w-full rounded-md border bg-card px-3 py-2 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                onChange={(e) => setReason(e.target.value)}
-                value={reason}
-              />
-            </label>
-            <div className="flex justify-end gap-2">
+        <Dialog
+          footer={
+            <>
               <Button
                 disabled={pending}
                 onClick={() => setRejecting(false)}
@@ -347,9 +303,16 @@ export const EnrollmentDetailPage = () => {
               >
                 {pending ? "Rejecting…" : "Confirm reject"}
               </Button>
-            </div>
-          </div>
-        </div>
+            </>
+          }
+          onClose={() => setRejecting(false)}
+          open
+          title="Reject request"
+        >
+          <Field label="Reason">
+            <Input onChange={(e) => setReason(e.target.value)} value={reason} />
+          </Field>
+        </Dialog>
       ) : null}
     </section>
   );

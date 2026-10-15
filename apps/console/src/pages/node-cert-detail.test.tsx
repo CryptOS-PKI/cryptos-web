@@ -20,6 +20,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { __resetCerts, certsFor } from "@/lib/certs";
 import { NodeCertDetailPage } from "@/pages/node-cert-detail";
+import { expectNoA11yViolations } from "@/test/axe";
 
 const renderAt = (path: string) =>
   render(
@@ -32,6 +33,12 @@ const renderAt = (path: string) =>
 
 describe("NodeCertDetailPage", () => {
   beforeEach(() => __resetCerts());
+
+  it("has no axe violations", async () => {
+    const cert = certsFor("acme-issuing-01")[0];
+    const { container } = renderAt(`/nodes/acme-issuing-01/certs/${cert.serial}`);
+    await expectNoA11yViolations(container);
+  });
 
   it("shows the certificate's subject CN and serial", () => {
     const cert = certsFor("acme-issuing-01")[0];

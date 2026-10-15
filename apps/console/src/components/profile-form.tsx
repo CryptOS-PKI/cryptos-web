@@ -14,9 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import { Button, cn, Field, Input, inputClasses, Notice } from "@cryptos-pki/ui";
 import { useState } from "react";
 
-import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/auth";
 import {
   type CertProfile,
@@ -30,10 +30,8 @@ import {
   type ProfileSans,
   updateProfile,
 } from "@/lib/profiles";
-import { cn } from "@/lib/utils";
 
-const field = "w-full rounded-md border bg-card px-3 py-2 font-mono text-sm";
-const label = "font-mono text-[11px] uppercase tracking-wider text-muted-foreground";
+const groupLabelClasses = "font-mono text-[11px] uppercase tracking-wider text-muted-foreground";
 
 const empty: CertProfile = {
   extKeyUsage: [],
@@ -70,7 +68,7 @@ const CheckGroup = ({
   selected: string[];
 }) => (
   <div className="space-y-1">
-    <span className={label}>{groupLabel}</span>
+    <span className={groupLabelClasses}>{groupLabel}</span>
     <div className="flex flex-wrap gap-1.5">
       {options.map((o) => (
         <button
@@ -100,16 +98,13 @@ const SanInput = ({
   onChange: (next: string[]) => void;
   values: string[];
 }) => (
-  <label className="block space-y-1">
-    <span className={label}>{category.toUpperCase()} SANs</span>
-    <input
-      aria-label={`${category} SANs`}
-      className={field}
+  <Field label={`${category.toUpperCase()} SANs`}>
+    <Input
       onChange={(e) => onChange(parseList(e.target.value))}
       placeholder="comma or newline separated"
       value={values.join(", ")}
     />
-  </label>
+  </Field>
 );
 
 export const ProfileForm = ({
@@ -167,20 +162,17 @@ export const ProfileForm = ({
 
   return (
     <div className="max-w-lg space-y-4">
-      <label className="block space-y-1">
-        <span className={label}>Name</span>
-        <input
-          className={field}
+      <Field label="Name">
+        <Input
           disabled={mode === "edit" || !isAdmin}
           onChange={(e) => setP({ ...p, name: e.target.value })}
           value={p.name}
         />
-      </label>
+      </Field>
 
-      <label className="block space-y-1">
-        <span className={label}>Key algorithm</span>
+      <Field label="Key algorithm">
         <select
-          className={field}
+          className={inputClasses}
           disabled={!isAdmin}
           onChange={(e) => setP({ ...p, keyAlg: e.target.value })}
           value={p.keyAlg}
@@ -191,54 +183,42 @@ export const ProfileForm = ({
             </option>
           ))}
         </select>
-      </label>
+      </Field>
 
-      <label className="block space-y-1">
-        <span className={label}>Validity (days)</span>
-        <input
-          aria-label="Validity (days)"
-          className={field}
+      <Field label="Validity (days)">
+        <Input
           disabled={!isAdmin}
           onChange={(e) => setP({ ...p, validityDays: Number(e.target.value) })}
           type="number"
           value={p.validityDays}
         />
-      </label>
+      </Field>
 
       <fieldset className="space-y-2 rounded-md border p-3">
-        <legend className={label}>Subject</legend>
-        <label className="block space-y-1">
-          <span className={label}>Common name</span>
-          <input
-            aria-label="Common name"
-            className={field}
+        <legend className={groupLabelClasses}>Subject</legend>
+        <Field label="Common name">
+          <Input
             disabled={!isAdmin}
             onChange={(e) => setP({ ...p, subject: { ...p.subject, commonName: e.target.value } })}
             value={p.subject.commonName}
           />
-        </label>
-        <label className="block space-y-1">
-          <span className={label}>Organization</span>
-          <input
-            aria-label="Organization"
-            className={field}
+        </Field>
+        <Field label="Organization">
+          <Input
             disabled={!isAdmin}
             onChange={(e) =>
               setP({ ...p, subject: { ...p.subject, organization: e.target.value } })
             }
             value={p.subject.organization}
           />
-        </label>
-        <label className="block space-y-1">
-          <span className={label}>Country</span>
-          <input
-            aria-label="Country"
-            className={field}
+        </Field>
+        <Field label="Country">
+          <Input
             disabled={!isAdmin}
             onChange={(e) => setP({ ...p, subject: { ...p.subject, country: e.target.value } })}
             value={p.subject.country}
           />
-        </label>
+        </Field>
       </fieldset>
 
       <label className="flex items-center gap-2 font-mono text-sm">
@@ -252,17 +232,14 @@ export const ProfileForm = ({
       </label>
 
       {p.isCA ? (
-        <label className="block space-y-1">
-          <span className={label}>Path length</span>
-          <input
-            aria-label="Path length"
-            className={field}
+        <Field label="Path length">
+          <Input
             disabled={!isAdmin}
             onChange={(e) => setP({ ...p, pathLen: Number(e.target.value) })}
             type="number"
             value={p.pathLen ?? 0}
           />
-        </label>
+        </Field>
       ) : null}
 
       <CheckGroup
@@ -279,7 +256,7 @@ export const ProfileForm = ({
       />
 
       <fieldset className="space-y-2 rounded-md border p-3">
-        <legend className={label}>Subject alternative names</legend>
+        <legend className={groupLabelClasses}>Subject alternative names</legend>
         <SanInput category="dns" onChange={(v) => setSan("dns", v)} values={p.sans.dns} />
         <SanInput category="ip" onChange={(v) => setSan("ip", v)} values={p.sans.ip} />
         <SanInput category="email" onChange={(v) => setSan("email", v)} values={p.sans.email} />
@@ -287,20 +264,18 @@ export const ProfileForm = ({
       </fieldset>
 
       <fieldset className="space-y-2 rounded-md border p-3">
-        <legend className={label}>Extra extensions</legend>
+        <legend className={groupLabelClasses}>Extra extensions</legend>
         {p.extraExtensions.map((ext, i) => (
           <div className="space-y-1 rounded-md border bg-card p-2" key={i}>
-            <input
+            <Input
               aria-label={`Extension ${i + 1} OID`}
-              className={field}
               disabled={!isAdmin}
               onChange={(e) => setExtension(i, { oid: e.target.value })}
               placeholder="OID, e.g. 1.3.6.1.5.5.7.1.1"
               value={ext.oid}
             />
-            <input
+            <Input
               aria-label={`Extension ${i + 1} value`}
-              className={field}
               disabled={!isAdmin}
               onChange={(e) => setExtension(i, { value: e.target.value })}
               placeholder="DER value (base64)"
@@ -337,9 +312,9 @@ export const ProfileForm = ({
       </fieldset>
 
       {error ? (
-        <p className="font-mono text-xs text-destructive" role="alert">
+        <Notice role="alert" tone="danger">
           {error}
-        </p>
+        </Notice>
       ) : null}
 
       {isAdmin ? (
