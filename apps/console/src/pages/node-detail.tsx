@@ -30,6 +30,7 @@ import { CertInventory } from "@/components/cert-inventory";
 import { NodeAuditLog } from "@/components/node-audit-log";
 import { NodeChainValidate } from "@/components/node-chain-validate";
 import { NodeDetailPanel } from "@/components/node-detail-panel";
+import { NodeScepEnrollments } from "@/components/node-scep-enrollments";
 import { NodeTsaCertificates } from "@/components/node-tsa-certificates";
 import { roleLabels } from "@/lib/fleet/labels";
 import { chainToRoot, useNode } from "@/lib/nodes";
@@ -159,6 +160,14 @@ export const NodeDetailPage = () => {
         </div>
         <div className="p-4">
           <NodeChainValidate nodeName={node.name} />
+        </div>
+      </Card>
+      <Card className="w-full overflow-hidden">
+        <div className="border-b px-4 py-3 font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
+          SCEP enrolment queue
+        </div>
+        <div className="p-4">
+          <NodeScepEnrollments nodeName={node.name} />
         </div>
       </Card>
       <Button asChild variant="outline">
