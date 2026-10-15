@@ -14,9 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import { Button, Dialog, Notice } from "@cryptos-pki/ui";
 import { useState } from "react";
 
-import { Button } from "@/components/ui/button";
 import { type ApprovalRow, decideApproval } from "@/lib/approvals";
 
 // ApprovalDecideDialog confirms an approve or deny. It repeats the approval ID
@@ -58,56 +58,10 @@ export const ApprovalDecideDialog = ({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-      role="presentation"
-    >
-      <div
-        aria-labelledby="approval-decide-title"
-        aria-modal="true"
-        className="w-full max-w-lg space-y-4 rounded-xl border bg-card p-5 shadow-xl"
-        role="dialog"
-      >
-        <div className="space-y-1">
-          <h2 className="text-lg font-bold" id="approval-decide-title">
-            {verb} request
-          </h2>
-          <p className="font-mono text-xs text-muted-foreground">
-            {target.tool} &middot; {target.requestedByCn} &middot; needs {target.requiredLevel}
-          </p>
-        </div>
-        <div className="space-y-1">
-          <p className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-            Approval ID
-          </p>
-          <p className="break-all font-mono text-sm">{target.id}</p>
-        </div>
-        <p className="text-sm">{target.summary}</p>
-        <div className="space-y-1">
-          <p className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-            Request digest (SHA-256)
-          </p>
-          <p className="break-all rounded-md border bg-secondary/50 p-2 font-mono text-xs">
-            {target.requestDigest}
-          </p>
-          <p className="text-xs text-muted-foreground">
-            Recorded in the audit log with the decision and the agent&apos;s call.
-          </p>
-        </div>
-        <p className="text-sm text-muted-foreground">
-          {approve
-            ? "The agent can run this exact request once. Check that the approval ID and summary match what the agent showed you."
-            : "The agent's request is refused and cannot be retried with this approval."}
-        </p>
-        {error ? (
-          <p className="font-mono text-xs text-destructive" role="alert">
-            {error}
-          </p>
-        ) : null}
-        <div className="flex justify-end gap-2">
+    <Dialog
+      description={`${target.tool} · ${target.requestedByCn} · needs ${target.requiredLevel}`}
+      footer={
+        <>
           <Button disabled={pending} onClick={onClose} size="sm" variant="outline">
             Cancel
           </Button>
@@ -119,8 +73,40 @@ export const ApprovalDecideDialog = ({
           >
             {pending ? (approve ? "Approving…" : "Denying…") : verb}
           </Button>
-        </div>
+        </>
+      }
+      onClose={onClose}
+      open
+      title={`${verb} request`}
+    >
+      <div className="space-y-1">
+        <p className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+          Approval ID
+        </p>
+        <p className="break-all font-mono text-sm">{target.id}</p>
       </div>
-    </div>
+      <p className="text-sm">{target.summary}</p>
+      <div className="space-y-1">
+        <p className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+          Request digest (SHA-256)
+        </p>
+        <p className="break-all rounded-md border bg-secondary/50 p-2 font-mono text-xs">
+          {target.requestDigest}
+        </p>
+        <p className="text-xs text-muted-foreground">
+          Recorded in the audit log with the decision and the agent&apos;s call.
+        </p>
+      </div>
+      <p className="text-sm text-muted-foreground">
+        {approve
+          ? "The agent can run this exact request once. Check that the approval ID and summary match what the agent showed you."
+          : "The agent's request is refused and cannot be retried with this approval."}
+      </p>
+      {error ? (
+        <Notice role="alert" tone="danger">
+          {error}
+        </Notice>
+      ) : null}
+    </Dialog>
   );
 };

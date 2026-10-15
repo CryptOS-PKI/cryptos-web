@@ -15,18 +15,16 @@ limitations under the License.
 */
 
 import { OcspSigner } from "@cryptos-pki/api-client/cryptos/fleet/v1/operator_ca_pb";
+import { Button, Dialog, Field, Input, Notice } from "@cryptos-pki/ui";
 import { useState } from "react";
 
-import { DialogFrame } from "@/components/dialog-frame";
 import {
   CrlSourceFields,
   OcspFields,
   OperatorCARegisterForm,
 } from "@/components/operator-ca-register-form";
-import { Button } from "@/components/ui/button";
 import { readFileBytes } from "@/lib/download";
 import { fleetErrorMessage } from "@/lib/fleet/error-copy";
-import { labelClass } from "@/lib/form";
 import {
   buildCrlChoice,
   type CrlChoice,
@@ -64,9 +62,9 @@ const useAction = () => {
 
 const ErrorLine = ({ error }: { error: null | string }) =>
   error ? (
-    <p className="font-mono text-xs text-destructive" role="alert">
+    <Notice role="alert" tone="danger">
       {error}
-    </p>
+    </Notice>
   ) : null;
 
 export const RegisterOperatorCADialog = ({
@@ -76,10 +74,7 @@ export const RegisterOperatorCADialog = ({
   onClose: () => void;
   onDone: () => void;
 }) => (
-  <DialogFrame labelId="operator-ca-register-title" onClose={onClose} wide>
-    <h2 className="text-lg font-bold" id="operator-ca-register-title">
-      Register operator CA
-    </h2>
+  <Dialog onClose={onClose} open title="Register operator CA" variant="wide">
     <p className="text-xs text-muted-foreground">
       The new CA becomes active and the current active CA becomes retiring: both are trusted until
       you retire the old one. New credentials are recorded only under the active CA.
@@ -91,7 +86,7 @@ export const RegisterOperatorCADialog = ({
       }}
       submit={registerOperatorCA}
     />
-  </DialogFrame>
+  </Dialog>
 );
 
 export const RetireOperatorCADialog = ({
@@ -106,20 +101,43 @@ export const RetireOperatorCADialog = ({
   const [selfLockout, setSelfLockout] = useState(false);
   const { error, pending, run } = useAction();
   return (
-    <DialogFrame labelId="operator-ca-retire-title" onClose={onClose}>
-      <h2 className="text-lg font-bold" id="operator-ca-retire-title">
-        Retire operator CA
-      </h2>
-      <p className="font-mono text-xs text-muted-foreground">{ca.subject}</p>
-      <p
-        className="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-xs text-muted-foreground"
-        role="note"
-      >
+    <Dialog
+      description={ca.subject}
+      footer={
+        <>
+          <Button disabled={pending} onClick={onClose} size="sm" variant="outline">
+            Cancel
+          </Button>
+          <Button
+            disabled={pending}
+            onClick={() =>
+              void run(() => retireOperatorCA(ca.sha256, selfLockout), "Retire failed.").then(
+                (done) => {
+                  if (done) {
+                    onDone();
+                    onClose();
+                  }
+                },
+              )
+            }
+            size="sm"
+            variant="destructive"
+          >
+            Retire this CA
+          </Button>
+        </>
+      }
+      onClose={onClose}
+      open
+      title="Retire operator CA"
+      variant="destructive"
+    >
+      <Notice role="note" tone="danger">
         Every certificate under this CA is refused from its next request, including MCP keys bound
         to them. The Fleet Manager refuses to retire the last active CA. If your own certificate
         comes only from this CA, retiring it signs you out for good unless you tick the box below on
         purpose.
-      </p>
+      </Notice>
       <label className="flex items-start gap-2 text-xs">
         <input
           checked={selfLockout}
@@ -129,29 +147,7 @@ export const RetireOperatorCADialog = ({
         Retire it even if this would lock myself out
       </label>
       <ErrorLine error={error} />
-      <div className="flex justify-end gap-2">
-        <Button disabled={pending} onClick={onClose} size="sm" variant="outline">
-          Cancel
-        </Button>
-        <Button
-          disabled={pending}
-          onClick={() =>
-            void run(() => retireOperatorCA(ca.sha256, selfLockout), "Retire failed.").then(
-              (done) => {
-                if (done) {
-                  onDone();
-                  onClose();
-                }
-              },
-            )
-          }
-          size="sm"
-          variant="destructive"
-        >
-          Retire this CA
-        </Button>
-      </div>
-    </DialogFrame>
+    </Dialog>
   );
 };
 
@@ -170,11 +166,36 @@ export const CrlSourceDialog = ({
   const [ack, setAck] = useState(false);
   const { error, pending, run } = useAction();
   return (
-    <DialogFrame labelId="operator-ca-crl-title" onClose={onClose}>
-      <h2 className="text-lg font-bold" id="operator-ca-crl-title">
-        CRL source
-      </h2>
-      <p className="font-mono text-xs text-muted-foreground">{ca.subject}</p>
+    <Dialog
+      description={ca.subject}
+      footer={
+        <>
+          <Button disabled={pending} onClick={onClose} size="sm" variant="outline">
+            Cancel
+          </Button>
+          <Button
+            disabled={pending || !crlChoiceReady(kind, url, crlFile, ack)}
+            onClick={() =>
+              void run(
+                () => setOperatorCACrlSource(ca.sha256, buildCrlChoice(kind, url, crlFile)),
+                "Changing the CRL source failed.",
+              ).then((done) => {
+                if (done) {
+                  onDone();
+                  onClose();
+                }
+              })
+            }
+            size="sm"
+          >
+            Save
+          </Button>
+        </>
+      }
+      onClose={onClose}
+      open
+      title="CRL source"
+    >
       <p className="text-xs text-muted-foreground">
         A new URL or CRL must verify against the CA before it is saved.
       </p>
@@ -189,29 +210,7 @@ export const CrlSourceDialog = ({
         url={url}
       />
       <ErrorLine error={error} />
-      <div className="flex justify-end gap-2">
-        <Button disabled={pending} onClick={onClose} size="sm" variant="outline">
-          Cancel
-        </Button>
-        <Button
-          disabled={pending || !crlChoiceReady(kind, url, crlFile, ack)}
-          onClick={() =>
-            void run(
-              () => setOperatorCACrlSource(ca.sha256, buildCrlChoice(kind, url, crlFile)),
-              "Changing the CRL source failed.",
-            ).then((done) => {
-              if (done) {
-                onDone();
-                onClose();
-              }
-            })
-          }
-          size="sm"
-        >
-          Save
-        </Button>
-      </div>
-    </DialogFrame>
+    </Dialog>
   );
 };
 
@@ -227,50 +226,53 @@ export const UploadCrlDialog = ({
   const [crlFile, setCrlFile] = useState<null | Uint8Array>(null);
   const { error, pending, run } = useAction();
   return (
-    <DialogFrame labelId="operator-ca-upload-title" onClose={onClose}>
-      <h2 className="text-lg font-bold" id="operator-ca-upload-title">
-        Upload CRL
-      </h2>
-      <p className="font-mono text-xs text-muted-foreground">{ca.subject}</p>
+    <Dialog
+      description={ca.subject}
+      footer={
+        <>
+          <Button disabled={pending} onClick={onClose} size="sm" variant="outline">
+            Cancel
+          </Button>
+          <Button
+            disabled={pending || !crlFile}
+            onClick={() =>
+              void run(
+                () => uploadOperatorCrl(ca.sha256, crlFile ?? new Uint8Array()),
+                "Uploading the CRL failed.",
+              ).then((done) => {
+                if (done) {
+                  onDone();
+                  onClose();
+                }
+              })
+            }
+            size="sm"
+          >
+            Upload
+          </Button>
+        </>
+      }
+      onClose={onClose}
+      open
+      title="Upload CRL"
+    >
       <p className="text-xs text-muted-foreground">
         The CRL must be signed by this CA and newer than the one the Fleet Manager holds
         {ca.crl?.nextUpdate ? `, whose next update is ${ca.crl.nextUpdate}` : ""}.
       </p>
-      <label className="block space-y-1 text-xs">
-        <span className={`${labelClass} block`}>CRL file (PEM or DER)</span>
-        <input
+      <Field label="CRL file (PEM or DER)">
+        <Input
           accept=".crl,.pem,.der"
+          mono={false}
           onChange={(e) => {
             const chosen = e.target.files?.[0];
             if (chosen) void readFileBytes(chosen).then(setCrlFile);
           }}
           type="file"
         />
-      </label>
+      </Field>
       <ErrorLine error={error} />
-      <div className="flex justify-end gap-2">
-        <Button disabled={pending} onClick={onClose} size="sm" variant="outline">
-          Cancel
-        </Button>
-        <Button
-          disabled={pending || !crlFile}
-          onClick={() =>
-            void run(
-              () => uploadOperatorCrl(ca.sha256, crlFile ?? new Uint8Array()),
-              "Uploading the CRL failed.",
-            ).then((done) => {
-              if (done) {
-                onDone();
-                onClose();
-              }
-            })
-          }
-          size="sm"
-        >
-          Upload
-        </Button>
-      </div>
-    </DialogFrame>
+    </Dialog>
   );
 };
 
@@ -289,35 +291,15 @@ export const OcspDialog = ({
   const [saved, setSaved] = useState(false);
   const { error, pending, run } = useAction();
   return (
-    <DialogFrame labelId="operator-ca-ocsp-title" onClose={onClose}>
-      <h2 className="text-lg font-bold" id="operator-ca-ocsp-title">
-        OCSP
-      </h2>
-      <p className="font-mono text-xs text-muted-foreground">{ca.subject}</p>
-      {saved ? (
-        <div className="space-y-2" role="status">
-          <p className="text-sm">OCSP mode saved.</p>
-          {probe ? (
-            <p className="text-xs text-muted-foreground">
-              The responder answered, signed by{" "}
-              {probe.signer === OcspSigner.ANCHOR ? "the CA itself" : "a delegated responder"} (
-              {probe.signerSubject}), valid until {probe.signerNotAfter}.
-            </p>
-          ) : null}
-          <div className="flex justify-end">
-            <Button onClick={onClose} size="sm">
-              Close
-            </Button>
-          </div>
-        </div>
-      ) : (
-        <>
-          <p className="text-xs text-muted-foreground">
-            OCSP only ever adds revocations. A url responder is probed before it is saved.
-          </p>
-          <OcspFields mode={mode} onMode={setMode} onUrl={setUrl} url={url} />
-          <ErrorLine error={error} />
-          <div className="flex justify-end gap-2">
+    <Dialog
+      description={ca.subject}
+      footer={
+        saved ? (
+          <Button onClick={onClose} size="sm">
+            Close
+          </Button>
+        ) : (
+          <>
             <Button disabled={pending} onClick={onClose} size="sm" variant="outline">
               Cancel
             </Button>
@@ -339,9 +321,33 @@ export const OcspDialog = ({
             >
               Save
             </Button>
-          </div>
+          </>
+        )
+      }
+      onClose={onClose}
+      open
+      title="OCSP"
+    >
+      {saved ? (
+        <Notice role="status" tone="success">
+          <p>OCSP mode saved.</p>
+          {probe ? (
+            <p>
+              The responder answered, signed by{" "}
+              {probe.signer === OcspSigner.ANCHOR ? "the CA itself" : "a delegated responder"} (
+              {probe.signerSubject}), valid until {probe.signerNotAfter}.
+            </p>
+          ) : null}
+        </Notice>
+      ) : (
+        <>
+          <p className="text-xs text-muted-foreground">
+            OCSP only ever adds revocations. A url responder is probed before it is saved.
+          </p>
+          <OcspFields mode={mode} onMode={setMode} onUrl={setUrl} url={url} />
+          <ErrorLine error={error} />
         </>
       )}
-    </DialogFrame>
+    </Dialog>
   );
 };
