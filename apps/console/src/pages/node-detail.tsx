@@ -27,6 +27,7 @@ import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import type { IdentityState } from "@/lib/mock";
 
 import { CertInventory } from "@/components/cert-inventory";
+import { NodeAuditLog } from "@/components/node-audit-log";
 import { NodeDetailPanel } from "@/components/node-detail-panel";
 import { roleLabels } from "@/lib/fleet/labels";
 import { chainToRoot, useNode } from "@/lib/nodes";
@@ -132,6 +133,14 @@ export const NodeDetailPage = () => {
         </div>
         <div className="p-4">
           <CertInventory nodeName={node.name} />
+        </div>
+      </Card>
+      <Card className="w-full overflow-hidden">
+        <div className="border-b px-4 py-3 font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
+          Audit log
+        </div>
+        <div className="p-4">
+          <NodeAuditLog nodeName={node.name} />
         </div>
       </Card>
       <Button asChild variant="outline">
