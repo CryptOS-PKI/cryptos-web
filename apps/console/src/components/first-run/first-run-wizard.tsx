@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { Button, Wordmark } from "@cryptos-pki/ui";
+import { Button, Stepper, Wordmark } from "@cryptos-pki/ui";
 import { useState } from "react";
 
 import { AdminStep } from "@/components/first-run/admin-step";
@@ -81,17 +81,11 @@ export const FirstRunWizard = ({
           No operator can sign in yet. Register your operator CA and get the first admin
           certificate.
         </p>
-        <ol className="flex gap-3 font-mono text-[11px] uppercase tracking-wider">
-          {STEPS.map((s) => (
-            <li
-              aria-current={s.id === step ? "step" : undefined}
-              className={s.id === step ? "text-primary" : "text-muted-foreground"}
-              key={s.id}
-            >
-              {s.label}
-            </li>
-          ))}
-        </ol>
+        <Stepper
+          current={STEPS.findIndex((s) => s.id === step)}
+          label="First-run progress"
+          steps={STEPS}
+        />
       </div>
 
       <section className="space-y-3 rounded-xl border bg-card p-5">

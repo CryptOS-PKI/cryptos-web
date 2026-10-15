@@ -21,6 +21,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { generateBackupPassphrase, keyBackupPem } from "@/lib/crypto/key-backup";
 import { CredentialRequestPage } from "@/pages/credential-request";
+import { expectNoA11yViolations } from "@/test/axe";
 
 const { downloadBytes, downloadText, fleetClient } = vi.hoisted(() => ({
   downloadBytes: vi.fn(),
@@ -62,6 +63,11 @@ const expectNoNetwork = () => {
 };
 
 describe("CredentialRequestPage", () => {
+  it("has no axe violations", async () => {
+    const { container } = render(<CredentialRequestPage />);
+    await expectNoA11yViolations(container);
+  });
+
   it("makes the key, backup and CSR entirely in the browser, with no network calls", async () => {
     render(<CredentialRequestPage />);
     fill(/full name/i, "Dana Example");

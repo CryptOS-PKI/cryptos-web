@@ -14,8 +14,5 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Shared field styling and checks for the operator credential forms.
-export const fieldClass = "w-full rounded-md border bg-card px-3 py-2 font-mono text-sm";
-export const labelClass = "font-mono text-[11px] uppercase tracking-wider text-muted-foreground";
-
+// Shared checks for the operator credential forms.
 export const looksLikeEmail = (v: string): boolean => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());

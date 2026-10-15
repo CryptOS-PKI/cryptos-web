@@ -32,7 +32,8 @@ components, named exports from `src/index.ts`) and
   The "Make a credential request" page `/request-credential` is outside the gate too, and makes
   no network calls at all: it must not import the Fleet Manager client.
 - `src/components/layout/` - app shell: header, sidebar nav, wordmark, theme toggle, auth gate.
-- `src/components/ui/` - shadcn/ui primitives (button, card, badge, separator).
+  There is no local `src/components/ui/`: every primitive comes from `@cryptos-pki/ui`, and
+  `src/components/` holds only app-specific parts (wizards, dialogs, the topology graph).
 - `src/context/` - `theme.tsx` (dark/light, persisted) and `auth.tsx` (browser-mTLS gate stub).
 - `src/lib/` - `mock.ts` (the typed Node model), `mock-fixtures.real.ts`/`mock-fixtures.stub.ts`
   (the fixture data every mock store's `seed()` copies from, swapped by `vite.config.ts` at build

@@ -15,15 +15,29 @@ limitations under the License.
 */
 
 import "reflect-metadata";
-import { Button, Wordmark } from "@cryptos-pki/ui";
+import {
+  Button,
+  CopyBlock,
+  Field,
+  Input,
+  inputClasses,
+  KeyBackupStep,
+  Notice,
+  Wordmark,
+} from "@cryptos-pki/ui";
 import { X509Certificate } from "@peculiar/x509";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-import { CopyBlock } from "@/components/copy-block";
-import { KeyBackupStep } from "@/components/key-backup-step";
-import { buildCredentialPkcs12, readCertificateDer } from "@/lib/crypto/key-backup";
-import { downloadBytes, readFileBytes } from "@/lib/download";
-import { fieldClass, labelClass, looksLikeEmail } from "@/lib/form";
+import {
+  buildCredentialPkcs12,
+  generateBackupPassphrase,
+  keyBackupFilename,
+  keyBackupPem,
+  readCertificateDer,
+} from "@/lib/crypto/key-backup";
+import { generateLeafKeyAndCSR } from "@/lib/crypto/leaf-key";
+import { downloadBytes, downloadText, readFileBytes } from "@/lib/download";
+import { looksLikeEmail } from "@/lib/form";
 import {
   credentialFileBase,
   csrToPem,
@@ -47,6 +61,46 @@ const certIdentity = (certDer: Uint8Array): { email: string; level: string } => 
   return { email, level };
 };
 
+interface MadeRequestKey {
+  backupPem: string;
+  csrDer: Uint8Array;
+  passphrase: string;
+}
+
+// useMadeRequestKey makes the holder's P-384 key and CSR in the browser once
+// the form asks for one, the same pattern CredentialRequestWizard uses for
+// its own in-browser key, then makes the encrypted key backup.
+const useMadeRequestKey = (active: boolean, email: string, level: OperatorLevel) => {
+  const [made, setMade] = useState<MadeRequestKey | null>(null);
+  const [error, setError] = useState<null | string>(null);
+
+  useEffect(() => {
+    if (!active) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const { csrDer, privateKey } = await generateLeafKeyAndCSR({
+          extensionRequest: { level },
+          sans: [],
+          subjectCn: email,
+        });
+        const passphrase = generateBackupPassphrase();
+        const backupPem = await keyBackupPem(privateKey, passphrase);
+        if (!cancelled) setMade({ backupPem, csrDer, passphrase });
+      } catch (error_: unknown) {
+        if (!cancelled)
+          setError(error_ instanceof Error ? error_.message : "Key generation failed");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- runs once per activation of the step
+  }, [active]);
+
+  return { error, made };
+};
+
 const MakeRequest = () => {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -55,6 +109,7 @@ const MakeRequest = () => {
   const [csrPem, setCsrPem] = useState<null | string>(null);
 
   const cleanEmail = email.trim().toLowerCase();
+  const { error: keyError, made } = useMadeRequestKey(making && !csrPem, cleanEmail, level);
 
   if (csrPem) {
     return (
@@ -62,6 +117,7 @@ const MakeRequest = () => {
         <CopyBlock
           filename={`${credentialFileBase(level, cleanEmail)}.csr`}
           label="CSR"
+          onDownload={downloadText}
           text={csrPem}
         />
         <p className="text-sm text-muted-foreground">
@@ -74,39 +130,61 @@ const MakeRequest = () => {
   }
 
   if (making) {
+    if (keyError)
+      return (
+        <Notice role="alert" tone="danger">
+          {keyError}
+        </Notice>
+      );
+    if (!made)
+      return (
+        <p className="font-mono text-xs text-muted-foreground" role="status">
+          Making a P-384 key and CSR in this browser&hellip;
+        </p>
+      );
     return (
       <KeyBackupStep
-        email={cleanEmail}
-        level={level}
-        onBackedUp={({ csrDer }) => setCsrPem(csrToPem(csrDer))}
+        filename={keyBackupFilename(level, cleanEmail)}
+        onContinue={() => setCsrPem(csrToPem(made.csrDer))}
+        onDownload={() =>
+          downloadText(
+            keyBackupFilename(level, cleanEmail),
+            made.backupPem,
+            "application/x-pem-file",
+          )
+        }
+        passphrase={made.passphrase}
+        warning={
+          <>
+            <p className="font-semibold">Save the key backup and its passphrase</p>
+            <p>
+              The private key was made in this browser and never goes to the Fleet Manager. Download
+              the encrypted key backup and store the passphrase in a password manager. The
+              passphrase is shown only here, once; without both, the key is lost and you must start
+              again.
+            </p>
+          </>
+        }
       />
     );
   }
 
   return (
     <div className="space-y-3">
-      <label className="block space-y-1">
-        <span className={labelClass}>Full name</span>
-        <input
-          className={fieldClass}
-          onChange={(e) => setFullName(e.target.value)}
-          value={fullName}
-        />
-      </label>
-      <label className="block space-y-1">
-        <span className={labelClass}>Email (your certificate&apos;s CN)</span>
-        <input
+      <Field label="Full name">
+        <Input onChange={(e) => setFullName(e.target.value)} value={fullName} />
+      </Field>
+      <Field label="Email (your certificate's CN)">
+        <Input
           autoComplete="off"
-          className={fieldClass}
           onChange={(e) => setEmail(e.target.value)}
           type="email"
           value={email}
         />
-      </label>
-      <label className="block space-y-1">
-        <span className={labelClass}>Access level</span>
+      </Field>
+      <Field label="Access level">
         <select
-          className={fieldClass}
+          className={inputClasses}
           onChange={(e) => setLevel(e.target.value as OperatorLevel)}
           value={level}
         >
@@ -116,7 +194,7 @@ const MakeRequest = () => {
             </option>
           ))}
         </select>
-      </label>
+      </Field>
       <div className="flex justify-end">
         <Button
           disabled={fullName.trim() === "" || !looksLikeEmail(email)}
@@ -169,53 +247,49 @@ const BuildPkcs12 = () => {
 
   return (
     <div className="space-y-3">
-      <label className="block space-y-1 text-xs">
-        <span className={`${labelClass} block`}>Your key backup file</span>
-        <input
+      <Field label="Your key backup file">
+        <Input
           accept=".pem,.key"
+          mono={false}
           onChange={(e) => {
             const chosen = e.target.files?.[0];
             if (chosen) void readFileBytes(chosen).then(setBackup);
           }}
           type="file"
         />
-      </label>
-      <label className="block space-y-1">
-        <span className={labelClass}>Your signed certificate (PEM)</span>
+      </Field>
+      <Field label="Your signed certificate (PEM)">
         <textarea
-          className={`${fieldClass} h-28`}
+          className={`${inputClasses} h-28`}
           onChange={(e) => setCertText(e.target.value)}
           value={certText}
         />
-      </label>
-      <label className="block space-y-1">
-        <span className={labelClass}>Operator CA certificate for the chain (optional)</span>
+      </Field>
+      <Field label="Operator CA certificate for the chain (optional)">
         <textarea
-          className={`${fieldClass} h-20`}
+          className={`${inputClasses} h-20`}
           onChange={(e) => setChainText(e.target.value)}
           value={chainText}
         />
-      </label>
-      <label className="block space-y-1">
-        <span className={labelClass}>Key backup passphrase</span>
-        <input
+      </Field>
+      <Field label="Key backup passphrase">
+        <Input
           autoComplete="off"
-          className={fieldClass}
           onChange={(e) => setPassphrase(e.target.value)}
           type="password"
           value={passphrase}
         />
-      </label>
+      </Field>
       {error ? (
-        <p className="font-mono text-xs text-destructive" role="alert">
+        <Notice role="alert" tone="danger">
           {error}
-        </p>
+        </Notice>
       ) : null}
       {done ? (
-        <p className="text-xs text-muted-foreground" role="status">
+        <Notice role="status" tone="success">
           PKCS#12 downloaded as <span className="font-mono">{done}</span>. It opens with the same
           passphrase. Import it into your browser or OS certificate store.
-        </p>
+        </Notice>
       ) : null}
       <div className="flex justify-end">
         <Button

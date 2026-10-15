@@ -14,30 +14,82 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { Button } from "@cryptos-pki/ui";
-import { useState } from "react";
+import {
+  Button,
+  CopyBlock,
+  Field,
+  Input,
+  inputClasses,
+  KeyBackupStep,
+  Notice,
+} from "@cryptos-pki/ui";
+import { useEffect, useState } from "react";
 
-import { CopyBlock } from "@/components/copy-block";
-import { KeyBackupStep } from "@/components/key-backup-step";
 import { type FirstAdminResult, submitFirstAdminCertificate } from "@/lib/bootstrap";
 import {
   buildCredentialPkcs12,
+  generateBackupPassphrase,
+  keyBackupFilename,
+  keyBackupPem,
   keyMatchesCertificate,
   readCertificateDer,
   readKeyBackup,
 } from "@/lib/crypto/key-backup";
-import { downloadBytes, readFileBytes } from "@/lib/download";
+import { generateLeafKeyAndCSR } from "@/lib/crypto/leaf-key";
+import { downloadBytes, downloadText, readFileBytes } from "@/lib/download";
 import { fleetErrorMessage } from "@/lib/fleet/error-copy";
-import { fieldClass, labelClass, looksLikeEmail } from "@/lib/form";
+import { looksLikeEmail } from "@/lib/form";
 import { credentialFileBase, csrToPem, levelOpensslCommand } from "@/lib/operators";
 
+const legendClass = "font-mono text-[10.5px] uppercase tracking-[0.08em] text-muted-foreground";
+
 const SessionCaution = () => (
-  <p className="rounded-md border border-warning/40 bg-warning/10 p-3 text-xs text-muted-foreground">
+  <Notice tone="warning">
     The first-run session ends after 15 minutes without a call. If it ends while you are at the CA,
     start again with the newest token from the log, confirm the CA&apos;s fingerprint again, and
     continue from your key backup.
-  </p>
+  </Notice>
 );
+
+interface MadeAdminKey {
+  backupPem: string;
+  csrDer: Uint8Array;
+  passphrase: string;
+}
+
+// useMadeAdminKey makes a P-384 admin key and CSR in the browser once PathA
+// reaches the backup step (the same pattern CredentialRequestWizard uses for
+// its own in-browser key), then makes the encrypted key backup.
+const useMadeAdminKey = (active: boolean, email: string) => {
+  const [made, setMade] = useState<MadeAdminKey | null>(null);
+  const [error, setError] = useState<null | string>(null);
+
+  useEffect(() => {
+    if (!active) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const { csrDer, privateKey } = await generateLeafKeyAndCSR({
+          extensionRequest: { level: "admin" },
+          sans: [],
+          subjectCn: email,
+        });
+        const passphrase = generateBackupPassphrase();
+        const backupPem = await keyBackupPem(privateKey, passphrase);
+        if (!cancelled) setMade({ backupPem, csrDer, passphrase });
+      } catch (error_: unknown) {
+        if (!cancelled)
+          setError(error_ instanceof Error ? error_.message : "Key generation failed");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- runs once per activation of the step
+  }, [active]);
+
+  return { error, made };
+};
 
 const certFrom = (text: string): Uint8Array =>
   readCertificateDer(new TextEncoder().encode(text.trim()));
@@ -69,6 +121,7 @@ const PathA = ({
 
   const cleanEmail = email.trim().toLowerCase();
   const detailsReady = fullName.trim() !== "" && looksLikeEmail(email);
+  const { error: keyError, made } = useMadeAdminKey(mode === "make" && !csrDer, cleanEmail);
 
   const record = async () => {
     setPending(true);
@@ -116,24 +169,17 @@ const PathA = ({
   if (mode === "details") {
     return (
       <div className="space-y-3">
-        <label className="block space-y-1">
-          <span className={labelClass}>Full name</span>
-          <input
-            className={fieldClass}
-            onChange={(e) => setFullName(e.target.value)}
-            value={fullName}
-          />
-        </label>
-        <label className="block space-y-1">
-          <span className={labelClass}>Email (the certificate&apos;s CN)</span>
-          <input
+        <Field label="Full name">
+          <Input onChange={(e) => setFullName(e.target.value)} value={fullName} />
+        </Field>
+        <Field label="Email (the certificate's CN)">
+          <Input
             autoComplete="off"
-            className={fieldClass}
             onChange={(e) => setEmail(e.target.value)}
             type="email"
             value={email}
           />
-        </label>
+        </Field>
         <div className="flex justify-end gap-2">
           <Button
             disabled={!detailsReady}
@@ -152,14 +198,44 @@ const PathA = ({
   }
 
   if (mode === "make" && !csrDer) {
+    if (keyError)
+      return (
+        <Notice role="alert" tone="danger">
+          {keyError}
+        </Notice>
+      );
+    if (!made)
+      return (
+        <p className="font-mono text-xs text-muted-foreground" role="status">
+          Making a P-384 key and CSR in this browser&hellip;
+        </p>
+      );
     return (
       <KeyBackupStep
-        email={cleanEmail}
-        level="admin"
-        onBackedUp={(key) => {
-          setBackup(key.backup);
-          setCsrDer(key.csrDer);
+        filename={keyBackupFilename("admin", cleanEmail)}
+        onContinue={() => {
+          setBackup(new TextEncoder().encode(made.backupPem));
+          setCsrDer(made.csrDer);
         }}
+        onDownload={() =>
+          downloadText(
+            keyBackupFilename("admin", cleanEmail),
+            made.backupPem,
+            "application/x-pem-file",
+          )
+        }
+        passphrase={made.passphrase}
+        warning={
+          <>
+            <p className="font-semibold">Save the key backup and its passphrase</p>
+            <p>
+              The private key was made in this browser and never goes to the Fleet Manager. Download
+              the encrypted key backup and store the passphrase in a password manager. The
+              passphrase is shown only here, once; without both, the key is lost and the request has
+              to start again.
+            </p>
+          </>
+        }
       />
     );
   }
@@ -171,6 +247,7 @@ const PathA = ({
           <CopyBlock
             filename={`${credentialFileBase("admin", cleanEmail)}.csr`}
             label="CSR"
+            onDownload={downloadText}
             text={csrToPem(csrDer)}
           />
           <CopyBlock label="Admin extension section" text={adminExtfile} />
@@ -183,55 +260,51 @@ const PathA = ({
           <SessionCaution />
         </>
       ) : (
-        <label className="block space-y-1 text-xs">
-          <span className={`${labelClass} block`}>Key backup file</span>
-          <input
+        <Field label="Key backup file">
+          <Input
             accept=".pem,.key"
+            mono={false}
             onChange={(e) => {
               const chosen = e.target.files?.[0];
               if (chosen) void readFileBytes(chosen).then(setBackup);
             }}
             type="file"
           />
-        </label>
+        </Field>
       )}
-      <label className="block space-y-1">
-        <span className={labelClass}>Signed admin certificate (PEM)</span>
+      <Field label="Signed admin certificate (PEM)">
         <textarea
-          className={`${fieldClass} h-28`}
+          className={`${inputClasses} h-28`}
           onChange={(e) => setCertText(e.target.value)}
           value={certText}
         />
-      </label>
+      </Field>
       {anchorDer ? null : (
-        <label className="block space-y-1">
-          <span className={labelClass}>Operator CA certificate for the chain (optional)</span>
+        <Field label="Operator CA certificate for the chain (optional)">
           <textarea
-            className={`${fieldClass} h-20`}
+            className={`${inputClasses} h-20`}
             onChange={(e) => setChainText(e.target.value)}
             value={chainText}
           />
-        </label>
+        </Field>
       )}
-      <label className="block space-y-1">
-        <span className={labelClass}>Key backup passphrase</span>
-        <input
+      <Field label="Key backup passphrase">
+        <Input
           autoComplete="off"
-          className={fieldClass}
           onChange={(e) => setPassphrase(e.target.value)}
           type="password"
           value={passphrase}
         />
-      </label>
+      </Field>
       {result?.warnings.map((w) => (
-        <p className="font-mono text-xs text-warning" key={w}>
+        <Notice key={w} tone="warning">
           {w}
-        </p>
+        </Notice>
       ))}
       {error ? (
-        <p className="font-mono text-xs text-destructive" role="alert">
+        <Notice role="alert" tone="danger">
           {error}
-        </p>
+        </Notice>
       ) : null}
       <div className="flex justify-end">
         <Button
@@ -284,15 +357,9 @@ const PathB = ({ adminExtfile, onDone }: { adminExtfile: string; onDone: () => v
 
   return (
     <div className="space-y-3">
-      <label className="block space-y-1">
-        <span className={labelClass}>Email (the certificate&apos;s CN)</span>
-        <input
-          className={fieldClass}
-          onChange={(e) => setEmail(e.target.value)}
-          type="email"
-          value={email}
-        />
-      </label>
+      <Field label="Email (the certificate's CN)">
+        <Input onChange={(e) => setEmail(e.target.value)} type="email" value={email} />
+      </Field>
       <CopyBlock label="Admin extension section" text={adminExtfile} />
       <CopyBlock label="OpenSSL commands" text={pathBRecipe(cleanEmail)} />
       <p className="text-xs text-muted-foreground">
@@ -305,26 +372,20 @@ const PathB = ({ adminExtfile, onDone }: { adminExtfile: string; onDone: () => v
           Paste the signed certificate to have the Fleet Manager check it now. Only the certificate
           is sent.
         </p>
-        <label className="block space-y-1">
-          <span className={labelClass}>Full name</span>
-          <input
-            className={fieldClass}
-            onChange={(e) => setFullName(e.target.value)}
-            value={fullName}
-          />
-        </label>
-        <label className="block space-y-1">
-          <span className={labelClass}>Signed admin certificate (PEM)</span>
+        <Field label="Full name">
+          <Input onChange={(e) => setFullName(e.target.value)} value={fullName} />
+        </Field>
+        <Field label="Signed admin certificate (PEM)">
           <textarea
-            className={`${fieldClass} h-24`}
+            className={`${inputClasses} h-24`}
             onChange={(e) => setCertText(e.target.value)}
             value={certText}
           />
-        </label>
+        </Field>
         {error ? (
-          <p className="font-mono text-xs text-destructive" role="alert">
+          <Notice role="alert" tone="danger">
             {error}
-          </p>
+          </Notice>
         ) : null}
         {result ? (
           <p className="text-xs" role="status">
@@ -365,7 +426,7 @@ export const AdminStep = ({
   return (
     <div className="space-y-4">
       <fieldset className="space-y-2">
-        <legend className={labelClass}>How to make the certificate</legend>
+        <legend className={legendClass}>How to make the certificate</legend>
         <label className="flex items-start gap-2 text-sm">
           <input
             checked={path === "a"}
