@@ -29,6 +29,7 @@ import {
 } from "@/lib/enrollment";
 import { __resetNodes } from "@/lib/nodes";
 import { EnrollmentPage } from "@/pages/enrollment";
+import { expectNoA11yViolations } from "@/test/axe";
 
 const mockOperator = vi.fn<() => { level: OperatorLevel } | null>(() => ({ level: "admin" }));
 vi.mock("@/context/auth", () => ({
@@ -46,6 +47,15 @@ describe("EnrollmentPage", () => {
     __resetEnrollments();
     mockOperator.mockReturnValue({ level: "admin" });
     vi.mocked(createEnrollment).mockClear();
+  });
+
+  it("has no axe violations", async () => {
+    const { container } = render(
+      <MemoryRouter>
+        <EnrollmentPage />
+      </MemoryRouter>,
+    );
+    await expectNoA11yViolations(container);
   });
 
   it("lists a pending request linking to its detail", () => {

@@ -23,6 +23,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CertProfile } from "@/lib/profiles";
 
 import { NodeProfilesPage } from "@/pages/node-profiles";
+import { expectNoA11yViolations } from "@/test/axe";
 
 const getNodeConfig = vi.fn();
 const applyProfileToNode = vi.fn();
@@ -96,6 +97,12 @@ describe("NodeProfilesPage drift view", () => {
   beforeEach(() => {
     getNodeConfig.mockReset().mockResolvedValue(driftedConfig());
     applyProfileToNode.mockReset().mockResolvedValue({ generation: 3, requiresReboot: false });
+  });
+
+  it("has no axe violations", async () => {
+    const { container } = renderAt("/nodes/acme-issuing-01/profiles");
+    expect(await screen.findByText("Drifted")).toBeInTheDocument();
+    await expectNoA11yViolations(container);
   });
 
   it("shows a drifted row with an Apply catalog version button that reconciles", async () => {

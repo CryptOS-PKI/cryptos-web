@@ -28,6 +28,7 @@ import type { IdentityState } from "@/lib/mock";
 
 import { CertInventory } from "@/components/cert-inventory";
 import { NodeAuditLog } from "@/components/node-audit-log";
+import { NodeChainValidate } from "@/components/node-chain-validate";
 import { NodeDetailPanel } from "@/components/node-detail-panel";
 import { NodeImageLifecycle } from "@/components/node-image-lifecycle";
 import { NodeTsaCertificates } from "@/components/node-tsa-certificates";
@@ -151,6 +152,14 @@ export const NodeDetailPage = () => {
         </div>
         <div className="p-4">
           <NodeTsaCertificates nodeName={node.name} />
+        </div>
+      </Card>
+      <Card className="w-full overflow-hidden">
+        <div className="border-b px-4 py-3 font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
+          Validate a certificate chain
+        </div>
+        <div className="p-4">
+          <NodeChainValidate nodeName={node.name} />
         </div>
       </Card>
       <Card className="w-full overflow-hidden">
