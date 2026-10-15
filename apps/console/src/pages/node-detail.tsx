@@ -27,8 +27,10 @@ import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import type { IdentityState } from "@/lib/mock";
 
 import { CertInventory } from "@/components/cert-inventory";
+import { NodeAuditLog } from "@/components/node-audit-log";
 import { NodeChainValidate } from "@/components/node-chain-validate";
 import { NodeDetailPanel } from "@/components/node-detail-panel";
+import { NodeTsaCertificates } from "@/components/node-tsa-certificates";
 import { roleLabels } from "@/lib/fleet/labels";
 import { chainToRoot, useNode } from "@/lib/nodes";
 import { cn } from "@/lib/utils";
@@ -133,6 +135,22 @@ export const NodeDetailPage = () => {
         </div>
         <div className="p-4">
           <CertInventory nodeName={node.name} />
+        </div>
+      </Card>
+      <Card className="w-full overflow-hidden">
+        <div className="border-b px-4 py-3 font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
+          Audit log
+        </div>
+        <div className="p-4">
+          <NodeAuditLog nodeName={node.name} />
+        </div>
+      </Card>
+      <Card className="w-full overflow-hidden">
+        <div className="border-b px-4 py-3 font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
+          TSA certificates
+        </div>
+        <div className="p-4">
+          <NodeTsaCertificates nodeName={node.name} />
         </div>
       </Card>
       <Card className="w-full overflow-hidden">
