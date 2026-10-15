@@ -14,10 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import { Button } from "@cryptos-pki/ui";
 import { Link, useNavigate } from "react-router-dom";
 
 import { ProfileForm } from "@/components/profile-form";
-import { Button } from "@/components/ui/button";
 
 export const ProfileNewPage = () => {
   const navigate = useNavigate();

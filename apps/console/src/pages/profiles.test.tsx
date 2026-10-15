@@ -20,9 +20,19 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { __resetProfiles } from "@/lib/profiles";
 import { ProfilesPage } from "@/pages/profiles";
+import { expectNoA11yViolations } from "@/test/axe";
 
 describe("ProfilesPage", () => {
   beforeEach(() => __resetProfiles());
+
+  it("has no axe violations", async () => {
+    const { container } = render(
+      <MemoryRouter>
+        <ProfilesPage />
+      </MemoryRouter>,
+    );
+    await expectNoA11yViolations(container);
+  });
 
   it("lists profiles linking to their detail, plus a New profile link", () => {
     render(

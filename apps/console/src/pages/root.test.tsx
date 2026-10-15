@@ -19,8 +19,18 @@ import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it } from "vitest";
 
 import { RootPage } from "@/pages/root";
+import { expectNoA11yViolations } from "@/test/axe";
 
 describe("RootPage", () => {
+  it("has no axe violations", async () => {
+    const { container } = render(
+      <MemoryRouter>
+        <RootPage />
+      </MemoryRouter>,
+    );
+    await expectNoA11yViolations(container);
+  });
+
   it("lists the root CAs, each linking to its detail page", () => {
     render(
       <MemoryRouter>

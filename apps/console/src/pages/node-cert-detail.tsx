@@ -14,19 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import { Button, FieldTile, FieldTiles } from "@cryptos-pki/ui";
 import { Link, useParams } from "react-router-dom";
 
-import { Button } from "@/components/ui/button";
 import { getCert } from "@/lib/certs";
-
-const Row = ({ children, label }: { children: React.ReactNode; label: string }) => (
-  <div className="flex flex-col gap-1 rounded-lg border bg-secondary px-3 py-2.5">
-    <span className="font-mono text-[10.5px] uppercase tracking-wider text-muted-foreground">
-      {label}
-    </span>
-    <span className="break-all font-mono text-xs">{children}</span>
-  </div>
-);
 
 export const NodeCertDetailPage = () => {
   const { name, serial } = useParams<{ name: string; serial: string }>();
@@ -51,19 +42,19 @@ export const NodeCertDetailPage = () => {
           {cert.kind === "subordinate-ca" ? "Subordinate CA" : "Leaf"} certificate
         </p>
       </div>
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <Row label="serial">{cert.serial}</Row>
-        <Row label="status">{cert.status}</Row>
-        <Row label="issuer node">{cert.issuerNodeName}</Row>
-        <Row label="kind">{cert.kind}</Row>
-        <Row label="not before">{cert.notBefore.slice(0, 10)}</Row>
-        <Row label="not after">{cert.notAfter.slice(0, 10)}</Row>
-        <Row label="eku">{cert.eku.join(", ") || "\u2014"}</Row>
-        <Row label="sans">{cert.sans.join(", ") || "\u2014"}</Row>
-        {cert.pathLen === undefined ? null : <Row label="path len">{cert.pathLen}</Row>}
-        {cert.profile ? <Row label="profile">{cert.profile}</Row> : null}
-        {cert.reason ? <Row label="revocation reason">{cert.reason}</Row> : null}
-      </div>
+      <FieldTiles columns={4}>
+        <FieldTile label="serial" value={cert.serial} />
+        <FieldTile label="status" value={cert.status} />
+        <FieldTile label="issuer node" value={cert.issuerNodeName} />
+        <FieldTile label="kind" value={cert.kind} />
+        <FieldTile label="not before" value={cert.notBefore.slice(0, 10)} />
+        <FieldTile label="not after" value={cert.notAfter.slice(0, 10)} />
+        <FieldTile full label="eku" value={cert.eku.length > 0 ? cert.eku : null} />
+        <FieldTile full label="sans" value={cert.sans.length > 0 ? cert.sans : null} />
+        {cert.pathLen === undefined ? null : <FieldTile label="path len" value={cert.pathLen} />}
+        {cert.profile ? <FieldTile label="profile" value={cert.profile} /> : null}
+        {cert.reason ? <FieldTile label="revocation reason" value={cert.reason} /> : null}
+      </FieldTiles>
       <Button asChild variant="outline">
         <Link to={`/nodes/${name}`}>Back to node</Link>
       </Button>

@@ -14,42 +14,119 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import type { ColumnDef } from "@tanstack/react-table";
-
+import { Button, DataTable, type DataTableColumn, inputClasses } from "@cryptos-pki/ui";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
-import { DataTable } from "@/components/data-table/data-table";
-import { Button } from "@/components/ui/button";
 import { type CertProfile, useProfiles } from "@/lib/profiles";
 
-const profileColumns: ColumnDef<CertProfile, unknown>[] = [
-  {
-    accessorKey: "name",
-    cell: ({ row }) => (
-      <Link className="text-primary hover:underline" to={`/profiles/${row.original.name}`}>
-        {row.original.name}
-      </Link>
-    ),
-    header: "Name",
-  },
-  { accessorKey: "keyAlg", header: "Key alg" },
-  {
-    accessorFn: (p) => p.validityDays,
-    cell: ({ row }) => `${row.original.validityDays}d`,
-    header: "Validity",
-    id: "validity",
-  },
-  { accessorFn: (p) => (p.isCA ? "yes" : "no"), header: "CA", id: "ca" },
-  {
-    accessorFn: (p) => p.extKeyUsage.join(", ") || "\u2014",
-    enableSorting: false,
-    header: "Ext key usage",
-    id: "eku",
-  },
-];
+type SortId = "ca" | "keyAlg" | "name" | "validity";
 
 export const ProfilesPage = () => {
   const profiles = useProfiles();
+
+  const [keyAlg, setKeyAlg] = useState("");
+  const [ca, setCa] = useState("");
+  const [sort, setSort] = useState<{ desc: boolean; id: SortId } | null>({
+    desc: false,
+    id: "name",
+  });
+
+  const keyAlgs = useMemo(
+    // eslint-disable-next-line unicorn/no-array-sort
+    () => [...new Set(profiles.map((p) => p.keyAlg))].sort((a, b) => a.localeCompare(b)),
+    [profiles],
+  );
+
+  const filtered = profiles
+    .filter((p) => !keyAlg || p.keyAlg === keyAlg)
+    .filter((p) => !ca || (p.isCA ? "yes" : "no") === ca);
+  const rows = sort
+    ? // eslint-disable-next-line unicorn/no-array-sort -- Array#toSorted needs ES2023 lib
+      [...filtered].sort((a, b) => {
+        const dir = sort.desc ? -1 : 1;
+        if (sort.id === "validity") return (a.validityDays - b.validityDays) * dir;
+        if (sort.id === "ca")
+          return ((a.isCA ? "yes" : "no") < (b.isCA ? "yes" : "no") ? -1 : 1) * dir;
+        return a[sort.id].localeCompare(b[sort.id]) * dir;
+      })
+    : filtered;
+
+  const sortOf = (id: SortId) => (sort?.id === id ? (sort.desc ? "desc" : "asc") : false);
+  const toggleSort = (id: SortId) =>
+    setSort((previous) => {
+      if (!previous || previous.id !== id) return { desc: false, id };
+      if (!previous.desc) return { desc: true, id };
+      return null;
+    });
+
+  const columns: DataTableColumn<CertProfile>[] = [
+    {
+      cell: (p) => (
+        <Link className="text-primary hover:underline" to={`/profiles/${p.name}`}>
+          {p.name}
+        </Link>
+      ),
+      header: "Name",
+      id: "name",
+      mobile: "title",
+      onSort: () => toggleSort("name"),
+      sort: sortOf("name"),
+    },
+    {
+      cell: (p) => p.keyAlg,
+      filter: (
+        <select
+          aria-label="Filter Key alg"
+          className={inputClasses}
+          onChange={(event) => setKeyAlg(event.target.value)}
+          value={keyAlg}
+        >
+          <option value="">All</option>
+          {keyAlgs.map((a) => (
+            <option key={a} value={a}>
+              {a}
+            </option>
+          ))}
+        </select>
+      ),
+      header: "Key alg",
+      id: "keyAlg",
+      onSort: () => toggleSort("keyAlg"),
+      sort: sortOf("keyAlg"),
+    },
+    {
+      cell: (p) => `${p.validityDays}d`,
+      header: "Validity",
+      id: "validity",
+      onSort: () => toggleSort("validity"),
+      sort: sortOf("validity"),
+    },
+    {
+      cell: (p) => (p.isCA ? "yes" : "no"),
+      filter: (
+        <select
+          aria-label="Filter CA"
+          className={inputClasses}
+          onChange={(event) => setCa(event.target.value)}
+          value={ca}
+        >
+          <option value="">All</option>
+          <option value="yes">yes</option>
+          <option value="no">no</option>
+        </select>
+      ),
+      header: "CA",
+      id: "ca",
+      onSort: () => toggleSort("ca"),
+      sort: sortOf("ca"),
+    },
+    {
+      cell: (p) => p.extKeyUsage.join(", ") || "—",
+      header: "Ext key usage",
+      id: "eku",
+    },
+  ];
 
   return (
     <section className="space-y-5">
@@ -64,14 +141,11 @@ export const ProfilesPage = () => {
       </div>
 
       <DataTable
-        columns={profileColumns}
-        data={profiles}
-        facets={[
-          { columnId: "keyAlg", title: "Key alg" },
-          { columnId: "ca", title: "CA" },
-        ]}
-        initialSort={[{ desc: false, id: "name" }]}
-        searchKeys={["name"]}
+        columns={columns}
+        filtered={keyAlg !== "" || ca !== ""}
+        label="Certificate profiles"
+        rowKey={(p) => p.name}
+        rows={rows}
       />
     </section>
   );

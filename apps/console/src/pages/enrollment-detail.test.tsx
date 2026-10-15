@@ -26,6 +26,7 @@ import { __resetCerts } from "@/lib/certs";
 import { __resetEnrollments, approveEnrollment, getEnrollment } from "@/lib/enrollment";
 import { __resetNodes, getNode } from "@/lib/nodes";
 import { EnrollmentDetailPage } from "@/pages/enrollment-detail";
+import { expectNoA11yViolations } from "@/test/axe";
 
 const mockOperator = vi.fn<() => { level: OperatorLevel } | null>(() => ({ level: "admin" }));
 vi.mock("@/context/auth", () => ({
@@ -80,6 +81,11 @@ describe("EnrollmentDetailPage", () => {
     __resetEnrollments();
     mockOperator.mockReturnValue({ level: "admin" });
     vi.mocked(approveEnrollment).mockClear();
+  });
+
+  it("has no axe violations", async () => {
+    const { container } = renderAt("/enrollment/enr-0001");
+    await expectNoA11yViolations(container);
   });
 
   it("approves a capable SUBORDINATE request and admits the node", async () => {
