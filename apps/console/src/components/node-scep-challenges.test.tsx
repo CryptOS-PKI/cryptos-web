@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { NodeScepChallenges } from "@/components/node-scep-challenges";
@@ -51,11 +51,20 @@ describe("NodeScepChallenges", () => {
     expect(screen.getByRole("button", { name: /^revoke$/i })).toBeInTheDocument();
   });
 
-  it("hides Mint and Revoke from a viewer", async () => {
+  // Was hidden entirely for a viewer; #196 moves both to the kit's lock
+  // pattern so a viewer still sees them and why they're unavailable.
+  it("locks Mint and Revoke for a viewer instead of hiding them", async () => {
     level = "viewer";
     render(<NodeScepChallenges nodeName="acme-issuing-01" />);
     await screen.findByText("ch-mock-1");
-    expect(screen.queryByRole("button", { name: /mint challenge/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /^revoke$/i })).not.toBeInTheDocument();
+    const mint = screen.getByRole("button", { name: /mint challenge/i });
+    const revoke = screen.getByRole("button", { name: /^revoke/i });
+    for (const button of [mint, revoke]) {
+      expect(button).not.toBeDisabled();
+      expect(button).toHaveAttribute("aria-disabled", "true");
+      expect(button).toHaveAccessibleDescription(/needs the operator role/i);
+      fireEvent.click(button);
+    }
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 });

@@ -76,17 +76,25 @@ export const NodeScepEnrollments = ({ nodeName }: { nodeName: string }) => {
       id: "receivedAt",
     },
     {
-      cell: (e) =>
-        isOperator ? (
-          <div className="flex gap-2">
-            <Button onClick={() => setApproveTarget(e)} size="sm">
-              Approve
-            </Button>
-            <Button onClick={() => setRejectTarget(e)} size="sm" variant="outline">
-              Reject
-            </Button>
-          </div>
-        ) : null,
+      cell: (e) => (
+        <div className="flex gap-2">
+          <Button
+            lockedReason={isOperator ? undefined : "Needs the operator role"}
+            onClick={() => setApproveTarget(e)}
+            size="sm"
+          >
+            Approve
+          </Button>
+          <Button
+            lockedReason={isOperator ? undefined : "Needs the operator role"}
+            onClick={() => setRejectTarget(e)}
+            size="sm"
+            variant="outline"
+          >
+            Reject
+          </Button>
+        </div>
+      ),
       header: <span className="sr-only">Actions</span>,
       id: "actions",
       mobile: "action",

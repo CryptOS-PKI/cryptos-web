@@ -51,11 +51,19 @@ const startAdoption = async () => {
 };
 
 describe("AdoptPage", () => {
-  it("gates the whole wizard behind admin level", () => {
+  // Was a full-page "requires admin level" notice with no form at all; #196
+  // moves the gate to the kit's lock pattern on the wizard's one entry-point
+  // action, so a non-admin still sees the page and why it's unavailable.
+  it("locks the wizard's entry point for a non-admin instead of hiding the whole page", () => {
     useAuth.mockReturnValue({ operator: { level: "operator" } });
     render(<AdoptPage />);
-    expect(screen.getByText(/requires admin level/i)).toBeInTheDocument();
-    expect(screen.queryByLabelText(/endpoint/i)).not.toBeInTheDocument();
+    expect(screen.getByLabelText(/endpoint/i)).toBeDisabled();
+    const preview = screen.getByRole("button", { name: /preview/i });
+    expect(preview).not.toBeDisabled();
+    expect(preview).toHaveAttribute("aria-disabled", "true");
+    expect(preview).toHaveAccessibleDescription(/needs the admin role/i);
+    fireEvent.click(preview);
+    expect(previewAdoption).not.toHaveBeenCalled();
   });
 
   it("has no axe violations", async () => {

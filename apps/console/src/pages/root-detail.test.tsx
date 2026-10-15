@@ -65,10 +65,18 @@ describe("RootDetailPage", () => {
     expect(screen.getByText("roots list")).toBeInTheDocument();
   });
 
-  it("hides the rename action from a non-admin operator", () => {
+  // Was hidden entirely for a non-admin; #196 moves it to the kit's lock
+  // pattern so a non-admin operator still sees Rename and why it's
+  // unavailable.
+  it("locks the rename action for a non-admin operator instead of hiding it", () => {
     level = "operator";
     renderAt("/root/acme-root-01");
-    expect(screen.queryByRole("button", { name: /^rename/i })).not.toBeInTheDocument();
+    const button = screen.getByRole("button", { name: /^rename/i });
+    expect(button).not.toBeDisabled();
+    expect(button).toHaveAttribute("aria-disabled", "true");
+    expect(button).toHaveAccessibleDescription(/needs the admin role/i);
+    fireEvent.click(button);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
   it("renames a root and moves to its new URL", async () => {

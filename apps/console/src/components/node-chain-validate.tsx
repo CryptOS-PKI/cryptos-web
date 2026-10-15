@@ -26,8 +26,8 @@ import {
 
 // NodeChainValidate lets an operator paste a certificate and check whether it
 // chains to a managed node's CA. It parses operator-supplied certificate
-// material, so submitting it needs operator level or above; viewers see the
-// form disabled, the same read-only pattern the enrollment page uses.
+// material, so submitting it needs operator level or above; a viewer sees
+// Validate locked with the kit's lock pattern instead of disabled or hidden.
 export const NodeChainValidate = ({ nodeName }: { nodeName: string }) => {
   const operator = useOptionalAuth()?.operator;
   const canValidate = operator ? operator.level !== "viewer" : false;
@@ -61,13 +61,9 @@ export const NodeChainValidate = ({ nodeName }: { nodeName: string }) => {
           value={certificatePem}
         />
       </Field>
-      {canValidate ? null : (
-        <p className="font-mono text-xs text-muted-foreground">
-          Read-only — your operator level cannot validate a certificate chain.
-        </p>
-      )}
       <Button
-        disabled={!canValidate || pending || certificatePem.trim() === ""}
+        disabled={canValidate && (pending || certificatePem.trim() === "")}
+        lockedReason={canValidate ? undefined : "Needs the operator role"}
         onClick={() => void submit()}
         size="sm"
         type="button"

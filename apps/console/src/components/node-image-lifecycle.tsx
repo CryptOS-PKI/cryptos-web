@@ -110,29 +110,34 @@ export const NodeImageLifecycle = ({ caCn, nodeName }: { caCn: string; nodeName:
         />
       </FieldTiles>
 
-      {isAdmin ? (
-        <div className="flex flex-wrap gap-2">
-          <Button onClick={() => setDialog("stage")} size="sm" variant="outline">
-            {"Stage image…"}
-          </Button>
-          <Button
-            disabled={!status.rebootPending}
-            onClick={() => setDialog("activate")}
-            size="sm"
-            variant={status.rebootPending ? "default" : "outline"}
-          >
-            {"Activate image…"}
-          </Button>
-          <Button
-            disabled={!status.previousSha256}
-            onClick={() => setDialog("rollback")}
-            size="sm"
-            variant="outline"
-          >
-            {"Roll back…"}
-          </Button>
-        </div>
-      ) : null}
+      <div className="flex flex-wrap gap-2">
+        <Button
+          lockedReason={isAdmin ? undefined : "Needs the admin role"}
+          onClick={() => setDialog("stage")}
+          size="sm"
+          variant="outline"
+        >
+          {"Stage image…"}
+        </Button>
+        <Button
+          disabled={isAdmin && !status.rebootPending}
+          lockedReason={isAdmin ? undefined : "Needs the admin role"}
+          onClick={() => setDialog("activate")}
+          size="sm"
+          variant={status.rebootPending ? "default" : "outline"}
+        >
+          {"Activate image…"}
+        </Button>
+        <Button
+          disabled={isAdmin && !status.previousSha256}
+          lockedReason={isAdmin ? undefined : "Needs the admin role"}
+          onClick={() => setDialog("rollback")}
+          size="sm"
+          variant="outline"
+        >
+          {"Roll back…"}
+        </Button>
+      </div>
 
       {dialog === "stage" ? (
         <StageNodeImageDialog

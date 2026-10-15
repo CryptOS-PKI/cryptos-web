@@ -317,15 +317,14 @@ export const ProfileForm = ({
         </Notice>
       ) : null}
 
-      {isAdmin ? (
-        <Button disabled={pending} onClick={() => void submit()} type="button">
-          {pending ? "Saving…" : "Save"}
-        </Button>
-      ) : (
-        <p className="font-mono text-xs text-muted-foreground">
-          Read-only — editing profiles requires admin level.
-        </p>
-      )}
+      <Button
+        disabled={isAdmin && pending}
+        lockedReason={isAdmin ? undefined : "Needs the admin role"}
+        onClick={() => void submit()}
+        type="button"
+      >
+        {pending ? "Saving…" : "Save"}
+      </Button>
     </div>
   );
 };
