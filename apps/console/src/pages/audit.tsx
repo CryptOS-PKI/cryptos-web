@@ -14,11 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import type { ColumnDef } from "@tanstack/react-table";
-
+import { DataTable, type DataTableColumn, inputClasses } from "@cryptos-pki/ui";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 
-import { DataTable } from "@/components/data-table/data-table";
 import { type AuditEvent, type AuditKind, useAudit } from "@/lib/audit";
 import { cn } from "@/lib/utils";
 
@@ -41,7 +40,7 @@ const KIND_TONE: Record<AuditKind, string> = {
   revoked: "text-destructive",
 };
 
-const DASH = "\u2014";
+const DASH = "—";
 
 const ACTOR_KIND_LABEL: Record<NonNullable<AuditEvent["actorKind"]>, string> = {
   cert: "certificate",
@@ -55,78 +54,158 @@ const OUTCOME_TONE: Record<string, string> = {
   pending: "text-warning",
 };
 
-const auditColumns: ColumnDef<AuditEvent, unknown>[] = [
-  { accessorFn: (e) => e.at.slice(0, 10), header: "Time", id: "time" },
-  {
-    accessorKey: "kind",
-    cell: ({ row }) => (
-      <span className={cn("font-semibold", KIND_TONE[row.original.kind])}>
-        {row.original.kind.replaceAll("-", " ")}
-      </span>
-    ),
-    header: "Kind",
-  },
-  { accessorFn: (e) => e.targetKind ?? DASH, header: "Target", id: "targetKind" },
-  {
-    accessorFn: (e) => e.actorCn ?? DASH,
-    cell: ({ row }) =>
-      row.original.actorCn ? (
-        <div className="flex flex-col">
-          <span>{row.original.actorCn}</span>
-          {row.original.actorKind ? (
-            <span className="text-[11px] text-muted-foreground">
-              {ACTOR_KIND_LABEL[row.original.actorKind]}
-            </span>
-          ) : null}
-        </div>
-      ) : (
-        DASH
-      ),
-    header: "Actor",
-    id: "actor",
-  },
-  {
-    accessorFn: (e) => e.via ?? DASH,
-    cell: ({ row }) => (
-      <div className="flex flex-col">
-        <span>{row.original.via ?? DASH}</span>
-        {row.original.tool ? (
-          <span className="text-[11px] text-muted-foreground">{row.original.tool}</span>
-        ) : null}
-      </div>
-    ),
-    header: "Via",
-    id: "via",
-  },
-  {
-    accessorFn: (e) => e.outcome ?? DASH,
-    cell: ({ row }) =>
-      row.original.outcome ? (
-        <span className={OUTCOME_TONE[row.original.outcome] ?? "text-muted-foreground"}>
-          {row.original.outcome}
-        </span>
-      ) : (
-        DASH
-      ),
-    header: "Outcome",
-    id: "outcome",
-  },
-  {
-    accessorKey: "summary",
-    cell: ({ row }) =>
-      row.original.targetPath ? (
-        <Link className="text-primary hover:underline" to={row.original.targetPath}>
-          {row.original.summary}
-        </Link>
-      ) : (
-        row.original.summary
-      ),
-    header: "Event",
-  },
-];
+// distinctValues reads option lists for the facet filters from every event,
+// not just the ones the other filters currently keep, so narrowing one facet
+// never removes the others' options.
+const distinctValues = (events: AuditEvent[], pick: (e: AuditEvent) => string | undefined) => {
+  const values = new Set<string>();
+  for (const e of events) {
+    const v = pick(e);
+    if (v) values.add(v);
+  }
+  // eslint-disable-next-line unicorn/no-array-sort -- Array#toSorted needs ES2023 lib
+  return [...values].sort((a, b) => a.localeCompare(b));
+};
+
+const facetSelect = (
+  title: string,
+  value: string,
+  options: string[],
+  onChange: (v: string) => void,
+  labelOf: (v: string) => string = (v) => v,
+) => (
+  <select
+    aria-label={`Filter ${title}`}
+    className={inputClasses}
+    onChange={(e) => onChange(e.target.value)}
+    value={value}
+  >
+    <option value="">All</option>
+    {options.map((v) => (
+      <option key={v} value={v}>
+        {labelOf(v)}
+      </option>
+    ))}
+  </select>
+);
 
 export const AuditPage = () => {
   const events = useAudit();
+
+  const [kind, setKind] = useState("");
+  const [targetKind, setTargetKind] = useState("");
+  const [via, setVia] = useState("");
+  const [outcome, setOutcome] = useState("");
+  const [query, setQuery] = useState("");
+
+  const filtered = events
+    .filter((e) => !kind || e.kind === kind)
+    .filter((e) => !targetKind || e.targetKind === targetKind)
+    .filter((e) => !via || e.via === via)
+    .filter((e) => !outcome || e.outcome === outcome)
+    .filter((e) => !query || e.summary.toLowerCase().includes(query.toLowerCase()));
+
+  const columns: DataTableColumn<AuditEvent>[] = [
+    { cell: (e) => e.at.slice(0, 10), header: "Time", id: "time" },
+    {
+      cell: (e) => (
+        <span className={cn("font-semibold", KIND_TONE[e.kind])}>
+          {e.kind.replaceAll("-", " ")}
+        </span>
+      ),
+      filter: facetSelect(
+        "Kind",
+        kind,
+        distinctValues(events, (e) => e.kind),
+        setKind,
+        (v) => v.replaceAll("-", " "),
+      ),
+      header: "Kind",
+      id: "kind",
+    },
+    {
+      cell: (e) => e.targetKind ?? DASH,
+      filter: facetSelect(
+        "Target",
+        targetKind,
+        distinctValues(events, (e) => e.targetKind),
+        setTargetKind,
+      ),
+      header: "Target",
+      id: "targetKind",
+    },
+    {
+      cell: (e) =>
+        e.actorCn ? (
+          <div className="flex flex-col">
+            <span>{e.actorCn}</span>
+            {e.actorKind ? (
+              <span className="text-[11px] text-muted-foreground">
+                {ACTOR_KIND_LABEL[e.actorKind]}
+              </span>
+            ) : null}
+          </div>
+        ) : (
+          DASH
+        ),
+      header: "Actor",
+      id: "actor",
+    },
+    {
+      cell: (e) => (
+        <div className="flex flex-col">
+          <span>{e.via ?? DASH}</span>
+          {e.tool ? <span className="text-[11px] text-muted-foreground">{e.tool}</span> : null}
+        </div>
+      ),
+      filter: facetSelect(
+        "Via",
+        via,
+        distinctValues(events, (e) => e.via),
+        setVia,
+      ),
+      header: "Via",
+      id: "via",
+    },
+    {
+      cell: (e) =>
+        e.outcome ? (
+          <span className={OUTCOME_TONE[e.outcome] ?? "text-muted-foreground"}>{e.outcome}</span>
+        ) : (
+          DASH
+        ),
+      filter: facetSelect(
+        "Outcome",
+        outcome,
+        distinctValues(events, (e) => e.outcome),
+        setOutcome,
+      ),
+      header: "Outcome",
+      id: "outcome",
+    },
+    {
+      cell: (e) =>
+        e.targetPath ? (
+          <Link className="text-primary hover:underline" to={e.targetPath}>
+            {e.summary}
+          </Link>
+        ) : (
+          e.summary
+        ),
+      filter: (
+        <input
+          aria-label="Filter summary"
+          className={inputClasses}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Filter…"
+          value={query}
+        />
+      ),
+      header: "Event",
+      id: "summary",
+      mobile: "title",
+    },
+  ];
 
   return (
     <section className="space-y-5">
@@ -136,16 +215,11 @@ export const AuditPage = () => {
       </div>
 
       <DataTable
-        columns={auditColumns}
-        data={events}
-        facets={[
-          { columnId: "kind", optionLabel: (v) => v.replaceAll("-", " "), title: "Kind" },
-          { columnId: "targetKind", title: "Target" },
-          { columnId: "via", title: "Via" },
-          { columnId: "outcome", title: "Outcome" },
-        ]}
-        initialSort={[]}
-        searchKeys={["summary"]}
+        columns={columns}
+        filtered={kind !== "" || targetKind !== "" || via !== "" || outcome !== "" || query !== ""}
+        label="Audit"
+        rowKey={(e) => e.id}
+        rows={filtered}
       />
     </section>
   );
