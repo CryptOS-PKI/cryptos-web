@@ -19,6 +19,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import * as cas from "@/lib/operator-cas";
 import { OperatorCAsPage } from "@/pages/operator-cas";
+import { expectNoA11yViolations } from "@/test/axe";
 
 const useAuth = vi.fn();
 vi.mock("@/context/auth", () => ({ useAuth: () => useAuth() }));
@@ -38,6 +39,12 @@ beforeEach(() => {
 afterEach(() => vi.restoreAllMocks());
 
 describe("OperatorCAsPage", () => {
+  it("has no axe violations", async () => {
+    const { container } = render(<OperatorCAsPage />);
+    await screen.findByRole("table");
+    await expectNoA11yViolations(container);
+  });
+
   it("lists every CA with its state, CRL and OCSP, and the banners that need action", async () => {
     render(<OperatorCAsPage />);
     const g2 = await rowOf(/Example Operator CA G2/);

@@ -21,6 +21,7 @@ import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ApprovalsPage } from "@/pages/approvals";
+import { expectNoA11yViolations } from "@/test/axe";
 
 const useAuth = vi.fn();
 vi.mock("@/context/auth", () => ({ useAuth: () => useAuth() }));
@@ -108,6 +109,13 @@ describe("ApprovalsPage", () => {
         [revoke, decommission, approved].filter((a) => status === "" || a.status === status),
       ),
     );
+  });
+
+  it("has no axe violations", async () => {
+    useAuth.mockReturnValue({ operator: { level: "admin" } });
+    const { container } = renderAt();
+    await screen.findByText("Revoke certificate 0a1b on issuing-1");
+    await expectNoA11yViolations(container);
   });
 
   it("lists pending approvals by default with every column", async () => {

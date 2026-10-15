@@ -14,10 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import { Button, Card, Notice, StatusBadge } from "@cryptos-pki/ui";
 import { useCallback, useEffect, useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 
-import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/auth";
 import { getNodeConfig } from "@/lib/config";
 import { fleetErrorMessage } from "@/lib/fleet/error-copy";
@@ -25,7 +25,6 @@ import { fleetMode } from "@/lib/fleet/mode";
 import { useNode } from "@/lib/nodes";
 import { computeDrift, type DriftRow, type DriftStatus } from "@/lib/profile-drift";
 import { applyProfileToNode, fromProtoProfile, useProfiles } from "@/lib/profiles";
-import { cn } from "@/lib/utils";
 
 const statusLabels: Record<DriftStatus, string> = {
   drifted: "Drifted",
@@ -34,11 +33,11 @@ const statusLabels: Record<DriftStatus, string> = {
   "not-applied": "Not applied",
 };
 
-const statusTone: Record<DriftStatus, string> = {
-  drifted: "text-warning",
-  "in-sync": "text-success",
-  "node-only": "text-muted-foreground",
-  "not-applied": "text-muted-foreground",
+const statusBadge: Record<DriftStatus, "drifted" | "in-sync" | "muted"> = {
+  drifted: "drifted",
+  "in-sync": "in-sync",
+  "node-only": "muted",
+  "not-applied": "muted",
 };
 
 // DriftView renders the live per-node drift. It fetches the node's full config,
@@ -85,9 +84,9 @@ const DriftView = ({ nodeName }: { nodeName: string }) => {
 
   if (loadError) {
     return (
-      <p className="max-w-lg font-mono text-sm text-destructive" role="alert">
+      <Notice className="max-w-lg" role="alert" tone="danger">
         {loadError}
-      </p>
+      </Notice>
     );
   }
   if (!rows) {
@@ -97,9 +96,9 @@ const DriftView = ({ nodeName }: { nodeName: string }) => {
   return (
     <div className="space-y-3">
       {applyError ? (
-        <p className="font-mono text-xs text-destructive" role="alert">
+        <Notice role="alert" tone="danger">
           {applyError}
-        </p>
+        </Notice>
       ) : null}
       {rows.length === 0 ? (
         <p className="font-mono text-sm text-muted-foreground">No profiles to compare.</p>
@@ -107,12 +106,10 @@ const DriftView = ({ nodeName }: { nodeName: string }) => {
       {rows.map((row) => {
         const canReconcile = row.status === "drifted" || row.status === "not-applied";
         return (
-          <div className="rounded-md border bg-card p-3" key={row.name}>
+          <Card className="p-3" key={row.name}>
             <div className="flex items-center justify-between">
               <span className="font-mono text-sm">{row.name}</span>
-              <span className={cn("font-mono text-xs uppercase", statusTone[row.status])}>
-                {statusLabels[row.status]}
-              </span>
+              <StatusBadge status={statusBadge[row.status]}>{statusLabels[row.status]}</StatusBadge>
             </div>
             {row.fieldDiffs && row.fieldDiffs.length > 0 ? (
               <ul className="mt-2 space-y-0.5 font-mono text-xs text-muted-foreground">
@@ -141,7 +138,7 @@ const DriftView = ({ nodeName }: { nodeName: string }) => {
                 Reconcile requires admin level.
               </p>
             ) : null}
-          </div>
+          </Card>
         );
       })}
     </div>

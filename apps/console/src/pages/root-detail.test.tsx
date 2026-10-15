@@ -20,6 +20,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { __resetNodes, getNode } from "@/lib/nodes";
 import { RootDetailPage } from "@/pages/root-detail";
+import { expectNoA11yViolations } from "@/test/axe";
 
 let level: "admin" | "operator" | "viewer" = "admin";
 vi.mock("@/context/auth", () => ({
@@ -43,6 +44,11 @@ describe("RootDetailPage", () => {
   beforeEach(() => {
     level = "admin";
     __resetNodes();
+  });
+
+  it("has no axe violations", async () => {
+    const { container } = renderAt("/root/acme-root-01");
+    await expectNoA11yViolations(container);
   });
 
   it("shows a root's connection, config, and ceremony", () => {

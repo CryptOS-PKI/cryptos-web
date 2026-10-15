@@ -26,6 +26,7 @@ import { describe, expect, it, vi } from "vitest";
 import { OperatorCARegisterForm } from "@/components/operator-ca-register-form";
 import { colonFingerprint } from "@/lib/fingerprint";
 import { type RegisterResult, toCARow } from "@/lib/operator-cas";
+import { expectNoA11yViolations } from "@/test/axe";
 
 const SHA = "3c".repeat(32);
 const CA_PEM = "-----BEGIN CERTIFICATE-----\nMAA=\n-----END CERTIFICATE-----\n";
@@ -61,6 +62,13 @@ const fill = (label: RegExp, value: string) =>
 const check = () => screen.getByRole("button", { name: /check the ca/i });
 
 describe("OperatorCARegisterForm", () => {
+  it("has no axe violations", async () => {
+    const { container } = render(
+      <OperatorCARegisterForm onRegistered={vi.fn()} submit={vi.fn()} />,
+    );
+    await expectNoA11yViolations(container);
+  });
+
   it("defaults OCSP to aia and needs a URL for url mode", () => {
     render(<OperatorCARegisterForm onRegistered={vi.fn()} submit={vi.fn()} />);
     fill(/ca certificate/i, CA_PEM);
