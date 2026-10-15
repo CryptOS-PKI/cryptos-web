@@ -45,6 +45,7 @@ import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import type { OperatorLevel } from "@/context/auth";
 
 import { DiagnosticsCopy } from "@/components/layout/diagnostics-copy";
+import { MemoryModeBanner } from "@/components/layout/memory-mode-banner";
 import { useAuth } from "@/context/auth";
 import { useTheme } from "@/context/theme";
 import { APPROVALS_CHANGED, listApprovals } from "@/lib/approvals";
@@ -220,7 +221,18 @@ export const AppShell = () => {
   );
 
   return (
-    <Shell banner={<Banner />} brand={brand} nav={nav} navFooter="FleetOS" topBar={topBar}>
+    <Shell
+      banner={
+        <>
+          <Banner />
+          <MemoryModeBanner />
+        </>
+      }
+      brand={brand}
+      nav={nav}
+      navFooter="FleetOS"
+      topBar={topBar}
+    >
       <Outlet />
     </Shell>
   );
