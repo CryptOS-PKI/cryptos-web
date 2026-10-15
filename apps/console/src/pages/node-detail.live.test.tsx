@@ -92,6 +92,7 @@ vi.mock("@/lib/fleet/client", () => ({
     listCertificates: () => Promise.resolve(listCertificatesResult),
     listNodeAuditEvents: () => Promise.resolve({ entries: [], nextPageToken: "" }),
     listNodes: () => Promise.resolve(listNodesResult),
+    listNodeScepChallenges: () => Promise.resolve({ challenges: [] }),
     listNodeTsaCertificates: () => Promise.resolve({ certificates: [] }),
     verifyNodeAuditChain: () =>
       Promise.resolve({ entryCount: 0n, firstBrokenSequence: 0n, intact: true, reason: "" }),
@@ -123,6 +124,7 @@ describe("NodeDetailPage live", () => {
     expect(screen.getByText("Certificates")).toBeInTheDocument();
     await screen.findByRole("button", { name: "Verify chain" });
     await screen.findByText(/not running/i);
+    await screen.findByText(/no usable scep challenges/i);
     await screen.findByText(/0\.1\.0/);
   });
 
@@ -132,6 +134,7 @@ describe("NodeDetailPage live", () => {
     expect(await screen.findByRole("link", { name: "AA11" })).toBeInTheDocument();
     await screen.findByRole("button", { name: "Verify chain" });
     await screen.findByText(/not running/i);
+    await screen.findByText(/no usable scep challenges/i);
     await screen.findByText(/0\.1\.0/);
   });
 });
