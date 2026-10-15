@@ -20,6 +20,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { __resetProfiles, getProfile } from "@/lib/profiles";
 import { ProfileDetailPage } from "@/pages/profile-detail";
+import { expectNoA11yViolations } from "@/test/axe";
 
 // mock mode keeps the in-memory catalog; the auth gate is mocked to an admin so
 // the edit/delete controls render without an AuthProvider.
@@ -42,6 +43,11 @@ const renderAt = (path: string) =>
 
 describe("ProfileDetailPage", () => {
   beforeEach(() => __resetProfiles());
+
+  it("has no axe violations", async () => {
+    const { container } = renderAt("/profiles/Code Signing");
+    await expectNoA11yViolations(container);
+  });
 
   it("edits an existing profile's validity", async () => {
     renderAt("/profiles/Code Signing");

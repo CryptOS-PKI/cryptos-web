@@ -14,11 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import { Button, Notice } from "@cryptos-pki/ui";
 import { useState } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 
 import { ProfileForm } from "@/components/profile-form";
-import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/auth";
 import { deleteProfile, useProfiles } from "@/lib/profiles";
 
@@ -68,9 +68,9 @@ export const ProfileDetailPage = () => {
             Danger zone
           </p>
           {error ? (
-            <p className="font-mono text-xs text-destructive" role="alert">
+            <Notice role="alert" tone="danger">
               {error}
-            </p>
+            </Notice>
           ) : null}
           {confirming ? (
             <div className="flex items-center gap-2">
