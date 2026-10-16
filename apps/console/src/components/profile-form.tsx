@@ -236,9 +236,7 @@ export const ProfileForm = ({
             <Field label="Country">
               <Input
                 disabled={!isAdmin}
-                onChange={(e) =>
-                  setP({ ...p, subject: { ...p.subject, country: e.target.value } })
-                }
+                onChange={(e) => setP({ ...p, subject: { ...p.subject, country: e.target.value } })}
                 value={p.subject.country}
               />
             </Field>
@@ -286,11 +284,7 @@ export const ProfileForm = ({
             <legend className={groupLabelClasses}>Subject alternative names</legend>
             <SanInput category="dns" onChange={(v) => setSan("dns", v)} values={p.sans.dns} />
             <SanInput category="ip" onChange={(v) => setSan("ip", v)} values={p.sans.ip} />
-            <SanInput
-              category="email"
-              onChange={(v) => setSan("email", v)}
-              values={p.sans.email}
-            />
+            <SanInput category="email" onChange={(v) => setSan("email", v)} values={p.sans.email} />
             <SanInput category="uri" onChange={(v) => setSan("uri", v)} values={p.sans.uri} />
           </fieldset>
 
