@@ -9,7 +9,7 @@
 
 This is the **only** web UI in the project, by design. CryptOS CA nodes ([`cryptos-node`](https://github.com/CryptOS-PKI/cryptos-node)) do not ship a web frontend in the OS image — they expose mTLS gRPC and that's it. When a fleet operator wants a web UI, they stand up the Fleet Manager (`manager/` backend + this frontend), link nodes to it, and use this UI for day-to-day operations.
 
-Conceptually `manager/` and `web/` are one application split across two repos. The split exists so the backend and frontend can be built, tested, and released on their own cadences while still ending up in a single deployable container image (the frontend bundle is pinned to a specific commit and embedded into `manager/` via `embed.FS`).
+Conceptually `manager/` and `web/` are one application split across two repos. The split exists so the backend and frontend can be built and tested on their own while still ending up in a single deployable container image: the frontend bundle is embedded into `manager/` via `embed.FS`. The two are released in lockstep. The manager's `vX.Y.Z` image embeds this repo's `vX.Y.Z`, so this repo's release is published first, at the same version. Release Drafter resolves each repo's next version from its own labels; if the two drafts differ, dispatch the Release Drafter workflow with a `version` input (for example `0.1.0-rc.2`) to bring one in line.
 
 ## 📂 Layout
 
