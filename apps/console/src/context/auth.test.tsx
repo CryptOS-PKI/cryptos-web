@@ -15,10 +15,12 @@ limitations under the License.
 */
 
 import { Code, ConnectError } from "@connectrpc/connect";
+import { BootstrapState } from "@cryptos-pki/api-client/cryptos/fleet/v1/bootstrap_pb";
 import { render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AuthProvider, useAuth } from "@/context/auth";
+import { __resetBootstrap, __setMockBootstrapState, closeMockBootstrap } from "@/lib/bootstrap";
 
 const whoAmI = vi.fn();
 const fleetMode = vi.fn(() => "live");
@@ -57,6 +59,7 @@ describe("AuthProvider", () => {
     probe.mockReset();
     fleetMode.mockReturnValue("live");
     vi.stubGlobal("fetch", probe);
+    __resetBootstrap();
   });
 
   // The point of #68: arriving at the page must not sign you in, even holding a
@@ -230,5 +233,44 @@ describe("AuthProvider", () => {
 
     await waitFor(() => expect(state()).toBe("authenticated:admin:none"));
     expect(whoAmI).not.toHaveBeenCalled();
+  });
+
+  // #198: with mock first run forced open, login used to always act like a
+  // browser holding no certificate, even after the wizard finished, so a
+  // reviewer could never get past it.
+  it("acts like a missing certificate while mock first run is open", async () => {
+    fleetMode.mockReturnValue("mock");
+    __setMockBootstrapState(BootstrapState.OPEN);
+    renderProbe();
+
+    screen.getByRole("button", { name: /sign in/i }).click();
+
+    await waitFor(() => expect(state()).toBe("denied:none:no-certificate"));
+  });
+
+  it("signs in as the mock admin once the wizard closes mock first run", async () => {
+    fleetMode.mockReturnValue("mock");
+    __setMockBootstrapState(BootstrapState.OPEN);
+    renderProbe();
+
+    screen.getByRole("button", { name: /sign in/i }).click();
+    await waitFor(() => expect(state()).toBe("denied:none:no-certificate"));
+
+    closeMockBootstrap();
+    screen.getByRole("button", { name: /sign in/i }).click();
+
+    await waitFor(() => expect(state()).toBe("authenticated:admin:none"));
+  });
+
+  // Live mode never reads the mock bootstrap state: closing it has no effect
+  // here, and a real certificate is still required.
+  it("ignores mock first-run state in live mode", async () => {
+    closeMockBootstrap();
+    whoAmI.mockRejectedValue(new ConnectError("no cert", Code.Unauthenticated));
+    renderProbe();
+
+    screen.getByRole("button", { name: /sign in/i }).click();
+
+    await waitFor(() => expect(state()).toBe("denied:none:certificate-not-sent"));
   });
 });
