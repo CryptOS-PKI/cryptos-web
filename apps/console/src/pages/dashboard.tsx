@@ -17,6 +17,7 @@ limitations under the License.
 import type { IconComponent } from "@cryptos-pki/ui";
 
 import {
+  IconAudit,
   IconCertificates,
   IconChev,
   IconEnrollment,
@@ -27,6 +28,7 @@ import {
 import { Link } from "react-router-dom";
 
 import { useAdapters } from "@/lib/adapters";
+import { useAudit } from "@/lib/audit";
 import { expiryClass, useAllCerts } from "@/lib/certs";
 import { useEnrollments } from "@/lib/enrollment";
 import { summarize } from "@/lib/fleet/labels";
@@ -67,6 +69,7 @@ export const DashboardPage = () => {
   const enrollments = useEnrollments();
   const adapters = useAdapters();
   const profiles = useProfiles();
+  const audit = useAudit();
 
   const health = summarize(nodes);
   const rootCount = nodes.filter((n) => n.role === "root").length;
@@ -139,6 +142,26 @@ export const DashboardPage = () => {
         <Card icon={IconProfiles} label="Profiles" testId="card-profiles" to="/profiles">
           <div className="font-mono text-4xl font-semibold leading-none">{profiles.length}</div>
           <div className="text-[13px] text-muted-foreground">certificate templates</div>
+        </Card>
+
+        <Card
+          icon={IconAudit}
+          label="Recent activity"
+          testId="card-recent-activity"
+          to="/audit"
+        >
+          {audit.length > 0 ? (
+            <>
+              <div className="truncate text-sm font-medium leading-snug">
+                {audit[0].summary}
+              </div>
+              <div className="text-[13px] text-muted-foreground">
+                {audit.length} logged event{audit.length === 1 ? "" : "s"}
+              </div>
+            </>
+          ) : (
+            <div className="text-[13px] text-muted-foreground">No activity yet</div>
+          )}
         </Card>
       </div>
     </section>
