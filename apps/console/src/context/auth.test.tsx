@@ -15,10 +15,10 @@ limitations under the License.
 */
 
 import { Code, ConnectError } from "@connectrpc/connect";
+import { BootstrapState } from "@cryptos-pki/api-client/cryptos/fleet/v1/bootstrap_pb";
 import { render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { BootstrapState } from "@cryptos-pki/api-client/cryptos/fleet/v1/bootstrap_pb";
 import { AuthProvider, useAuth } from "@/context/auth";
 import { __resetBootstrap, __setMockBootstrapState, closeMockBootstrap } from "@/lib/bootstrap";
 
