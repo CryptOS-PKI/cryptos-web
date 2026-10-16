@@ -42,6 +42,29 @@ describe("Notice", () => {
     expect(note).toHaveClass("border-l-warning");
   });
 
+  // #201: a saturated tone color as the title's text, over that same tone's
+  // 10% tint, fell as low as 2.8:1 in the light theme -- short of the 4.5:1
+  // normal-text minimum. The tone now shows only on the left edge and the
+  // icon; the title and body always read in the foreground color, which is
+  // already the app's body-text pairing against the card background.
+  it("keeps title and body text in the foreground color, not the tone, so every tone passes contrast", () => {
+    render(
+      <Notice title="Needs reboot" tone="warning">
+        This change takes effect only after the node reboots.
+      </Notice>,
+    );
+    const note = screen.getByRole("note");
+    expect(note.querySelector("p")).toHaveClass("text-foreground");
+    expect(note.querySelector("p")).not.toHaveClass("text-warning");
+    expect(note).toHaveClass("bg-card");
+    expect(note).not.toHaveClass("bg-warning/10");
+  });
+
+  it("is full width of its container", () => {
+    render(<Notice>Body</Notice>);
+    expect(screen.getByRole("note")).toHaveClass("w-full");
+  });
+
   it("is an alert for the danger tone so it is announced", () => {
     render(<Notice tone="danger">There is no undo.</Notice>);
     expect(screen.getByRole("alert")).toHaveTextContent("There is no undo.");

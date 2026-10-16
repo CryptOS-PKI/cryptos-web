@@ -21,28 +21,35 @@ import { cn } from "../lib/cn";
 
 export type NoticeTone = "danger" | "info" | "success" | "warning";
 
+// The tone's 10%-tint fill failed WCAG AA for its own text in the light
+// theme (a saturated warning or info text on its own pale tint lands around
+// 2.8:1 to 4.2:1, short of the 4.5:1 normal-text minimum). The box now sits
+// on the card background, which is already the app's body-text pairing, and
+// the tone shows only on the left edge and the icon (both checked against
+// bg-card at 3:1 or better in light and dark, the non-text minimum): no
+// combination depends on tone-colored text to be readable.
 const TONES: Record<NoticeTone, { box: string; icon: IconComponent; role: string; text: string }> =
   {
     danger: {
-      box: "border-destructive/40 border-l-destructive bg-destructive/10",
+      box: "border-border border-l-destructive bg-card",
       icon: IconDanger,
       role: "alert",
       text: "text-destructive",
     },
     info: {
-      box: "border-primary/40 border-l-primary bg-primary/10",
+      box: "border-border border-l-primary bg-card",
       icon: IconInfo,
       role: "note",
       text: "text-primary",
     },
     success: {
-      box: "border-success/40 border-l-success bg-success/10",
+      box: "border-border border-l-success bg-card",
       icon: IconSuccess,
       role: "status",
       text: "text-success",
     },
     warning: {
-      box: "border-warning/40 border-l-warning bg-warning/10",
+      box: "border-border border-l-warning bg-card",
       icon: IconWarning,
       role: "note",
       text: "text-warning",
@@ -55,8 +62,10 @@ export interface NoticeProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 
   tone?: NoticeTone;
 }
 
-// Notice is the callout: a 10% tone fill, a 40% tone border and a 4 px edge,
-// the same pattern as the docs callouts.
+// Notice is the callout: the card background, a 4 px tone edge and a
+// tone-colored icon, full width of whatever it is placed in. Title and body
+// always read in the foreground color, so the tone never has to carry
+// contrast on its own.
 export const Notice = ({
   action,
   children,
@@ -71,7 +80,7 @@ export const Notice = ({
   return (
     <div
       className={cn(
-        "flex gap-3 rounded-md border border-l-4 px-3.5 py-3 text-[13px]",
+        "flex w-full gap-3 rounded-md border border-l-4 px-3.5 py-3 text-[13px]",
         t.box,
         className,
       )}
@@ -81,7 +90,7 @@ export const Notice = ({
     >
       <Icon className={cn("mt-0.5 size-4 shrink-0", t.text)} />
       <div className="min-w-0 flex-1 space-y-0.5 leading-relaxed">
-        {title ? <p className={cn("font-semibold", t.text)}>{title}</p> : null}
+        {title ? <p className="font-semibold text-foreground">{title}</p> : null}
         {children ? <div className="text-foreground">{children}</div> : null}
       </div>
       {action ? <div className="shrink-0 self-center">{action}</div> : null}
