@@ -82,6 +82,22 @@ describe("NodeDetailPanel escrow actions", () => {
     expect(screen.getByRole("button", { name: /^reboot…$/i })).toBeInTheDocument();
   });
 
+  // #199: the fleet topology panel links to the node's own page, where that
+  // same link would point back at the page already on screen.
+  it("shows the Open node link by default", () => {
+    renderPanel();
+    expect(screen.getByRole("link", { name: /open node/i })).toBeInTheDocument();
+  });
+
+  it("hides the Open node link when showOpenNodeLink is false", () => {
+    render(
+      <MemoryRouter>
+        <NodeDetailPanel node={rootNode()} onRenamed={vi.fn()} showOpenNodeLink={false} />
+      </MemoryRouter>,
+    );
+    expect(screen.queryByRole("link", { name: /open node/i })).not.toBeInTheDocument();
+  });
+
   it("calls out a pending reboot on the action label when reboot_required is set", () => {
     render(
       <MemoryRouter>

@@ -40,12 +40,16 @@ const fleetManagerText = (node: Node): string => {
 export const NodeDetailPanel = ({
   node,
   onRenamed,
+  showOpenNodeLink = true,
 }: {
   node: Node;
   /** Called with the name after a successful rename (#87), so the caller can
    * move its own URL and any other name-keyed state -- the fleet store
    * updates itself, but nothing else does. */
   onRenamed: (newName: string) => void;
+  /** False on the node's own detail page (#199), where the link would only
+   * point back at the page already on screen. */
+  showOpenNodeLink?: boolean;
 }) => {
   const isAdmin = useOptionalAuth()?.operator?.level === "admin";
   const [dialog, setDialog] = useState<
@@ -92,9 +96,11 @@ export const NodeDetailPanel = ({
             <Link to={`/nodes/${node.name}/issue`}>{"Issue\u2026"}</Link>
           </Button>
         ) : null}
-        <Button asChild size="sm" variant="outline">
-          <Link to={`/nodes/${node.name}`}>Open node</Link>
-        </Button>
+        {showOpenNodeLink ? (
+          <Button asChild size="sm" variant="outline">
+            <Link to={`/nodes/${node.name}`}>Open node</Link>
+          </Button>
+        ) : null}
         {node.identityState === "REVOKED" ? null : (
           <Button asChild size="sm" variant="outline">
             <Link to={`/nodes/${node.name}/config`}>Config</Link>
