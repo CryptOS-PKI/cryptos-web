@@ -73,9 +73,16 @@ describe("ProfileForm", () => {
     expect(screen.queryByLabelText(/^dns sans$/i)).not.toBeInTheDocument();
   });
 
-  it("switches to the Key usage tab on click", () => {
+  it("switches to the Key usage tab on click", async () => {
     render(<ProfileForm mode="create" onDone={vi.fn()} />);
-    fireEvent.click(screen.getByRole("tab", { name: "Key usage" }));
+    const trigger = screen.getByRole("tab", { name: "Key usage" });
+    // A real click both focuses the trigger and fires "click"; Radix's Tabs
+    // (activationMode="automatic") selects on focus, so the test reproduces
+    // both parts of that interaction rather than just the synthetic event.
+    await act(async () => {
+      trigger.focus();
+    });
+    fireEvent.click(trigger);
     expect(screen.getByRole("button", { name: "digital_signature" })).toBeInTheDocument();
     expect(screen.queryByLabelText(/^name$/i)).not.toBeInTheDocument();
   });
