@@ -221,6 +221,22 @@ describe("OperatorsPage credentials", () => {
     await screen.findByText(/no operator credentials are recorded or seen yet/i);
     expect(screen.getByText(/admin@example.org/)).toBeInTheDocument();
   });
+
+  // #201: the notice was capped to a narrow column and had no way to reach
+  // the docs for the full lifecycle.
+  it("keeps the credentials notice full width and linked to the docs", async () => {
+    useAuth.mockReturnValue({ operator: admin });
+    render(<OperatorsPage />);
+    await screen.findByText("admin@example.org");
+    const notes = screen.getAllByRole("note");
+    const note = notes.find((n) => /signs every operator credential/.test(n.textContent ?? ""));
+    expect(note).toBeDefined();
+    expect(note).not.toHaveClass("max-w-3xl");
+    expect(screen.getByRole("link", { name: "Learn more" })).toHaveAttribute(
+      "href",
+      "https://docs.cryptos-pki.com/docs/fleet-manager/web-operators-audit#operators",
+    );
+  });
 });
 
 // ListOperatorCredentials refuses with 1400 only when the manager has no

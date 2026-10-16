@@ -147,6 +147,20 @@ describe("ApprovalsPage", () => {
     expect(note).not.toHaveTextContent(/digest/i);
   });
 
+  // #201: the notice was capped to a narrow column and had no way to reach
+  // the docs for the full approval flow.
+  it("keeps the approvals notice full width and linked to the docs", async () => {
+    useAuth.mockReturnValue({ operator: { level: "admin" } });
+    renderAt();
+
+    const note = await screen.findByRole("note");
+    expect(note).not.toHaveClass("max-w-3xl");
+    expect(screen.getByRole("link", { name: "Learn more" })).toHaveAttribute(
+      "href",
+      "https://docs.cryptos-pki.com/docs/fleet-manager/approvals",
+    );
+  });
+
   it("switches the filter to every status", async () => {
     useAuth.mockReturnValue({ operator: { level: "admin" } });
     renderAt();

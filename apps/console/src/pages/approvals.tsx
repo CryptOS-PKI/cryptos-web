@@ -32,6 +32,8 @@ const statusTone: Record<string, string> = {
   pending: "text-warning",
 };
 
+const APPROVALS_DOCS_URL = "https://docs.cryptos-pki.com/docs/fleet-manager/approvals";
+
 // ApprovalsPage is where a person decides the step-up requests MCP agents
 // raise. The manager's approve_url links here with ?id=<approval>, so a deep
 // link shows every status: the approval may already be decided or expired by
@@ -159,10 +161,23 @@ export const ApprovalsPage = () => {
         </label>
       </div>
 
-      <Notice className="max-w-3xl" role="note" tone="warning">
-        An agent asks for approval before a tool that changes the fleet runs. Approving lets that
-        exact request through once; check that the approval ID and summary in the confirmation match
-        what the agent showed you. You can decide only requests at or below your own level.
+      <Notice
+        action={
+          <a
+            className="whitespace-nowrap text-primary underline underline-offset-2"
+            href={APPROVALS_DOCS_URL}
+            rel="noreferrer"
+            target="_blank"
+          >
+            Learn more
+          </a>
+        }
+        role="note"
+        tone="warning"
+      >
+        An agent asks for approval before a tool that changes the fleet runs, and approving lets
+        that exact request through once; check that the approval ID and summary in the confirmation
+        match what the agent showed you before you decide.
       </Notice>
 
       {loadError ? (

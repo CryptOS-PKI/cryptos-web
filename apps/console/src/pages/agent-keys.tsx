@@ -24,6 +24,9 @@ import { listMcpKeys, type McpKeyRow } from "@/lib/mcp-keys";
 
 const when = (ts: string): string => (ts ? ts.replace("T", " ").slice(0, 16) : "never");
 
+const AGENT_KEYS_DOCS_URL =
+  "https://docs.cryptos-pki.com/docs/fleet-manager/web-operators-audit#agent-keys-and-mcp-sign-in";
+
 // AgentKeysPage lists the MCP agent keys bound to operator certificates. Every
 // operator manages their own keys; an admin can widen the list to every
 // operator's, which the manager enforces as well.
@@ -122,11 +125,23 @@ export const AgentKeysPage = () => {
         </div>
       </div>
 
-      <Notice className="max-w-3xl" role="note" tone="warning">
-        An agent key is bound to the operator certificate that created it. It can do no more than
-        that certificate&apos;s level or its own ceiling, whichever is lower, and it stops working
-        when the certificate is revoked or renewed. Revoking a key here takes effect on the
-        agent&apos;s next request.
+      <Notice
+        action={
+          <a
+            className="whitespace-nowrap text-primary underline underline-offset-2"
+            href={AGENT_KEYS_DOCS_URL}
+            rel="noreferrer"
+            target="_blank"
+          >
+            Learn more
+          </a>
+        }
+        role="note"
+        tone="warning"
+      >
+        An agent key is bound to the operator certificate that created it, and stops working when
+        that certificate is revoked or renewed. Revoking a key here takes effect on the agent&apos;s
+        next request.
       </Notice>
 
       {loadError ? (

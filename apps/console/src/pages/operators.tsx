@@ -45,6 +45,9 @@ import {
 
 const actionButton = "rounded-md border px-2.5 py-1 text-xs hover:bg-secondary";
 
+const OPERATOR_CREDENTIALS_DOCS_URL =
+  "https://docs.cryptos-pki.com/docs/fleet-manager/web-operators-audit#operators";
+
 type Tab = "credentials" | "requests";
 
 // OperatorsPage lists every operator credential the manager knows (recorded,
@@ -260,10 +263,23 @@ export const OperatorsPage = () => {
 
         <OperatorCABanners banners={banners} />
 
-        <Notice className="max-w-3xl" role="note" tone="warning">
-          Operator credentials are signed by your external operator CA, never by the Fleet Manager.
-          Denying one here stops it at this Fleet Manager from its next request; revoke it at your
-          CA as well so other systems stop trusting it.
+        <Notice
+          action={
+            <a
+              className="whitespace-nowrap text-primary underline underline-offset-2"
+              href={OPERATOR_CREDENTIALS_DOCS_URL}
+              rel="noreferrer"
+              target="_blank"
+            >
+              Learn more
+            </a>
+          }
+          role="note"
+          tone="warning"
+        >
+          Your external operator CA signs every operator credential, never the Fleet Manager.
+          Denying one here stops it at this Fleet Manager right away; revoke it at your CA too so
+          other systems stop trusting it.
         </Notice>
 
         {loadError ? (
