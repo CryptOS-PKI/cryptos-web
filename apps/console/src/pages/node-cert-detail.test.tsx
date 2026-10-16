@@ -47,4 +47,19 @@ describe("NodeCertDetailPage", () => {
     expect(screen.getAllByText(cert.subjectCn)[0]).toBeInTheDocument();
     expect(screen.getByText(cert.serial)).toBeInTheDocument();
   });
+
+  // #199: previously the only way back was via the node, with no direct path
+  // to the Certificates list.
+  it("links straight back to Certificates, not only via the node", () => {
+    const cert = certsFor("acme-issuing-01")[0];
+    renderAt(`/nodes/acme-issuing-01/certs/${cert.serial}`);
+    expect(screen.getByRole("link", { name: "Certificates" })).toHaveAttribute(
+      "href",
+      "/certificates",
+    );
+    expect(screen.getByRole("link", { name: /back to node/i })).toHaveAttribute(
+      "href",
+      "/nodes/acme-issuing-01",
+    );
+  });
 });

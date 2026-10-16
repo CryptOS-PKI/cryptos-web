@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { Button, FieldTile, FieldTiles } from "@cryptos-pki/ui";
+import { Button, FieldTile, FieldTiles, IconChev } from "@cryptos-pki/ui";
 import { Link, useParams } from "react-router-dom";
 
 import { getCert } from "@/lib/certs";
@@ -36,6 +36,16 @@ export const NodeCertDetailPage = () => {
 
   return (
     <section className="space-y-5">
+      <nav
+        aria-label="Breadcrumb"
+        className="flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider text-muted-foreground"
+      >
+        <Link className="hover:text-foreground hover:underline" to="/certificates">
+          Certificates
+        </Link>
+        <IconChev className="size-3" />
+        <span aria-current="page">{cert.subjectCn}</span>
+      </nav>
       <div className="space-y-1">
         <h1 className="text-2xl font-bold tracking-tight">{cert.subjectCn}</h1>
         <p className="font-mono text-sm text-muted-foreground">
