@@ -74,6 +74,7 @@ export const NodeDetailPage = () => {
         <NodeDetailPanel
           node={node}
           onRenamed={(newName) => navigate(`/nodes/${newName}`, { replace: true })}
+          showOpenNodeLink={false}
         />
       </Card>
       <Card className="w-full overflow-hidden">

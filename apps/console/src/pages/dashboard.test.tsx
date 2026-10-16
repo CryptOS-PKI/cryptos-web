@@ -19,6 +19,7 @@ import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { __resetAdapters } from "@/lib/adapters";
+import { __resetAudit, auditList } from "@/lib/audit";
 import { __resetCerts } from "@/lib/certs";
 import { __resetEnrollments } from "@/lib/enrollment";
 import { __resetNodes } from "@/lib/nodes";
@@ -40,6 +41,7 @@ describe("DashboardPage", () => {
     __resetEnrollments();
     __resetProfiles();
     __resetAdapters();
+    __resetAudit();
   });
 
   it("has no axe violations", async () => {
@@ -60,6 +62,18 @@ describe("DashboardPage", () => {
     );
     expect(screen.getByRole("link", { name: /protocols/i })).toHaveAttribute("href", "/protocols");
     expect(screen.getByRole("link", { name: /profiles/i })).toHaveAttribute("href", "/profiles");
+    expect(screen.getByRole("link", { name: /recent activity/i })).toHaveAttribute(
+      "href",
+      "/audit",
+    );
+  });
+
+  // #199: a sixth card keeps the grid even (no orphan last row) and gives the
+  // operator a reason to look without leaving the dashboard.
+  it("recent activity card shows the latest audit entry", () => {
+    renderDash();
+    const card = screen.getByTestId("card-recent-activity");
+    expect(within(card).getByText(auditList()[0].summary)).toBeInTheDocument();
   });
 
   it("certificates card shows the expiring + expired counts from the seed", () => {

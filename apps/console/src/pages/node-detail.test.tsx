@@ -65,6 +65,14 @@ describe("NodeDetailPage trust chain", () => {
     );
     expect(within(chain).getByRole("link", { name: "acme-intermediate-01" })).toBeInTheDocument();
   });
+
+  // #199: the node's own page used to show "Open node" pointing right back
+  // at itself.
+  it("has no Open node link on the node's own page", async () => {
+    renderAt("/nodes/acme-issuing-01");
+    await screen.findByText("0a1b2c3d");
+    expect(screen.queryByRole("link", { name: /open node/i })).not.toBeInTheDocument();
+  });
 });
 
 // A root has no page under /nodes -- that route used to render an empty one

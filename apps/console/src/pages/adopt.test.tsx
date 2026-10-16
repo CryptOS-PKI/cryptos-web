@@ -17,7 +17,7 @@ limitations under the License.
 import type { MachineConfig } from "@cryptos-pki/api-client/cryptos/node/v1/config_pb";
 
 import { Code, ConnectError } from "@connectrpc/connect";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { AdoptPage } from "@/pages/adopt";
@@ -74,6 +74,38 @@ describe("AdoptPage", () => {
     fireEvent.click(screen.getByRole("button", { name: /preview/i }));
     await waitFor(() => expect(screen.getByText("ABCD")).toBeInTheDocument());
     await expectNoA11yViolations(container);
+  });
+
+  // #199: the wizard is a full-width mini stepper, not a narrow fixed-width box.
+  it("is full width, not a narrow fixed-width box", () => {
+    useAuth.mockReturnValue({ operator: { level: "admin" } });
+    const { container } = render(<AdoptPage />);
+    expect(container.querySelector("section")).not.toHaveClass("max-w-xl");
+  });
+
+  it("shows the Endpoint step as current, then moves to Initial config once confirmed", async () => {
+    useAuth.mockReturnValue({ operator: { level: "admin" } });
+    previewAdoption.mockResolvedValue({ certSha256: "AB:CD:EF", subject: "CN=maintenance" });
+    render(<AdoptPage />);
+
+    const stepper = screen.getByRole("list", { name: /adoption steps/i });
+    expect(within(stepper).getByText("Endpoint").closest("li")).toHaveAttribute(
+      "aria-current",
+      "step",
+    );
+    expect(within(stepper).getByText("Initial config").closest("li")).not.toHaveAttribute(
+      "aria-current",
+    );
+
+    fireEvent.change(screen.getByLabelText(/endpoint/i), { target: { value: "host:9000" } });
+    fireEvent.click(screen.getByRole("button", { name: /preview/i }));
+    await waitFor(() => screen.getByRole("button", { name: /confirm fingerprint/i }));
+    fireEvent.click(screen.getByRole("button", { name: /confirm fingerprint/i }));
+
+    expect(within(stepper).getByText("Initial config").closest("li")).toHaveAttribute(
+      "aria-current",
+      "step",
+    );
   });
 
   it("previews the fingerprint, requires an explicit confirm, then reveals step 2", async () => {
