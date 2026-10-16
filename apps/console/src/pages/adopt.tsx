@@ -292,7 +292,7 @@ export const AdoptPage = () => {
   const established = phase?.done && phase.phase === "established";
   const awaitingCert = phase?.done && phase.phase === "awaiting-certificate";
 
-  const stepIndex = !confirmedPin ? 0 : phase || pending ? 2 : 1;
+  const stepIndex = confirmedPin ? (phase || pending ? 2 : 1) : 0;
 
   return (
     <section className="w-full space-y-5">

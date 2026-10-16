@@ -144,17 +144,10 @@ export const DashboardPage = () => {
           <div className="text-[13px] text-muted-foreground">certificate templates</div>
         </Card>
 
-        <Card
-          icon={IconAudit}
-          label="Recent activity"
-          testId="card-recent-activity"
-          to="/audit"
-        >
+        <Card icon={IconAudit} label="Recent activity" testId="card-recent-activity" to="/audit">
           {audit.length > 0 ? (
             <>
-              <div className="truncate text-sm font-medium leading-snug">
-                {audit[0].summary}
-              </div>
+              <div className="truncate text-sm font-medium leading-snug">{audit[0].summary}</div>
               <div className="text-[13px] text-muted-foreground">
                 {audit.length} logged event{audit.length === 1 ? "" : "s"}
               </div>
