@@ -97,6 +97,22 @@ export const getBootstrapState = async (): Promise<BootstrapStatus> => {
 
 export const hasBootstrapSession = (): boolean => sessionSecret !== null;
 
+// isMockFirstRunOpen tells mock-mode sign-in whether first run is still open,
+// so it knows to act like a browser holding no certificate. Reading the live
+// mockState rather than the env var means it reflects closeMockBootstrap()
+// once the wizard reaches the end.
+export const isMockFirstRunOpen = (): boolean =>
+  mockState === BootstrapState.OPEN || mockState === BootstrapState.OPEN_IN_PROGRESS;
+
+// closeMockBootstrap closes mock first run the way a live admin's first
+// authenticated sign-in closes the real thing. Mock mode has no browser
+// certificate to present on a reload, so the wizard calls this directly once
+// the operator finishes or skips the admin step, instead of relying on a
+// reload that would only reset the mock state back to open.
+export const closeMockBootstrap = (): void => {
+  mockState = BootstrapState.CLOSED;
+};
+
 export const endBootstrapSession = (): void => {
   sessionSecret = null;
 };

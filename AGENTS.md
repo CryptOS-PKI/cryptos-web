@@ -95,7 +95,9 @@ components, named exports from `src/index.ts`) and
   `FirstRunWizard` (`src/components/first-run/`). `src/lib/bootstrap.ts` keeps the session secret
   in module memory only and sends it as the `Fleetos-Bootstrap-Session` header; never put it in
   web storage, a cookie or a URL. Mock mode keeps first run closed; set
-  `VITE_BOOTSTRAP_MOCK_STATE=open` to try the wizard offline.
+  `VITE_BOOTSTRAP_MOCK_STATE=open` to try the wizard offline. With it open, finishing or skipping
+  the admin step calls `closeMockBootstrap()` and the install step's button signs straight in as
+  the mock admin, since mock mode has no browser certificate for a reload to pick up.
 - Operator CA registration is a preview then a confirm with `confirm_sha256`.
   `OperatorCARegisterForm` takes the submit call as a prop, so the admin page and first run share
   it; `registerRequestFields()` builds the body both RegisterOperatorCA RPCs take.

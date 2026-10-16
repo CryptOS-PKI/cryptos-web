@@ -21,7 +21,9 @@ import { AdminStep } from "@/components/first-run/admin-step";
 import { CaStep } from "@/components/first-run/ca-step";
 import { TokenStep } from "@/components/first-run/token-step";
 import { CertificateHelp } from "@/components/layout/certificate-help";
-import { endBootstrapSession } from "@/lib/bootstrap";
+import { useOptionalAuth } from "@/context/auth";
+import { closeMockBootstrap, endBootstrapSession } from "@/lib/bootstrap";
+import { fleetMode } from "@/lib/fleet/mode";
 import { levelExtfileSection } from "@/lib/operators";
 
 type Step = "admin" | "ca" | "install" | "token";
@@ -33,24 +35,33 @@ const STEPS: { id: Step; label: string }[] = [
   { id: "install", label: "Install" },
 ];
 
-const InstallStep = () => (
-  <div className="space-y-4">
-    <h2 className="text-lg font-bold">Install your admin certificate</h2>
-    <p className="text-sm text-muted-foreground">
-      Import the PKCS#12 with its passphrase (the key backup&apos;s), then reload this page and
-      choose the FleetOS certificate when the browser asks. If it doesn&apos;t ask, quit the browser
-      fully and start it again: Chrome remembers a &quot;no certificate&quot; answer per site. Your
-      first sign-in as admin closes first run.
-    </p>
-    <CertificateHelp />
-    <p className="text-xs text-muted-foreground">
-      Keep the key backup somewhere safe, or delete it once the PKCS#12 is imported.
-    </p>
-    <Button onClick={() => globalThis.location.reload()} size="sm">
-      Reload and sign in
-    </Button>
-  </div>
-);
+// In mock mode there is no browser certificate for a reload to pick up, so
+// finishing or skipping the admin step (FirstRunWizard's onDone) already
+// closed mock first run; the button here signs straight in instead of
+// reloading, which would only reset the mock state back to open.
+const InstallStep = () => {
+  const auth = useOptionalAuth();
+  const mock = fleetMode() === "mock";
+
+  return (
+    <div className="space-y-4">
+      <h2 className="text-lg font-bold">Install your admin certificate</h2>
+      <p className="text-sm text-muted-foreground">
+        Import the PKCS#12 with its passphrase (the key backup&apos;s), then reload this page and
+        choose the FleetOS certificate when the browser asks. If it doesn&apos;t ask, quit the
+        browser fully and start it again: Chrome remembers a &quot;no certificate&quot; answer per
+        site. Your first sign-in as admin closes first run.
+      </p>
+      <CertificateHelp />
+      <p className="text-xs text-muted-foreground">
+        Keep the key backup somewhere safe, or delete it once the PKCS#12 is imported.
+      </p>
+      <Button onClick={() => (mock ? auth?.login() : globalThis.location.reload())} size="sm">
+        {mock ? "Continue to the console" : "Reload and sign in"}
+      </Button>
+    </div>
+  );
+};
 
 // FirstRunWizard stands a Fleet Manager up from nothing: the bootstrap token,
 // then the external operator CA (with the fingerprint confirm), then the
@@ -115,7 +126,10 @@ export const FirstRunWizard = ({
             <AdminStep
               adminExtfile={adminExtfile}
               anchorDer={anchorDer}
-              onDone={() => setStep("install")}
+              onDone={() => {
+                if (fleetMode() === "mock") closeMockBootstrap();
+                setStep("install");
+              }}
             />
           </>
         ) : null}

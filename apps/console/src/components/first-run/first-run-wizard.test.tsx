@@ -25,7 +25,8 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { FirstRunWizard } from "@/components/first-run/first-run-wizard";
-import { __resetBootstrap } from "@/lib/bootstrap";
+import { AuthProvider, useAuth } from "@/context/auth";
+import { __resetBootstrap, isMockFirstRunOpen } from "@/lib/bootstrap";
 import { base64 } from "@/lib/crypto/leaf-key";
 import { colonFingerprint } from "@/lib/fingerprint";
 import * as modeMod from "@/lib/fleet/mode";
@@ -90,6 +91,14 @@ const signLeaf = async (ca: Awaited<ReturnType<typeof makeCA>>, publicKey: Crypt
 
 const fill = (label: RegExp, value: string, root: HTMLElement = document.body) =>
   fireEvent.change(within(root).getByLabelText(label), { target: { value } });
+
+// Reads the auth status next to the wizard, the way the real console gates on
+// it, so a test can prove the install step actually signs the operator in
+// rather than only checking which button it renders.
+const AuthStatusProbe = () => {
+  const { status } = useAuth();
+  return <span data-testid="auth-status">{status}</span>;
+};
 
 const captureKeys = () => {
   const generated: CryptoKeyPair[] = [];
@@ -218,10 +227,15 @@ describe("FirstRunWizard (mock mode)", () => {
     await expectNoA11yViolations(container);
   }, 30_000);
 
-  it("path A: token, CA with fingerprint confirm, key backup before the CSR, upload, PKCS#12, install", async () => {
+  it("path A: token, CA with fingerprint confirm, key backup before the CSR, upload, PKCS#12, install, then continue signs in", async () => {
     const generated = captureKeys();
     const ca = await makeCA();
-    render(<FirstRunWizard inProgress={false} tokenExpiresAt="" />);
+    render(
+      <AuthProvider>
+        <AuthStatusProbe />
+        <FirstRunWizard inProgress={false} tokenExpiresAt="" />
+      </AuthProvider>,
+    );
     await startSession();
     await registerCA(ca);
     const passphrase = await pathA(ca, generated);
@@ -234,12 +248,23 @@ describe("FirstRunWizard (mock mode)", () => {
     expect(args.friendlyName).toBe(`FleetOS admin (${EMAIL})`);
     expect(downloadBytes.mock.calls[0][0]).toBe(`${EMAIL}.p12`);
     expect(screen.getByText(/Current User/)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /reload/i })).toBeInTheDocument();
+
+    // Finishing path A already closed mock first run (#198): no reload is
+    // needed, and continuing signs straight in as the mock admin.
+    expect(isMockFirstRunOpen()).toBe(false);
+    expect(screen.getByTestId("auth-status")).toHaveTextContent("anonymous");
+    fireEvent.click(screen.getByRole("button", { name: /continue to the console/i }));
+    expect(screen.getByTestId("auth-status")).toHaveTextContent("authenticated");
   }, 60_000);
 
-  it("path B: the recipe, an optional pre-flight, then install", async () => {
+  it("path B: the recipe, an optional pre-flight, then skipping to install closes mock first run too", async () => {
     const ca = await makeCA();
-    render(<FirstRunWizard inProgress={false} tokenExpiresAt="" />);
+    render(
+      <AuthProvider>
+        <AuthStatusProbe />
+        <FirstRunWizard inProgress={false} tokenExpiresAt="" />
+      </AuthProvider>,
+    );
     await startSession();
     await registerCA(ca);
     fireEvent.click(screen.getByLabelText(/path b/i));
@@ -250,6 +275,10 @@ describe("FirstRunWizard (mock mode)", () => {
     ).toContain("op_admin");
     fireEvent.click(screen.getByRole("button", { name: /skip to install/i }));
     await screen.findByRole("heading", { name: /install your admin certificate/i });
+
+    expect(isMockFirstRunOpen()).toBe(false);
+    fireEvent.click(screen.getByRole("button", { name: /continue to the console/i }));
+    expect(screen.getByTestId("auth-status")).toHaveTextContent("authenticated");
   }, 60_000);
 });
 
@@ -307,5 +336,9 @@ describe("FirstRunWizard (live mode)", () => {
     ].join("\n");
     expect(stored).not.toContain("fos_bsess_live");
     expect(stored).not.toContain(passphrase);
+
+    // Live mode keeps needing a real reload for the browser to present the
+    // newly installed certificate (#198 is mock-only).
+    expect(screen.getByRole("button", { name: /reload and sign in/i })).toBeInTheDocument();
   }, 60_000);
 });

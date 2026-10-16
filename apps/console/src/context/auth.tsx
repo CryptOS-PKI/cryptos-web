@@ -17,6 +17,7 @@ limitations under the License.
 import { Code, ConnectError } from "@connectrpc/connect";
 import { createContext, type ReactNode, useCallback, useContext, useState } from "react";
 
+import { isMockFirstRunOpen } from "@/lib/bootstrap";
 import { fleetClient } from "@/lib/fleet/client";
 import { fleetMode } from "@/lib/fleet/mode";
 
@@ -162,9 +163,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setReason(null);
 
     if (fleetMode() === "mock") {
-      // With mock first run open, act like a browser holding no certificate,
-      // so the first-run wizard can be tried offline.
-      if (import.meta.env.VITE_BOOTSTRAP_MOCK_STATE === "open") {
+      // With mock first run still open, act like a browser holding no
+      // certificate, so the first-run wizard can be tried offline. Once the
+      // wizard closes it (closeMockBootstrap, on finishing or skipping the
+      // admin step), sign in below like any other mock login.
+      if (isMockFirstRunOpen()) {
         setOperator(null);
         setReason("no-certificate");
         setStatus("denied");
