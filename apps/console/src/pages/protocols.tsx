@@ -26,6 +26,8 @@ import {
   PROTOCOLS,
 } from "@/lib/protocols";
 
+const PROTOCOLS_DOCS_URL = "https://docs.cryptos-pki.com/docs/fleet-manager/web-catalogs#protocols";
+
 // ProtocolSummary is one protocol's row on the list: the catalog entry plus,
 // for an implemented protocol, how many eligible nodes actually report it
 // running and how many are stuck waiting on a reboot. #84: these numbers come
@@ -144,14 +146,26 @@ export const ProtocolsPage = () => {
           both had already shipped (RFC 8555 and RFC 7030), which told an
           operator their configured protocols did not exist. This page now
           reads a node's own reported state instead of a local catalog, so the
-          note only needs to explain what "eligible" and "wired up" mean. */}
-      <Notice className="max-w-3xl" tone="warning">
-        <span className="text-foreground">ACME (RFC 8555) and EST (RFC 7030)</span> are served by
-        the nodes themselves, under <span className="font-mono">pki.acme</span> and{" "}
-        <span className="font-mono">pki.est</span>. Only an ESTABLISHED issuing node is eligible to
-        serve either; a switch here takes effect at that node&apos;s next reboot. SCEP and Windows
-        autoenrollment are not implemented yet and have no node to reflect, so this page does not
-        offer a switch for them.
+          note only needs to explain what "eligible" and "wired up" mean. #201:
+          the note read as internals (field names, a SCEP/Windows aside with
+          nothing to show) rather than what an operator needs to know, so it's
+          now two sentences with the detail moved to the docs. */}
+      <Notice
+        action={
+          <a
+            className="whitespace-nowrap text-primary underline underline-offset-2"
+            href={PROTOCOLS_DOCS_URL}
+            rel="noreferrer"
+            target="_blank"
+          >
+            Learn more
+          </a>
+        }
+        tone="warning"
+      >
+        ACME and EST are served by the node itself, not by this Fleet Manager: only an ESTABLISHED
+        issuing node can serve either, and a switch here takes effect at that node&apos;s next
+        reboot.
       </Notice>
 
       <DataTable

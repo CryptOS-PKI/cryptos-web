@@ -99,4 +99,26 @@ describe("ProtocolsPage", () => {
     expect(screen.queryByText(/ships in a later release/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/services ship/i)).not.toBeInTheDocument();
   });
+
+  // #201: the notice read like internals (field names, an aside for two
+  // protocols with nothing to show) rather than what an operator needs to
+  // know, and was capped to a narrow column. It's now short, full width and
+  // links to the docs for the detail.
+  it("keeps the protocols notice short, full width and linked to the docs", () => {
+    render(
+      <MemoryRouter>
+        <ProtocolsPage />
+      </MemoryRouter>,
+    );
+    const note = screen.getByRole("note");
+    expect(note).toHaveTextContent(
+      "only an ESTABLISHED issuing node can serve either, and a switch here takes effect at that node's next reboot",
+    );
+    expect(note).not.toHaveTextContent(/SCEP/);
+    expect(note).not.toHaveClass("max-w-3xl");
+    expect(screen.getByRole("link", { name: "Learn more" })).toHaveAttribute(
+      "href",
+      "https://docs.cryptos-pki.com/docs/fleet-manager/web-catalogs#protocols",
+    );
+  });
 });

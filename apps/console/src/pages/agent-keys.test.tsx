@@ -146,4 +146,22 @@ describe("AgentKeysPage", () => {
 
     expect(await screen.findByRole("alert")).toHaveTextContent("manager unreachable");
   });
+
+  // #201: the notice was capped to a narrow column and had no way to reach
+  // the docs for the full agent-key lifecycle.
+  it("keeps the agent keys notice full width and linked to the docs", async () => {
+    useAuth.mockReturnValue({ operator: { level: "operator" } });
+    render(<AgentKeysPage />);
+    await screen.findByText("build agent");
+
+    const note = screen.getByRole("note");
+    expect(note).toHaveTextContent(
+      "bound to the operator certificate that created it, and stops working when that certificate is revoked or renewed",
+    );
+    expect(note).not.toHaveClass("max-w-3xl");
+    expect(screen.getByRole("link", { name: "Learn more" })).toHaveAttribute(
+      "href",
+      "https://docs.cryptos-pki.com/docs/fleet-manager/web-operators-audit#agent-keys-and-mcp-sign-in",
+    );
+  });
 });
