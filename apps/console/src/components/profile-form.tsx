@@ -14,7 +14,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { Button, cn, Field, Input, inputClasses, Notice } from "@cryptos-pki/ui";
+import {
+  Button,
+  cn,
+  Field,
+  Input,
+  inputClasses,
+  Notice,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@cryptos-pki/ui";
 import { useState } from "react";
 
 import { useAuth } from "@/context/auth";
@@ -161,155 +172,171 @@ export const ProfileForm = ({
   };
 
   return (
-    <div className="max-w-lg space-y-4">
-      <Field label="Name">
-        <Input
-          disabled={mode === "edit" || !isAdmin}
-          onChange={(e) => setP({ ...p, name: e.target.value })}
-          value={p.name}
-        />
-      </Field>
+    <div className="w-full space-y-4">
+      <Tabs defaultValue="common">
+        <TabsList className="grid w-full grid-cols-1 gap-1 sm:grid-cols-3">
+          <TabsTrigger value="common">Common settings</TabsTrigger>
+          <TabsTrigger value="key-usage">Key usage</TabsTrigger>
+          <TabsTrigger value="sans">SANs &amp; extensions</TabsTrigger>
+        </TabsList>
 
-      <Field label="Key algorithm">
-        <select
-          className={inputClasses}
-          disabled={!isAdmin}
-          onChange={(e) => setP({ ...p, keyAlg: e.target.value })}
-          value={p.keyAlg}
-        >
-          {KEY_ALG_OPTIONS.map((a) => (
-            <option key={a} value={a}>
-              {a}
-            </option>
-          ))}
-        </select>
-      </Field>
-
-      <Field label="Validity (days)">
-        <Input
-          disabled={!isAdmin}
-          onChange={(e) => setP({ ...p, validityDays: Number(e.target.value) })}
-          type="number"
-          value={p.validityDays}
-        />
-      </Field>
-
-      <fieldset className="space-y-2 rounded-md border p-3">
-        <legend className={groupLabelClasses}>Subject</legend>
-        <Field label="Common name">
-          <Input
-            disabled={!isAdmin}
-            onChange={(e) => setP({ ...p, subject: { ...p.subject, commonName: e.target.value } })}
-            value={p.subject.commonName}
-          />
-        </Field>
-        <Field label="Organization">
-          <Input
-            disabled={!isAdmin}
-            onChange={(e) =>
-              setP({ ...p, subject: { ...p.subject, organization: e.target.value } })
-            }
-            value={p.subject.organization}
-          />
-        </Field>
-        <Field label="Country">
-          <Input
-            disabled={!isAdmin}
-            onChange={(e) => setP({ ...p, subject: { ...p.subject, country: e.target.value } })}
-            value={p.subject.country}
-          />
-        </Field>
-      </fieldset>
-
-      <label className="flex items-center gap-2 font-mono text-sm">
-        <input
-          checked={p.isCA}
-          disabled={!isAdmin}
-          onChange={(e) => setP({ ...p, isCA: e.target.checked })}
-          type="checkbox"
-        />
-        CA certificate (basic constraints)
-      </label>
-
-      {p.isCA ? (
-        <Field label="Path length">
-          <Input
-            disabled={!isAdmin}
-            onChange={(e) => setP({ ...p, pathLen: Number(e.target.value) })}
-            type="number"
-            value={p.pathLen ?? 0}
-          />
-        </Field>
-      ) : null}
-
-      <CheckGroup
-        label="Key usage"
-        onToggle={(v) => setP({ ...p, keyUsage: toggle(p.keyUsage, v) })}
-        options={KEY_USAGE_OPTIONS}
-        selected={p.keyUsage}
-      />
-      <CheckGroup
-        label="Extended key usage"
-        onToggle={(v) => setP({ ...p, extKeyUsage: toggle(p.extKeyUsage, v) })}
-        options={EXT_KEY_USAGE_OPTIONS}
-        selected={p.extKeyUsage}
-      />
-
-      <fieldset className="space-y-2 rounded-md border p-3">
-        <legend className={groupLabelClasses}>Subject alternative names</legend>
-        <SanInput category="dns" onChange={(v) => setSan("dns", v)} values={p.sans.dns} />
-        <SanInput category="ip" onChange={(v) => setSan("ip", v)} values={p.sans.ip} />
-        <SanInput category="email" onChange={(v) => setSan("email", v)} values={p.sans.email} />
-        <SanInput category="uri" onChange={(v) => setSan("uri", v)} values={p.sans.uri} />
-      </fieldset>
-
-      <fieldset className="space-y-2 rounded-md border p-3">
-        <legend className={groupLabelClasses}>Extra extensions</legend>
-        {p.extraExtensions.map((ext, i) => (
-          <div className="space-y-1 rounded-md border bg-card p-2" key={i}>
+        <TabsContent className="space-y-4" value="common">
+          <Field label="Name">
             <Input
-              aria-label={`Extension ${i + 1} OID`}
-              disabled={!isAdmin}
-              onChange={(e) => setExtension(i, { oid: e.target.value })}
-              placeholder="OID, e.g. 1.3.6.1.5.5.7.1.1"
-              value={ext.oid}
+              disabled={mode === "edit" || !isAdmin}
+              onChange={(e) => setP({ ...p, name: e.target.value })}
+              value={p.name}
             />
+          </Field>
+
+          <Field label="Key algorithm">
+            <select
+              className={inputClasses}
+              disabled={!isAdmin}
+              onChange={(e) => setP({ ...p, keyAlg: e.target.value })}
+              value={p.keyAlg}
+            >
+              {KEY_ALG_OPTIONS.map((a) => (
+                <option key={a} value={a}>
+                  {a}
+                </option>
+              ))}
+            </select>
+          </Field>
+
+          <Field label="Validity (days)">
             <Input
-              aria-label={`Extension ${i + 1} value`}
               disabled={!isAdmin}
-              onChange={(e) => setExtension(i, { value: e.target.value })}
-              placeholder="DER value (base64)"
-              value={ext.value}
+              onChange={(e) => setP({ ...p, validityDays: Number(e.target.value) })}
+              type="number"
+              value={p.validityDays}
             />
-            <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 font-mono text-xs">
-                <input
-                  checked={ext.critical}
+          </Field>
+
+          <fieldset className="space-y-2 rounded-md border p-3">
+            <legend className={groupLabelClasses}>Subject</legend>
+            <Field label="Common name">
+              <Input
+                disabled={!isAdmin}
+                onChange={(e) =>
+                  setP({ ...p, subject: { ...p.subject, commonName: e.target.value } })
+                }
+                value={p.subject.commonName}
+              />
+            </Field>
+            <Field label="Organization">
+              <Input
+                disabled={!isAdmin}
+                onChange={(e) =>
+                  setP({ ...p, subject: { ...p.subject, organization: e.target.value } })
+                }
+                value={p.subject.organization}
+              />
+            </Field>
+            <Field label="Country">
+              <Input
+                disabled={!isAdmin}
+                onChange={(e) => setP({ ...p, subject: { ...p.subject, country: e.target.value } })}
+                value={p.subject.country}
+              />
+            </Field>
+          </fieldset>
+
+          <label className="flex items-center gap-2 font-mono text-sm">
+            <input
+              checked={p.isCA}
+              disabled={!isAdmin}
+              onChange={(e) => setP({ ...p, isCA: e.target.checked })}
+              type="checkbox"
+            />
+            CA certificate (basic constraints)
+          </label>
+
+          {p.isCA ? (
+            <Field label="Path length">
+              <Input
+                disabled={!isAdmin}
+                onChange={(e) => setP({ ...p, pathLen: Number(e.target.value) })}
+                type="number"
+                value={p.pathLen ?? 0}
+              />
+            </Field>
+          ) : null}
+        </TabsContent>
+
+        <TabsContent className="space-y-4" value="key-usage">
+          <CheckGroup
+            label="Key usage"
+            onToggle={(v) => setP({ ...p, keyUsage: toggle(p.keyUsage, v) })}
+            options={KEY_USAGE_OPTIONS}
+            selected={p.keyUsage}
+          />
+          <CheckGroup
+            label="Extended key usage"
+            onToggle={(v) => setP({ ...p, extKeyUsage: toggle(p.extKeyUsage, v) })}
+            options={EXT_KEY_USAGE_OPTIONS}
+            selected={p.extKeyUsage}
+          />
+        </TabsContent>
+
+        <TabsContent className="space-y-4" value="sans">
+          <fieldset className="space-y-2 rounded-md border p-3">
+            <legend className={groupLabelClasses}>Subject alternative names</legend>
+            <SanInput category="dns" onChange={(v) => setSan("dns", v)} values={p.sans.dns} />
+            <SanInput category="ip" onChange={(v) => setSan("ip", v)} values={p.sans.ip} />
+            <SanInput category="email" onChange={(v) => setSan("email", v)} values={p.sans.email} />
+            <SanInput category="uri" onChange={(v) => setSan("uri", v)} values={p.sans.uri} />
+          </fieldset>
+
+          <fieldset className="space-y-2 rounded-md border p-3">
+            <legend className={groupLabelClasses}>Extra extensions</legend>
+            {p.extraExtensions.map((ext, i) => (
+              <div className="space-y-1 rounded-md border bg-card p-2" key={i}>
+                <Input
+                  aria-label={`Extension ${i + 1} OID`}
                   disabled={!isAdmin}
-                  onChange={(e) => setExtension(i, { critical: e.target.checked })}
-                  type="checkbox"
+                  onChange={(e) => setExtension(i, { oid: e.target.value })}
+                  placeholder="OID, e.g. 1.3.6.1.5.5.7.1.1"
+                  value={ext.oid}
                 />
-                critical
-              </label>
-              {isAdmin ? (
-                <Button
-                  onClick={() => removeExtension(i)}
-                  size="sm"
-                  type="button"
-                  variant="outline"
-                >
-                  Remove
-                </Button>
-              ) : null}
-            </div>
-          </div>
-        ))}
-        {isAdmin ? (
-          <Button onClick={addExtension} size="sm" type="button" variant="outline">
-            Add extension
-          </Button>
-        ) : null}
-      </fieldset>
+                <Input
+                  aria-label={`Extension ${i + 1} value`}
+                  disabled={!isAdmin}
+                  onChange={(e) => setExtension(i, { value: e.target.value })}
+                  placeholder="DER value (base64)"
+                  value={ext.value}
+                />
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center gap-2 font-mono text-xs">
+                    <input
+                      checked={ext.critical}
+                      disabled={!isAdmin}
+                      onChange={(e) => setExtension(i, { critical: e.target.checked })}
+                      type="checkbox"
+                    />
+                    critical
+                  </label>
+                  {isAdmin ? (
+                    <Button
+                      onClick={() => removeExtension(i)}
+                      size="sm"
+                      type="button"
+                      variant="outline"
+                    >
+                      Remove
+                    </Button>
+                  ) : null}
+                </div>
+              </div>
+            ))}
+            {isAdmin ? (
+              <Button onClick={addExtension} size="sm" type="button" variant="outline">
+                Add extension
+              </Button>
+            ) : null}
+          </fieldset>
+        </TabsContent>
+      </Tabs>
 
       {error ? (
         <Notice role="alert" tone="danger">

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ProfileForm } from "@/components/profile-form";
@@ -63,5 +63,42 @@ describe("ProfileForm", () => {
     expect(button).toHaveAccessibleDescription(/needs the admin role/i);
     fireEvent.click(button);
     expect(onDone).not.toHaveBeenCalled();
+  });
+
+  // #200: the form's top-level sections are full-width tabs, so only one
+  // section's fields are reachable at a time.
+  it("shows the common settings fields by default and keeps the others out of the tree", () => {
+    render(<ProfileForm mode="create" onDone={vi.fn()} />);
+    expect(screen.getByLabelText(/^name$/i)).toBeInTheDocument();
+    expect(screen.queryByLabelText(/^dns sans$/i)).not.toBeInTheDocument();
+  });
+
+  it("switches to the Key usage tab on click", async () => {
+    render(<ProfileForm mode="create" onDone={vi.fn()} />);
+    const trigger = screen.getByRole("tab", { name: "Key usage" });
+    // A real click both focuses the trigger and fires "click"; Radix's Tabs
+    // (activationMode="automatic") selects on focus, so the test reproduces
+    // both parts of that interaction rather than just the synthetic event.
+    await act(async () => {
+      trigger.focus();
+    });
+    fireEvent.click(trigger);
+    expect(screen.getByRole("button", { name: "digital_signature" })).toBeInTheDocument();
+    expect(screen.queryByLabelText(/^name$/i)).not.toBeInTheDocument();
+  });
+
+  it("moves between tabs with the arrow keys", async () => {
+    render(<ProfileForm mode="create" onDone={vi.fn()} />);
+    const common = screen.getByRole("tab", { name: "Common settings" });
+    await act(async () => {
+      common.focus();
+    });
+    await act(async () => {
+      fireEvent.keyDown(common, { key: "ArrowRight" });
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    const keyUsage = screen.getByRole("tab", { name: "Key usage" });
+    expect(keyUsage).toHaveFocus();
+    expect(keyUsage).toHaveAttribute("aria-selected", "true");
   });
 });
