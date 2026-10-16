@@ -27,6 +27,7 @@ import {
   Notice,
   type Phase,
   PhaseRail,
+  Stepper,
 } from "@cryptos-pki/ui";
 import { useRef, useState } from "react";
 
@@ -75,6 +76,15 @@ const SUBORDINATE_PHASES = [
   "awaiting-reboot",
   "awaiting-fingerprint-confirmation",
   "awaiting-certificate",
+];
+
+// The wizard's own mini stepper, across the three stages of the page itself
+// (as distinct from the manager's ROOT_PHASES/SUBORDINATE_PHASES rail, which
+// tracks the orchestrated adoption once Adopt node is pressed).
+const ADOPT_STEPS = [
+  { id: "endpoint", label: "Endpoint" },
+  { id: "config", label: "Initial config" },
+  { id: "provisioning", label: "Provisioning" },
 ];
 
 // adoptionPhases turns the manager's phase ids into the kit PhaseRail's Phase
@@ -282,8 +292,10 @@ export const AdoptPage = () => {
   const established = phase?.done && phase.phase === "established";
   const awaitingCert = phase?.done && phase.phase === "awaiting-certificate";
 
+  const stepIndex = !confirmedPin ? 0 : phase || pending ? 2 : 1;
+
   return (
-    <section className="max-w-xl space-y-5">
+    <section className="w-full space-y-5">
       <div className="space-y-1">
         <h1 className="text-2xl font-bold tracking-tight">Adopt node</h1>
         <p className="text-sm text-muted-foreground">
@@ -292,10 +304,12 @@ export const AdoptPage = () => {
         </p>
       </div>
 
+      <Stepper current={stepIndex} label="Adoption steps" steps={ADOPT_STEPS} />
+
       {/* Step 1: endpoint + trust-on-first-use fingerprint confirmation. */}
       <div className="space-y-3 rounded-xl border bg-card p-4">
         <h2 className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-          Step 1 — maintenance endpoint
+          Maintenance endpoint
         </h2>
         <Field label="Endpoint (host:port)">
           <Input
@@ -343,7 +357,7 @@ export const AdoptPage = () => {
       {confirmedPin ? (
         <div className="space-y-3 rounded-xl border bg-card p-4">
           <h2 className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-            Step 2 — initial config
+            Initial config
           </h2>
           <Field label="Node name">
             <Input onChange={(e) => setNodeName(e.target.value)} value={nodeName} />
