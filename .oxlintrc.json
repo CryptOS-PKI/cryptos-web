@@ -1,0 +1,107 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "extends": [
+    "./node_modules/@bugs5382/node-oxlint-config/configs/base.json",
+    "./node_modules/@bugs5382/node-oxlint-config/configs/a11y.json"
+  ],
+  "ignorePatterns": [
+    "dist/**",
+    "lib/**",
+    "coverage/**",
+    "docs/**",
+    "storybook-static/**",
+    ".storybook/**",
+    "packages/api-client/src/gen/**",
+    "packages/api-client/.protos/**",
+    "packages/ui/src/icons/Icon*.tsx",
+    "packages/ui/src/icons/index.ts"
+  ],
+  "settings": {
+    "react": {
+      "version": "19.2"
+    }
+  },
+  "overrides": [
+    {
+      "files": ["**/*.{ts,tsx}"],
+      "rules": {
+        "react/rules-of-hooks": "error",
+        "react/exhaustive-deps": "warn",
+        "react/only-export-components": [
+          "warn",
+          {
+            "allowConstantExport": true
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "apps/console/src/components/ui/**/*.tsx",
+        "apps/console/src/context/**/*.tsx",
+        "packages/ui/src/**/*.tsx"
+      ],
+      "rules": {
+        "react/only-export-components": "off"
+      }
+    },
+    {
+      "files": ["**/*"],
+      "rules": {
+        "perfectionist/sort-objects": "off",
+        "perfectionist/sort-imports": "off",
+        "perfectionist/sort-modules": "off",
+        "perfectionist/sort-interfaces": "off",
+        "perfectionist/sort-named-imports": "off",
+        "perfectionist/sort-union-types": "off",
+        "perfectionist/sort-sets": "off",
+        "perfectionist/sort-intersection-types": "off",
+        "perfectionist/sort-object-types": "off"
+      }
+    }
+  ],
+  "rules": {
+    "jsx-a11y/label-has-associated-control": [
+      "error",
+      {
+        "controlComponents": ["Input"]
+      }
+    ],
+    "unicorn/filename-case": [
+      "error",
+      {
+        "cases": {
+          "kebabCase": true,
+          "pascalCase": true
+        }
+      }
+    ],
+    "unicorn/no-null": "off",
+    "unicorn-js/prefer-https": "off",
+    "unicorn-js/prevent-abbreviations": "off",
+    "unicorn/number-literal-case": "off",
+    "unicorn/no-await-expression-member": "off",
+    "unicorn/no-array-sort": "off",
+    "unicorn/consistent-function-scoping": "off",
+    "unicorn/prefer-code-point": "off",
+    "unicorn/no-array-callback-reference": "off",
+    "unicorn/prefer-module": "off",
+    "unicorn/prefer-export-from": "off",
+    "unicorn/prefer-blob-reading-methods": "off",
+    "unicorn/no-nested-ternary": "off",
+    "eslint/func-style": "off",
+    "unicorn/no-array-reverse": "off",
+    "unicorn/prefer-array-find": "off",
+    "unicorn/prefer-response-static-json": "off",
+    "unicorn/numeric-separators-style": "off",
+    "unicorn/prefer-spread": "off",
+    "unicorn/no-useless-undefined": "off",
+    "unicorn-js/prefer-string-repeat": "off",
+    "unicorn/catch-error-name": "off",
+    "unicorn/prefer-string-replace-all": "off",
+    "unicorn/consistent-existence-index-check": "off",
+    "unicorn/no-useless-fallback-in-spread": "off",
+    "unicorn-js/no-for-loop": "off",
+    "unicorn/prefer-at": "off"
+  }
+}

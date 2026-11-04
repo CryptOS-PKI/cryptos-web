@@ -44,7 +44,9 @@ import {
 const actionButton = "rounded-md border px-2.5 py-1 text-xs hover:bg-secondary";
 
 type Dialog =
-  { ca: OperatorCARow; kind: "crl" | "ocsp" | "retire" | "upload" } | { kind: "register" } | null;
+  | { ca: OperatorCARow; kind: "crl" | "ocsp" | "retire" | "upload" }
+  | { kind: "register" }
+  | null;
 
 // OperatorCAsPage lists the external operator CAs the Fleet Manager trusts or
 // has trusted, with their CRL and OCSP state, and the banners an admin must

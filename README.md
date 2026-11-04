@@ -21,7 +21,7 @@ An npm workspaces monorepo. Each app builds on its own; the packages are shared 
 
 ## 🧩 UI kit
 
-All UI in `apps/console` comes from `@cryptos-pki/ui` (`packages/ui`) — no page hand-rolls its own styling or a one-off component. Every kit component's test renders it through axe-core, and [`eslint-plugin-jsx-a11y`](https://github.com/jsx-eslint/eslint-plugin-jsx-a11y) runs at error level across the whole repo.
+All UI in `apps/console` comes from `@cryptos-pki/ui` (`packages/ui`) — no page hand-rolls its own styling or a one-off component. Every kit component's test renders it through axe-core, and the `jsx-a11y` rules in Oxlint run at error level across the whole repo.
 
 - 🔧 **Icons are generated, never hand-edited.** Add or change an SVG under `packages/ui/assets/icons`, then run `npm -w @cryptos-pki/ui run generate:icons` and commit the regenerated `packages/ui/src/icons`; CI fails a pull request where they disagree.
 - ♿ **The full accessibility write-up** — what axe checks automatically, what's left to a manual WCAG 2.2 AA pass, and why — is in the docs site's [Contributing section](https://cryptos-pki.com/docs/contributing/accessibility-checks).
@@ -115,8 +115,9 @@ Requires Node 22 LTS (the version CI builds on) and npm, plus [`buf`](https://bu
 npm ci            # install every workspace from the one lockfile
 npm run dev       # start the console's Vite dev server
 npm run build     # type-check and build every app (the console bundle lands in apps/console/dist/)
-npm run lint      # eslint (typescript-eslint) + prettier --check, across the repo
-npm run format    # prettier --write
+npm run lint      # oxlint, across the repo
+npm run format    # oxfmt
+npm run format:check  # oxfmt --check
 npm test          # vitest, in every workspace
 npm run generate  # regenerate packages/api-client from the pinned node and fleet protos (needs buf)
 task license      # check the Apache 2.0 headers (task license:fix adds them)

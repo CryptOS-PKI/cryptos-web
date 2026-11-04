@@ -27,7 +27,11 @@ import type { Certificate } from "@cryptos-pki/api-client/cryptos/fleet/v1/fleet
 export type CertKind = "leaf" | "subordinate-ca";
 export type CertStatus = "EXPIRED" | "REVOKED" | "VALID";
 export type RevocationReason =
-  "affiliationChanged" | "cessationOfOperation" | "keyCompromise" | "superseded" | "unspecified";
+  | "affiliationChanged"
+  | "cessationOfOperation"
+  | "keyCompromise"
+  | "superseded"
+  | "unspecified";
 
 export interface Cert {
   eku: string[];

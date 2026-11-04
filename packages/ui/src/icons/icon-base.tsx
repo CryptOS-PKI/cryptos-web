@@ -19,15 +19,31 @@ import * as React from "react";
 import { cn } from "../lib/cn";
 
 export type IconComponent = (props: IconProps) => React.JSX.Element;
-export interface IconProps { className?: string; size?: 16 | 20 | 24; title?: string }
+export interface IconProps {
+  className?: string;
+  size?: 16 | 20 | 24;
+  title?: string;
+}
 
-export const IconBase = ({ children, className, size = 20, title }: { children: React.ReactNode } & IconProps) => (
+export const IconBase = ({
+  children,
+  className,
+  size = 20,
+  title,
+}: { children: React.ReactNode } & IconProps) => (
   <svg
     aria-hidden={title ? undefined : true}
     className={cn("shrink-0", className)}
-    fill="none" height={size} role={title ? "img" : undefined}
-    stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75}
-    viewBox="0 0 24 24" width={size} xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    height={size}
+    role={title ? "img" : undefined}
+    stroke="currentColor"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    strokeWidth={1.75}
+    viewBox="0 0 24 24"
+    width={size}
+    xmlns="http://www.w3.org/2000/svg"
   >
     {title ? <title>{title}</title> : null}
     {children}
