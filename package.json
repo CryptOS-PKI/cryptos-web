@@ -10,38 +10,21 @@
   "scripts": {
     "build": "npm run build --workspaces --if-present",
     "dev": "npm run dev -w @cryptos-pki/console",
-    "format": "prettier --write .",
+    "format": "oxfmt",
+    "format:check": "oxfmt --check",
     "generate": "npm run generate -w @cryptos-pki/api-client",
-    "lint": "eslint . && prettier --check .",
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix",
     "test": "npm run test --workspaces --if-present"
   },
   "devDependencies": {
-    "@eslint/js": "^9.17.0",
-    "@the-rabbit-hole/eslint-config": "^0.6.0",
-    "eslint": "^9.17.0",
-    "eslint-config-prettier": "^9.1.0",
-    "eslint-plugin-jsx-a11y": "^6.10.2",
-    "eslint-plugin-react-hooks": "^5.1.0",
-    "eslint-plugin-react-refresh": "^0.4.16",
-    "globals": "^15.14.0",
-    "prettier": "^3.4.2",
-    "typescript-eslint": "^8.19.0"
+    "@bugs5382/node-oxlint-config": "^1.0.1",
+    "oxfmt": "^0.76.0",
+    "oxlint": "^1.91.0"
   },
   "overrides": {
     "js-yaml": "4.3.2",
     "browserslist": "4.29.3",
-    "postcss-selector-parser": "7.1.6",
-    "eslint-plugin-jsx-a11y": {
-      "minimatch": {
-        "brace-expansion": "1.1.21"
-      }
-    },
-    "typescript-eslint": {
-      "@typescript-eslint/typescript-estree": {
-        "minimatch": {
-          "brace-expansion": "5.0.12"
-        }
-      }
-    }
+    "postcss-selector-parser": "7.1.6"
   }
 }

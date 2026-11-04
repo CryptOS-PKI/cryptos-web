@@ -47,7 +47,7 @@ components, named exports from `src/index.ts`) and
 - Test: `npm test` (vitest in every workspace; no external service required)
 - Generated stubs: `npm run generate` (needs `buf`; fetches the protos at the refs in
   `packages/api-client/proto-refs.env`)
-- Lint: `npm run lint` (eslint + `prettier --check`); `npm run format` to fix
+- Lint: `npm run lint` (oxlint); `npm run format:check` (oxfmt); `npm run format` to fix
 - License headers: `task license` (golic; `.golic.yaml` adds the .ts/.tsx rules)
 
 ## Conventions and gotchas
@@ -63,11 +63,10 @@ components, named exports from `src/index.ts`) and
   with `npm -w @cryptos-pki/ui run generate:icons` after changing the source set. CI's "Icons match
   their sources" step reruns the generator and fails on any diff, and "No embedded design-tool
   metadata" fails on a stray `c2pa` string anywhere under `packages/` or `apps/console/public/`
-  (both in `ci-web.yml`). Both files are excluded from ESLint and Prettier (`eslint.config.js`,
-  `.prettierignore`): they follow the generator's template, not the repo's formatting rules.
+  (both in `ci-web.yml`). Both files are excluded from Oxlint and oxfmt (`.oxlintrc.json`,
+  `oxfmt.config.ts`): they follow the generator's template, not the repo's formatting rules.
 - Every kit component test calls `expectNoA11yViolations` (`packages/ui/src/test/axe.ts`) on what it
-  renders, and `eslint-plugin-jsx-a11y` runs at error level (`jsxA11y.flatConfigs.strict` in
-  `eslint.config.js`).
+  renders, and the `jsx-a11y` rules run at error level (`configs/a11y.json` in `.oxlintrc.json`).
 - See `CLAUDE.md` for the branch/commit/PR rules; they are enforced by the git hooks in
   `.claude/hooks` (run `bash .claude/hooks/install.sh` once per clone).
 - Open every PR as a draft. CI skips drafts, so run the full checks locally, push once they pass,

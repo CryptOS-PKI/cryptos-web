@@ -74,7 +74,9 @@ export interface OcspProbeRow {
 }
 
 export type CrlChoice =
-  { der: Uint8Array; kind: "upload" } | { kind: "none" } | { kind: "url"; url: string };
+  | { der: Uint8Array; kind: "upload" }
+  | { kind: "none" }
+  | { kind: "url"; url: string };
 
 export type OcspChoice = "aia" | "off" | "url";
 

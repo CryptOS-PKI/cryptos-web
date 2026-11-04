@@ -141,10 +141,7 @@ const LEVEL_BADGE_VARIANT: Record<OperatorLevel, "outline" | "tag-primary" | "ta
 
 const rankOf: Record<OperatorLevel, number> = { admin: 2, operator: 1, viewer: 0 };
 
-const lockedReason = (
-  needs: OperatorLevel | undefined,
-  level: OperatorLevel,
-): string | undefined =>
+const lockedReason = (needs: OperatorLevel | undefined, level: OperatorLevel): string | undefined =>
   needs && rankOf[level] < rankOf[needs] ? `Needs ${needs} level` : undefined;
 
 const Banner = () => (
