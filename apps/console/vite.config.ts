@@ -85,6 +85,12 @@ export default defineConfig(({ mode }) => {
     test: {
       css: true,
       environment: "jsdom",
+      // Node 26 ships its own experimental localStorage global, which shadows
+      // jsdom's and throws without --localstorage-file. Turn it off for the
+      // test workers where the flag exists, so a local run matches CI (Node 22).
+      execArgv: process.allowedNodeEnvironmentFlags.has("--no-experimental-webstorage")
+        ? ["--no-experimental-webstorage"]
+        : [],
       globals: true,
       setupFiles: ["./src/test/setup.ts"],
     },
