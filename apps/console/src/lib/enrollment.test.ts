@@ -14,6 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import type { EnrollmentRequest as ProtoEnrollmentRequest } from "@cryptos-pki/api-client/cryptos/fleet/v1/fleet_pb";
+
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { __resetCerts } from "@/lib/certs";
@@ -29,8 +31,6 @@ import {
   requestEnrollment,
 } from "@/lib/enrollment";
 import { __resetNodes, getNode } from "@/lib/nodes";
-
-import type { EnrollmentRequest as ProtoEnrollmentRequest } from "@cryptos-pki/api-client/cryptos/fleet/v1/fleet_pb";
 
 const listEnrollments = vi.fn();
 const createEnrollmentRpc = vi.fn();

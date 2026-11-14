@@ -15,40 +15,16 @@ limitations under the License.
 */
 
 import { create } from "@bufbuild/protobuf";
+import {
+  CertificateProfileSchema,
+  type CertificateProfile as ProtoCertProfile,
+} from "@cryptos-pki/api-client/cryptos/node/v1/config_pb";
 import { useEffect, useSyncExternalStore } from "react";
 
 import { recordAudit } from "@/lib/audit";
 import { fleetClient } from "@/lib/fleet/client";
 import { fleetMode } from "@/lib/fleet/mode";
 import { mockProfiles } from "@/lib/mock-fixtures";
-
-import {
-  type CertificateProfile as ProtoCertProfile,
-  CertificateProfileSchema,
-} from "@cryptos-pki/api-client/cryptos/node/v1/config_pb";
-
-// ProfileSubject is the certificate subject fields the catalog edits.
-export interface ProfileSubject {
-  commonName: string;
-  country: string;
-  organization: string;
-}
-
-// ProfileSans mirrors cryptos.v1.SubjectAltNames: typed SAN lists by category.
-export interface ProfileSans {
-  dns: string[];
-  email: string[];
-  ip: string[];
-  uri: string[];
-}
-
-// ProfileExtension mirrors cryptos.v1.X509Extension: a raw-OID escape hatch.
-// `value` is a base64 string in the UI; it maps to the proto's `bytes value`.
-export interface ProfileExtension {
-  critical: boolean;
-  oid: string;
-  value: string;
-}
 
 // CertProfile mirrors cryptos.v1.CertificateProfile (config.proto): the reusable
 // issuance template a node stores in pki.profiles[] and the manager's catalog
@@ -65,6 +41,29 @@ export interface CertProfile {
   sans: ProfileSans;
   subject: ProfileSubject;
   validityDays: number;
+}
+
+// ProfileExtension mirrors cryptos.v1.X509Extension: a raw-OID escape hatch.
+// `value` is a base64 string in the UI; it maps to the proto's `bytes value`.
+export interface ProfileExtension {
+  critical: boolean;
+  oid: string;
+  value: string;
+}
+
+// ProfileSans mirrors cryptos.v1.SubjectAltNames: typed SAN lists by category.
+export interface ProfileSans {
+  dns: string[];
+  email: string[];
+  ip: string[];
+  uri: string[];
+}
+
+// ProfileSubject is the certificate subject fields the catalog edits.
+export interface ProfileSubject {
+  commonName: string;
+  country: string;
+  organization: string;
 }
 
 export const KEY_ALG_OPTIONS = ["ECDSA-P256", "ECDSA-P384", "RSA-3072", "RSA-4096"];

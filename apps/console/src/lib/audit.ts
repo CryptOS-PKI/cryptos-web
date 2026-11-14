@@ -14,13 +14,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import type { AuditEvent as ProtoAuditEvent } from "@cryptos-pki/api-client/cryptos/fleet/v1/fleet_pb";
+
 import { useEffect, useSyncExternalStore } from "react";
 
 import { fleetClient } from "@/lib/fleet/client";
 import { fleetMode } from "@/lib/fleet/mode";
 import { mockAuditEvents } from "@/lib/mock-fixtures";
 
-import type { AuditEvent as ProtoAuditEvent } from "@cryptos-pki/api-client/cryptos/fleet/v1/fleet_pb";
+export type AuditActorKind = "cert" | "mcp_key";
 
 // Leaf store: imports NO domain store (domain stores import recordAudit from
 // here). Own fixed clock keeps events deterministic without Date.now().
@@ -39,8 +41,6 @@ export interface AuditEvent {
   tool?: string;
   via?: string;
 }
-
-export type AuditActorKind = "cert" | "mcp_key";
 
 export type AuditKind =
   | "config-applied"

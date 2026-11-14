@@ -36,7 +36,7 @@ import type { OperatorLevel } from "@/lib/operators";
 // extractable so it can be exported -- but only ever as a passphrase-encrypted
 // PKCS#8, never in plaintext.
 const LEAF_KEY_ALGORITHM: EcKeyGenParams = { name: "ECDSA", namedCurve: "P-384" };
-const CSR_SIGNING_ALGORITHM: EcdsaParams = { name: "ECDSA", hash: "SHA-384" };
+const CSR_SIGNING_ALGORITHM: EcdsaParams = { hash: "SHA-384", name: "ECDSA" };
 
 // The 18-character floor is a hard, in-code guard on every export path -- the
 // UI never gets to skip it, and there is no plaintext branch to fall back to.
@@ -143,14 +143,14 @@ export const exportEncryptedKey = async (
     ["deriveKey"],
   );
   const aesKey = await crypto.subtle.deriveKey(
-    { name: "PBKDF2", salt, iterations: PBKDF2_ITERATIONS, hash: "SHA-256" },
+    { hash: "SHA-256", iterations: PBKDF2_ITERATIONS, name: "PBKDF2", salt },
     baseKey,
-    { name: "AES-CBC", length: 256 },
+    { length: 256, name: "AES-CBC" },
     false,
     ["encrypt"],
   );
   const ciphertext = new Uint8Array(
-    await crypto.subtle.encrypt({ name: "AES-CBC", iv }, aesKey, pkcs8),
+    await crypto.subtle.encrypt({ iv, name: "AES-CBC" }, aesKey, pkcs8),
   );
 
   return encodeEncryptedPrivateKeyInfo(salt, PBKDF2_ITERATIONS, iv, ciphertext);
@@ -175,9 +175,9 @@ export const importEncryptedKey = async (
     ["deriveKey"],
   );
   const aesKey = await crypto.subtle.deriveKey(
-    { name: "PBKDF2", salt: bufferOf(salt), iterations, hash: "SHA-256" },
+    { hash: "SHA-256", iterations, name: "PBKDF2", salt: bufferOf(salt) },
     baseKey,
-    { name: "AES-CBC", length: 256 },
+    { length: 256, name: "AES-CBC" },
     false,
     ["decrypt"],
   );
@@ -185,7 +185,7 @@ export const importEncryptedKey = async (
   try {
     const pkcs8 = new Uint8Array(
       await crypto.subtle.decrypt(
-        { name: "AES-CBC", iv: bufferOf(iv) },
+        { iv: bufferOf(iv), name: "AES-CBC" },
         aesKey,
         bufferOf(ciphertext),
       ),

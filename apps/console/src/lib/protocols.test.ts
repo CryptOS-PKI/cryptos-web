@@ -14,23 +14,23 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import { ServiceProtocol } from "@cryptos-pki/api-client/cryptos/node/v1/status_pb";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import type { Node } from "@/lib/mock";
 
 import * as clientMod from "@/lib/fleet/client";
 import * as modeMod from "@/lib/fleet/mode";
-import type { Node } from "@/lib/mock";
 import { __resetNodes, getNode } from "@/lib/nodes";
 import * as nodesMod from "@/lib/nodes";
 import {
   eligibleForProtocols,
   ineligibleReason,
   nodeProtocolRows,
-  PROTOCOLS,
   protocolInfo,
+  PROTOCOLS,
   switchNodeProtocol,
 } from "@/lib/protocols";
-
-import { ServiceProtocol } from "@cryptos-pki/api-client/cryptos/node/v1/status_pb";
 
 const node = (overrides: Partial<Node>): Node => ({
   address: "10.0.0.1:8443",

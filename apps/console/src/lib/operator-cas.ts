@@ -16,8 +16,6 @@ limitations under the License.
 
 import "reflect-metadata";
 import { Code, ConnectError } from "@connectrpc/connect";
-import { X509Certificate } from "@peculiar/x509";
-
 import {
   CrlSource,
   OcspMode,
@@ -25,9 +23,11 @@ import {
   OperatorCAAcknowledgement,
   OperatorCAState,
 } from "@cryptos-pki/api-client/cryptos/fleet/v1/operator_ca_pb";
+import { X509Certificate } from "@peculiar/x509";
+
+import { normalizeFingerprint } from "@/lib/fingerprint";
 import { fleetClient } from "@/lib/fleet/client";
 import { fleetMode } from "@/lib/fleet/mode";
-import { normalizeFingerprint } from "@/lib/fingerprint";
 import { levelExtfileSection } from "@/lib/operators";
 
 // The external operator CAs the Fleet Manager trusts. It holds only their
@@ -35,6 +35,11 @@ import { levelExtfileSection } from "@/lib/operators";
 // returns the fingerprint, then the same call with confirm_sha256. The admin
 // RPCs here run after first run; first run's BootstrapService takes the same
 // fields (registerRequestFields), so both screens share the form.
+
+export type CrlChoice =
+  | { der: Uint8Array; kind: "upload" }
+  | { kind: "none" }
+  | { kind: "url"; url: string };
 
 export interface CrlStatusRow {
   crlNumber: string;
@@ -44,6 +49,15 @@ export interface CrlStatusRow {
   revokedCount: bigint;
   stale: boolean;
   thisUpdate: string;
+}
+
+export type OcspChoice = "aia" | "off" | "url";
+
+export interface OcspProbeRow {
+  certStatus: string;
+  signer: OcspSigner;
+  signerNotAfter: string;
+  signerSubject: string;
 }
 
 export interface OperatorCARow {
@@ -65,20 +79,6 @@ export interface OperatorCARow {
   subject: string;
   warnings: string[];
 }
-
-export interface OcspProbeRow {
-  certStatus: string;
-  signer: OcspSigner;
-  signerNotAfter: string;
-  signerSubject: string;
-}
-
-export type CrlChoice =
-  | { der: Uint8Array; kind: "upload" }
-  | { kind: "none" }
-  | { kind: "url"; url: string };
-
-export type OcspChoice = "aia" | "off" | "url";
 
 export const crlChoiceReady = (
   kind: CrlChoice["kind"],
@@ -175,9 +175,9 @@ export const registerRequestFields = (form: RegisterForm) => ({
   ocspUrl: form.ocspMode === "url" ? form.ocspUrl.trim() : "",
 });
 
-type WireCA = Partial<Omit<OperatorCARow, "crl">> & { crl?: Partial<CrlStatusRow> };
+type WireCA = { crl?: Partial<CrlStatusRow> } & Partial<Omit<OperatorCARow, "crl">>;
 
-export const toCARow = (w: WireCA | undefined): OperatorCARow => ({
+export const toCARow = (w: undefined | WireCA): OperatorCARow => ({
   acknowledgements: [...(w?.acknowledgements ?? [])],
   crl: w?.crl
     ? {
@@ -248,7 +248,7 @@ export const operatorCABanners = (
   now: Date = new Date(),
 ): OperatorCABanner[] => {
   const out: OperatorCABanner[] = [];
-  for (const c of cas.filter(trusted)) {
+  for (const c of cas.filter((ca) => trusted(ca))) {
     const ocspOn = c.ocspMode !== OcspMode.OFF;
     if (c.crlSource === CrlSource.NONE) {
       out.push(

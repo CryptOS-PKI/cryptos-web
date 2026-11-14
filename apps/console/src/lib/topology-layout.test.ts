@@ -58,8 +58,8 @@ describe("computeTreeLayout", () => {
   it("places a node added under an existing parent at the correct depth", () => {
     const extra = {
       ...mockNodes.find((n) => n.role === "issuing")!, // clone shape
-      name: "acme-issuing-added",
       cn: "ACME Issuing CA ADDED",
+      name: "acme-issuing-added",
       parentCn: "ACME Intermediate CA G1", // an ESTABLISHED intermediate in the fixture
     };
     const l = computeTreeLayout([...mockNodes, extra]);

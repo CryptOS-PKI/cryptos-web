@@ -14,14 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import type { EnrollmentAdapter as ProtoEnrollmentAdapter } from "@cryptos-pki/api-client/cryptos/fleet/v1/fleet_pb";
+
 import { useEffect, useSyncExternalStore } from "react";
 
 import { recordAudit } from "@/lib/audit";
 import { fleetClient } from "@/lib/fleet/client";
 import { fleetMode } from "@/lib/fleet/mode";
 import { mockAdapters } from "@/lib/mock-fixtures";
-
-import type { EnrollmentAdapter as ProtoEnrollmentAdapter } from "@cryptos-pki/api-client/cryptos/fleet/v1/fleet_pb";
 
 // UI-defined config for an enrollment protocol adapter, and deliberately still
 // the fleet's *intent* rather than a node's served state.

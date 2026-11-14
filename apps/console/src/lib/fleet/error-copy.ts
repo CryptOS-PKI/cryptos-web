@@ -61,6 +61,16 @@ const CODE_COPY: Record<number, { detail: string; title: string }> = {
       "A link needs the CA certificate that signed the node's management certificate, or the node's exact management certificate, so the Fleet Manager can check it is talking to the node.",
     title: "CA certificate required",
   },
+  // A node's own refusal. The node's reason, when it gave one, is added to
+  // the detail.
+  1108: {
+    detail: "The node refused the request.",
+    title: "Node refused",
+  },
+  1500: {
+    detail: "The node rejected the configuration as invalid.",
+    title: "Configuration rejected",
+  },
   1600: {
     detail:
       "The bootstrap token is wrong, expired or already used. Each token works once: take the newest one from the Fleet Manager's log and try again.",
@@ -114,16 +124,6 @@ const CODE_COPY: Record<number, { detail: string; title: string }> = {
     detail: "The credential request can't be used.",
     title: "Credential request unusable",
   },
-  // A node's own refusal. The node's reason, when it gave one, is added to
-  // the detail.
-  1108: {
-    detail: "The node refused the request.",
-    title: "Node refused",
-  },
-  1500: {
-    detail: "The node rejected the configuration as invalid.",
-    title: "Configuration rejected",
-  },
 };
 
 const REASON_COPY: Record<string, string> = {
@@ -132,76 +132,76 @@ const REASON_COPY: Record<string, string> = {
   "1603/FIRST_RUN_DISABLED":
     "First run is switched off (firstRun: disabled). Configure the operator CA with operatorCAPath.",
 
-  "1605/NOT_A_CA":
-    "The certificate isn't a CA: it needs basicConstraints CA:TRUE and key usage keyCertSign.",
-  "1605/EXPIRING":
-    "The CA certificate has less than 30 days left. Use a CA with a longer validity.",
-  "1605/KEY_TYPE": "The CA key must be ECDSA P-384 or P-256, or RSA of 3072 bits or more.",
-  "1605/IS_NODE_CA":
-    "That is a CryptOS node's CA. A CryptOS node can never be the operator CA; use an external CA such as an offline OpenSSL CA.",
-  "1605/CRL_SIGN_MISSING":
-    "A CRL source is set, but the CA's key usage lacks cRLSign, so its CRLs can't be verified. Reissue the CA with cRLSign, or choose no CRL.",
-  "1605/NO_CRL_NOT_ACKNOWLEDGED":
-    "Choosing no CRL needs the acknowledgement that revocations made at the CA won't be seen and MCP will be refused.",
-  "1605/CRL_UNREACHABLE":
-    "The Fleet Manager couldn't fetch the CRL from that URL. Check the URL and that the Fleet Manager can reach it.",
   "1605/CRL_INVALID":
     "The CRL failed verification against the CA: check that this CA signed it and that it has a nextUpdate.",
   "1605/CRL_ROLLBACK":
     "That CRL is older than the one the Fleet Manager holds. Publish or upload a newer CRL.",
-  "1605/OCSP_UNREACHABLE":
-    "The OCSP responder didn't answer the probe. Check the URL and that the responder is running.",
-  "1605/OCSP_INVALID":
-    "The OCSP responder answered, but its response failed validation (signer, EKU OCSPSigning, validity or format).",
+  "1605/CRL_SIGN_MISSING":
+    "A CRL source is set, but the CA's key usage lacks cRLSign, so its CRLs can't be verified. Reissue the CA with cRLSign, or choose no CRL.",
+  "1605/CRL_UNREACHABLE":
+    "The Fleet Manager couldn't fetch the CRL from that URL. Check the URL and that the Fleet Manager can reach it.",
+  "1605/EXPIRING":
+    "The CA certificate has less than 30 days left. Use a CA with a longer validity.",
+  "1605/IS_NODE_CA":
+    "That is a CryptOS node's CA. A CryptOS node can never be the operator CA; use an external CA such as an offline OpenSSL CA.",
+  "1605/KEY_TYPE": "The CA key must be ECDSA P-384 or P-256, or RSA of 3072 bits or more.",
+  "1605/NO_CRL_NOT_ACKNOWLEDGED":
+    "Choosing no CRL needs the acknowledgement that revocations made at the CA won't be seen and MCP will be refused.",
+  "1605/NOT_A_CA":
+    "The certificate isn't a CA: it needs basicConstraints CA:TRUE and key usage keyCertSign.",
   "1605/NOT_CONFIRMED":
     "The fingerprint wasn't confirmed, or doesn't match the CA. Compare it with the CA certificate and confirm again.",
+  "1605/OCSP_INVALID":
+    "The OCSP responder answered, but its response failed validation (signer, EKU OCSPSigning, validity or format).",
+  "1605/OCSP_UNREACHABLE":
+    "The OCSP responder didn't answer the probe. Check the URL and that the responder is running.",
   "1605/ROTATION_IN_PROGRESS":
     "A retiring operator CA already exists. Retire it before registering another CA.",
 
-  "1606/SIZE": "The CSR is larger than 4 KiB.",
+  "1606/KEY_TYPE": "The CSR key must be ECDSA P-384 or RSA of 3072 bits or more.",
   "1606/SIGNATURE":
     "The CSR's signature doesn't verify. It may be truncated, or not match its own key.",
+  "1606/SIZE": "The CSR is larger than 4 KiB.",
   "1606/SUBJECT_MISMATCH":
     "The CSR's subject must be exactly one common name, the holder's email (CN=<email>).",
-  "1606/KEY_TYPE": "The CSR key must be ECDSA P-384 or RSA of 3072 bits or more.",
 
-  "1608/STALE_CRL": "The operator CA's CRL is past its nextUpdate. Publish or upload a new CRL.",
-  "1608/STALE_OCSP":
-    "OCSP is configured for this certificate, but the responder gave no fresh answer and there is no fresh CRL to fall back on.",
-  "1608/STALE_DENYLIST":
-    "This Fleet Manager hasn't read its denylist for over 5 minutes (is Postgres reachable?).",
-  "1608/NO_CRL":
-    "MCP needs a CRL: this certificate's operator CA has no CRL source. Set one on the Operator CAs page.",
   "1608/DATABASE_REQUIRED":
     "The Fleet Manager denylist needs Postgres, which this Fleet Manager runs without. Revoke at the CA and publish a CRL instead.",
+  "1608/NO_CRL":
+    "MCP needs a CRL: this certificate's operator CA has no CRL source. Set one on the Operator CAs page.",
+  "1608/STALE_CRL": "The operator CA's CRL is past its nextUpdate. Publish or upload a new CRL.",
+  "1608/STALE_DENYLIST":
+    "This Fleet Manager hasn't read its denylist for over 5 minutes (is Postgres reachable?).",
+  "1608/STALE_OCSP":
+    "OCSP is configured for this certificate, but the responder gave no fresh answer and there is no fresh CRL to fall back on.",
 
-  "1610/NOT_CHAINED":
-    "The certificate doesn't verify against the operator CA for client authentication (wrong CA, expired, or an unknown critical extension).",
-  "1610/NOT_ACTIVE_ANCHOR":
-    "The certificate chains to a retiring operator CA. New credentials must come from the active CA.",
-  "1610/WRONG_LEVEL":
-    "The level extension (1.3.6.1.4.1.59999.1.1) is missing or names the wrong level. Sign with the matching op_<level> section.",
-  "1610/LEVEL_EXT_CRITICAL":
-    "The level extension is marked critical. It must be non-critical, or browsers can't sign in with it.",
-  "1610/EKU": "The extended key usage must be exactly clientAuth.",
-  "1610/KEY_USAGE":
-    "The key usage must include digitalSignature, and must not include keyCertSign or cRLSign.",
   "1610/BASIC_CONSTRAINTS": "basicConstraints must be present and CA:FALSE.",
-  "1610/SUBJECT_MISMATCH":
-    "The certificate's subject must be exactly one common name, the holder's email (CN=<email>).",
-  "1610/KEY_TYPE": "The certificate key must be ECDSA P-384 or RSA of 3072 bits or more.",
+  "1610/DUPLICATE": "This certificate is already recorded.",
+  "1610/EKU": "The extended key usage must be exactly clientAuth.",
+  "1610/EXPIRING": "The certificate has less than 1 day left.",
+  "1610/FULL_NAME": "The full name must be 1 to 128 characters, with no control characters.",
   "1610/KEY_MISMATCH":
     "The certificate's public key differs from the request's. Upload the certificate signed from this request's CSR.",
-  "1610/EXPIRING": "The certificate has less than 1 day left.",
-  "1610/REVOKED": "The certificate is on the Fleet Manager denylist or in the CA's CRL.",
-  "1610/REVOKED_OCSP": "The operator CA's OCSP responder says this certificate is revoked.",
+  "1610/KEY_TYPE": "The certificate key must be ECDSA P-384 or RSA of 3072 bits or more.",
+  "1610/KEY_USAGE":
+    "The key usage must include digitalSignature, and must not include keyCertSign or cRLSign.",
+  "1610/LEVEL_EXT_CRITICAL":
+    "The level extension is marked critical. It must be non-critical, or browsers can't sign in with it.",
+  "1610/NOT_ACTIVE_ANCHOR":
+    "The certificate chains to a retiring operator CA. New credentials must come from the active CA.",
+  "1610/NOT_CHAINED":
+    "The certificate doesn't verify against the operator CA for client authentication (wrong CA, expired, or an unknown critical extension).",
   "1610/OCSP_UNKNOWN":
     "The operator CA's OCSP responder doesn't know this certificate, which counts as revoked.",
-  "1610/DUPLICATE": "This certificate is already recorded.",
-  "1610/FULL_NAME": "The full name must be 1 to 128 characters, with no control characters.",
+  "1610/REVOKED": "The certificate is on the Fleet Manager denylist or in the CA's CRL.",
+  "1610/REVOKED_OCSP": "The operator CA's OCSP responder says this certificate is revoked.",
+  "1610/SUBJECT_MISMATCH":
+    "The certificate's subject must be exactly one common name, the holder's email (CN=<email>).",
+  "1610/WRONG_LEVEL":
+    "The level extension (1.3.6.1.4.1.59999.1.1) is missing or names the wrong level. Sign with the matching op_<level> section.",
 
-  "1611/NOT_FOUND": "No credential request has that id.",
   "1611/EXPIRED": "The credential request has expired (after 30 days). Make a new request.",
+  "1611/NOT_FOUND": "No credential request has that id.",
   "1611/NOT_PENDING": "The credential request was already completed or cancelled.",
 };
 

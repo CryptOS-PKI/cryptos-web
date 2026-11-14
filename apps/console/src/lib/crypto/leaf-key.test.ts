@@ -212,8 +212,8 @@ describe("exportEncryptedKey", () => {
     // i.e. a real EncryptedPrivateKeyInfo rather than an unencrypted key.
     expect(bytes[0]).toBe(0x30);
     const pbes2Oid = new Uint8Array([0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x05, 0x0d]);
-    const haystack = Array.from(bytes).join(",");
-    expect(haystack).toContain(Array.from(pbes2Oid).join(","));
+    const haystack = [...bytes].join(",");
+    expect(haystack).toContain([...pbes2Oid].join(","));
   });
 
   it("rejects a passphrase shorter than 18 characters", async () => {

@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 import type { MachineConfig } from "@cryptos-pki/api-client/cryptos/node/v1/config_pb";
+
 import { fleetClient } from "@/lib/fleet/client";
 import { fleetMode } from "@/lib/fleet/mode";
 
@@ -57,7 +58,7 @@ export const applyNodeConfig = async (
     throw new Error("applyNodeConfig: live config apply requires live mode");
   }
 
-  const response = await fleetClient().applyNodeConfig({ nodeName, config });
+  const response = await fleetClient().applyNodeConfig({ config, nodeName });
   return {
     generation: Number(response.generation),
     requiresReboot: response.requiresReboot,

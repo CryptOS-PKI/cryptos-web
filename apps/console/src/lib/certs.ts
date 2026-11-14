@@ -14,26 +14,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import type { Certificate } from "@cryptos-pki/api-client/cryptos/fleet/v1/fleet_pb";
+
 import { useEffect, useMemo, useSyncExternalStore } from "react";
+
+import type { Node } from "@/lib/mock";
 
 import { recordAudit } from "@/lib/audit";
 import { fleetClient } from "@/lib/fleet/client";
 import { fleetMode } from "@/lib/fleet/mode";
 import { mockNodes } from "@/lib/mock-fixtures";
-import type { Node } from "@/lib/mock";
-
-import type { Certificate } from "@cryptos-pki/api-client/cryptos/fleet/v1/fleet_pb";
-
-export type CertKind = "leaf" | "subordinate-ca";
-export type CertStatus = "EXPIRED" | "REVOKED" | "VALID";
-export type RevocationReason =
-  | "affiliationChanged"
-  | "cessationOfOperation"
-  | "keyCompromise"
-  | "superseded"
-  | "unspecified";
 
 export interface Cert {
+  childNodeName?: string;
   eku: string[];
   issuedAt: string;
   issuerNodeName: string;
@@ -48,8 +41,9 @@ export interface Cert {
   serial: string;
   status: CertStatus;
   subjectCn: string;
-  childNodeName?: string;
 }
+export type CertKind = "leaf" | "subordinate-ca";
+export type CertStatus = "EXPIRED" | "REVOKED" | "VALID";
 
 export interface IssueDraft {
   // csrDer is the browser-generated PKCS#10 CSR. The live path forwards it to
@@ -64,6 +58,13 @@ export interface IssueDraft {
   validityDays: number;
 }
 
+export type RevocationReason =
+  | "affiliationChanged"
+  | "cessationOfOperation"
+  | "keyCompromise"
+  | "superseded"
+  | "unspecified";
+
 // Issuance capability: ESTABLISHED only; Root -> sub-CA, Intermediate -> both,
 // Issuing -> leaf. Anything else issues nothing.
 export const canIssue = (node: Node): CertKind[] => {
@@ -75,7 +76,7 @@ export const canIssue = (node: Node): CertKind[] => {
 
 // Deterministic pseudo-serial so seeded fixtures are stable across reloads.
 const hex = (seed: number): string => {
-  let h = (seed * 2654435761) >>> 0;
+  let h = (seed * 2_654_435_761) >>> 0;
   let out = "";
   for (let i = 0; i < 8; i += 1) {
     out += (h & 0xf).toString(16);
@@ -400,11 +401,11 @@ export const issueCert = async (issuerNodeName: string, draft: IssueDraft): Prom
 // RFC 5280 CRLReason codes for the reasons the revoke dialog offers. The
 // manager forwards this code to the issuing node's RevokeCertificate unchanged.
 const REASON_CODE: Record<RevocationReason, number> = {
-  unspecified: 0,
-  keyCompromise: 1,
   affiliationChanged: 3,
-  superseded: 4,
   cessationOfOperation: 5,
+  keyCompromise: 1,
+  superseded: 4,
+  unspecified: 0,
 };
 
 export const revokeCert = async (serial: string, reason: RevocationReason): Promise<void> => {
@@ -428,8 +429,8 @@ export const revokeCert = async (serial: string, reason: RevocationReason): Prom
   const cert = liveCerts.find((c) => c.serial === serial);
   await fleetClient().revokeCertificate({
     nodeName: cert?.issuerNodeName ?? "",
-    serialHex: serial,
     reasonCode: REASON_CODE[reason],
+    serialHex: serial,
   });
   // Refetch unfiltered: refreshLiveCerts replaces the whole cache, so a
   // node-scoped refetch would transiently collapse the all-nodes view.

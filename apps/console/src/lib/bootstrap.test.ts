@@ -14,10 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
 import { BootstrapState } from "@cryptos-pki/api-client/cryptos/fleet/v1/bootstrap_pb";
 import { ErrorReason } from "@cryptos-pki/api-client/cryptos/fleet/v1/errors_pb";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
 import {
   __resetBootstrap,
   BOOTSTRAP_SESSION_HEADER,
@@ -51,10 +51,7 @@ const stubManager = (responses: Record<string, unknown>) => {
         url,
       });
       const method = url.split("/").pop() ?? "";
-      return new Response(JSON.stringify(responses[method] ?? {}), {
-        headers: { "content-type": "application/json" },
-        status: 200,
-      });
+      return Response.json(responses[method] ?? {});
     }),
   );
   return calls;

@@ -16,6 +16,12 @@ limitations under the License.
 
 import "reflect-metadata";
 import {
+  CrlSource,
+  OcspMode,
+  OperatorCAAcknowledgement,
+  OperatorCAState,
+} from "@cryptos-pki/api-client/cryptos/fleet/v1/operator_ca_pb";
+import {
   BasicConstraintsExtension,
   KeyUsageFlags,
   KeyUsagesExtension,
@@ -23,12 +29,6 @@ import {
 } from "@peculiar/x509";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import {
-  CrlSource,
-  OcspMode,
-  OperatorCAAcknowledgement,
-  OperatorCAState,
-} from "@cryptos-pki/api-client/cryptos/fleet/v1/operator_ca_pb";
 import { colonFingerprint, normalizeFingerprint } from "@/lib/fingerprint";
 import * as clientMod from "@/lib/fleet/client";
 import { errorCode, errorReason } from "@/lib/fleet/error-code";
@@ -36,8 +36,8 @@ import * as modeMod from "@/lib/fleet/mode";
 import {
   __resetOperatorCAs,
   listOperatorCAs,
-  type OperatorCARow,
   operatorCABanners,
+  type OperatorCARow,
   registerOperatorCA,
   registerRequestFields,
   retireOperatorCA,
@@ -259,7 +259,7 @@ describe("operator CAs (mock mode)", () => {
       crl: { kind: "none" },
       ocspMode: "aia",
       ocspUrl: "",
-    }).catch((e: unknown) => e);
+    }).catch((error_: unknown) => error_);
     expect(errorCode(error)).toBe(1605);
     expect(errorReason(error)).toBe("ROTATION_IN_PROGRESS");
   });
@@ -268,7 +268,9 @@ describe("operator CAs (mock mode)", () => {
     const active = (await listOperatorCAs()).find(
       (c) => c.state === OperatorCAState.OPERATOR_CA_STATE_ACTIVE,
     );
-    const error = await retireOperatorCA(active?.sha256 ?? "", true).catch((e: unknown) => e);
+    const error = await retireOperatorCA(active?.sha256 ?? "", true).catch(
+      (error_: unknown) => error_,
+    );
     expect(errorCode(error)).toBe(1609);
   });
 

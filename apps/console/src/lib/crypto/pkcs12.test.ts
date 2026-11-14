@@ -32,8 +32,8 @@ const STRONG = "correct-horse-battery-staple";
 // A minimal DER reader for the round-trip test: it only has to walk the shapes
 // assemblePkcs12 emits (definite lengths, no high tag numbers).
 interface Tlv {
-  tag: number;
   content: Uint8Array;
+  tag: number;
 }
 
 const readTlv = (bytes: Uint8Array, offset: number): { next: number; tlv: Tlv } => {
@@ -128,7 +128,7 @@ const certBags = (pfx: Uint8Array): Uint8Array[] => {
 };
 
 const ECDSA_P384 = { name: "ECDSA", namedCurve: "P-384" } as const;
-const SHA384 = { name: "ECDSA", hash: "SHA-384" } as const;
+const SHA384 = { hash: "SHA-384", name: "ECDSA" } as const;
 
 // makeAnchorAndLeaf mints a throwaway P-384 CA and a leaf for privateKey's
 // public half, so the PFX carries real certificates rather than opaque bytes.

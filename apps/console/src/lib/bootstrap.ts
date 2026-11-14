@@ -16,21 +16,21 @@ limitations under the License.
 
 import { Code, ConnectError, createClient, type Interceptor } from "@connectrpc/connect";
 import { createConnectTransport } from "@connectrpc/connect-web";
-
 import {
   BootstrapService,
   BootstrapState,
 } from "@cryptos-pki/api-client/cryptos/fleet/v1/bootstrap_pb";
 import { ErrorReason } from "@cryptos-pki/api-client/cryptos/fleet/v1/errors_pb";
+
+import { normalizeFingerprint } from "@/lib/fingerprint";
 import { reportApiErrors } from "@/lib/fleet/error-reporter";
 import { fleetMode } from "@/lib/fleet/mode";
-import { normalizeFingerprint } from "@/lib/fingerprint";
 import {
   mockPreview,
   mockProbe,
   type RegisterForm,
-  type RegisterResult,
   registerRequestFields,
+  type RegisterResult,
   toRegisterResult,
 } from "@/lib/operator-cas";
 import { levelExtfileSection } from "@/lib/operators";

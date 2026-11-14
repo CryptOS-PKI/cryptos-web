@@ -29,10 +29,10 @@ import {
 export interface ParsedCsr {
   /** DER bytes to send to IssueLeaf. */
   csrDer: Uint8Array;
-  /** Human-readable key description, e.g. "RSA 3072" or "ECDSA P-384". */
-  keyDescription: string;
   /** RSA modulus size, when the subject key is RSA. */
   keyBits?: number;
+  /** Human-readable key description, e.g. "RSA 3072" or "ECDSA P-384". */
+  keyDescription: string;
   sans: string[];
   subjectCn: string;
   /** The full subject DN, for the cases where the CN alone is not enough. */

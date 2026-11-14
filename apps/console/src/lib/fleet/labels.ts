@@ -22,14 +22,14 @@ limitations under the License.
 import type { IdentityState, Node, NodeRole } from "@/lib/mock";
 
 export const roleLabels: Record<NodeRole, string> = {
-  root: "Root CA",
   intermediate: "Intermediate CA",
   issuing: "Issuing CA",
+  root: "Root CA",
 };
 
 export const identityStateLabels: Record<IdentityState, string> = {
-  ESTABLISHED: "ESTABLISHED",
   AWAITING_CERT: "AWAITING_CERT",
+  ESTABLISHED: "ESTABLISHED",
   REVOKED: "REVOKED",
 };
 

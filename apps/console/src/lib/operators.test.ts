@@ -117,7 +117,8 @@ describe("operators (mock mode)", () => {
   });
 
   it("denies a credential and warns to revoke at the CA as well", async () => {
-    const [target] = (await listOperatorCredentials()).filter((r) => !r.denylisted);
+    const target = (await listOperatorCredentials()).find((r) => !r.denylisted);
+    if (!target) throw new Error("fixture has no active credential");
     const result = await denyOperatorCredential({
       note: "left the team",
       reasonCode: 3,

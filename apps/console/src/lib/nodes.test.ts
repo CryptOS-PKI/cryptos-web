@@ -14,6 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import type { NodeSummary } from "@cryptos-pki/api-client/cryptos/fleet/v1/fleet_pb";
+
+import {
+  type ProtocolStatus,
+  ServiceProtocol,
+} from "@cryptos-pki/api-client/cryptos/node/v1/status_pb";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { mockNodes } from "@/lib/mock-fixtures";
@@ -27,12 +33,6 @@ import {
   renameNode,
   setMockNodeProtocol,
 } from "@/lib/nodes";
-
-import type { NodeSummary } from "@cryptos-pki/api-client/cryptos/fleet/v1/fleet_pb";
-import {
-  ServiceProtocol,
-  type ProtocolStatus,
-} from "@cryptos-pki/api-client/cryptos/node/v1/status_pb";
 
 // A NodeSummary carries only the fields the manager's read-through view sets;
 // the mapper defaults the rest. Cast a partial rather than build the full
@@ -54,18 +54,18 @@ describe("nodes store", () => {
   it("addNode appends and getNode resolves it; reference changes on mutation", () => {
     const before = nodesList();
     addNode({
-      name: "acme-issuing-x9",
       address: "10.20.9.9:8443",
-      role: "issuing",
-      identityState: "ESTABLISHED",
-      cn: "ACME Issuing CA X9",
-      parentCn: "ACME Intermediate CA G1",
-      issuer: "ACME Intermediate CA G1",
-      issued: 0,
-      revoked: 0,
-      tpm: "UNAVAILABLE · nodeID",
-      fleetManager: { linked: true, peerCertDays: 1 },
       bootCount: 1,
+      cn: "ACME Issuing CA X9",
+      fleetManager: { linked: true, peerCertDays: 1 },
+      identityState: "ESTABLISHED",
+      issued: 0,
+      issuer: "ACME Intermediate CA G1",
+      name: "acme-issuing-x9",
+      parentCn: "ACME Intermediate CA G1",
+      revoked: 0,
+      role: "issuing",
+      tpm: "UNAVAILABLE · nodeID",
       uptime: "0d 01h",
     });
     expect(nodesList()).not.toBe(before);
@@ -78,9 +78,9 @@ describe("fromSummary", () => {
   it("derives parentCn from issuer for a subordinate (issuer !== cn)", () => {
     const node = fromSummary(
       summary({
-        name: "pki-inter",
         cn: "ACME Intermediate CA",
         issuer: "ACME Root CA",
+        name: "pki-inter",
         role: "intermediate",
       }),
     );
@@ -89,13 +89,13 @@ describe("fromSummary", () => {
 
   it("leaves a self-signed root parentless (issuer === cn)", () => {
     const node = fromSummary(
-      summary({ name: "pki-root", cn: "ACME Root CA", issuer: "ACME Root CA", role: "root" }),
+      summary({ cn: "ACME Root CA", issuer: "ACME Root CA", name: "pki-root", role: "root" }),
     );
     expect(node.parentCn).toBeUndefined();
   });
 
   it("leaves parentCn undefined when issuer is empty", () => {
-    const node = fromSummary(summary({ name: "pki-root", cn: "ACME Root CA", issuer: "" }));
+    const node = fromSummary(summary({ cn: "ACME Root CA", issuer: "", name: "pki-root" }));
     expect(node.parentCn).toBeUndefined();
   });
 
@@ -106,15 +106,15 @@ describe("fromSummary", () => {
   });
 
   it("marks the node linked only when health is UP (1)", () => {
-    expect(fromSummary(summary({ name: "up", health: 1 })).fleetManager.linked).toBe(true);
-    expect(fromSummary(summary({ name: "down", health: 2 })).fleetManager.linked).toBe(false);
+    expect(fromSummary(summary({ health: 1, name: "up" })).fleetManager.linked).toBe(true);
+    expect(fromSummary(summary({ health: 2, name: "down" })).fleetManager.linked).toBe(false);
   });
 
   it("passes through a known identityState and defaults an unknown one", () => {
-    expect(fromSummary(summary({ name: "a", identityState: "ESTABLISHED" })).identityState).toBe(
+    expect(fromSummary(summary({ identityState: "ESTABLISHED", name: "a" })).identityState).toBe(
       "ESTABLISHED",
     );
-    expect(fromSummary(summary({ name: "b", identityState: "BOGUS" })).identityState).toBe(
+    expect(fromSummary(summary({ identityState: "BOGUS", name: "b" })).identityState).toBe(
       "AWAITING_CERT",
     );
   });
@@ -298,7 +298,7 @@ describe("chainToRoot", () => {
   it("returns the ordered chain from the root to the node", () => {
     const chain = chainToRoot(getNode("acme-issuing-01")!).map((n) => n.name);
     expect(chain[0]).toBe("acme-root-01");
-    expect(chain[chain.length - 1]).toBe("acme-issuing-01");
+    expect(chain.at(-1)).toBe("acme-issuing-01");
     expect(chain).toContain("acme-intermediate-01");
   });
 

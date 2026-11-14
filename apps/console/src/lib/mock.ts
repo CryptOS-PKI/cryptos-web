@@ -30,14 +30,68 @@ limitations under the License.
 import { summarize } from "@/lib/fleet/labels";
 import { mockNodes } from "@/lib/mock-fixtures";
 
-export type NodeRole = "root" | "intermediate" | "issuing";
+/** Fleet Manager peer-cert linkage for a node. */
+export interface FleetManagerLink {
+  /** Whether the node currently holds a valid peer certificate. */
+  linked: boolean;
+  /** Free-form status for the revoked/unlinked case. */
+  note?: string;
+  /** Age of the peer certificate in days; undefined when pulled/unlinked. */
+  peerCertDays?: number;
+}
 
-export type IdentityState = "ESTABLISHED" | "AWAITING_CERT" | "REVOKED";
+export type IdentityState = "AWAITING_CERT" | "ESTABLISHED" | "REVOKED";
 
-// The enrolment protocols a node can report switch state for (ProtocolStatus).
-// SCEP and Windows autoenrollment have no Pki block yet (cryptos#185, #108), so
-// a node never reports them and they are not part of this union.
-export type ProtocolKind = "acme" | "est";
+export interface Node {
+  /** mTLS gRPC address the manager reaches the node on. */
+  address: string;
+  /** Times the node has booted. */
+  bootCount: number;
+  /** Subject common name on this CA's own certificate. */
+  cn: string;
+  /** Present on root nodes: the FM's dedicated connection context for this root. */
+  connection?: RootConnection;
+  /** CRL distribution point; present only once the CA is established and issuing. */
+  crl?: string;
+  /** Fleet Manager peer-cert linkage. */
+  fleetManager: FleetManagerLink;
+  /**
+   * Stable fleet inventory identifier (NodeSummary.id): what RenameNode
+   * addresses the node by, so the name can change without losing the node.
+   * Undefined in the mock fixtures, which stay keyed by name only.
+   */
+  id?: string;
+  identityState: IdentityState;
+  /** Count of leaf/sub-CA certificates this node has issued. */
+  issued: number;
+  /** Human summary of the issuer, as rendered in the detail panel. */
+  issuer: string;
+  /** Operator-facing node name (also the route param). Renameable (#87). */
+  name: string;
+  /** OCSP responder endpoint; present only once the CA is established and issuing. */
+  ocsp?: string;
+  /** Common name of the parent CA that signs this node; undefined for the root. */
+  parentCn?: string;
+  /**
+   * The node's reported enrolment protocol state (NodeSummary.protocols).
+   * Undefined for a node that has never reported status, or that only reports
+   * protocols this fixture leaves unset.
+   */
+  protocols?: NodeProtocolStatus[];
+  /**
+   * True when the node holds a staged change that only takes effect on
+   * reboot (NodeSummary.reboot_required). Undefined in the mock fixtures,
+   * which treat it as false.
+   */
+  rebootRequired?: boolean;
+  /** Count of certificates this node has revoked. */
+  revoked: number;
+  role: NodeRole;
+  /** TPM / hardware-root attestation summary for the node's key material. */
+  tpm: string;
+  /** Human-readable uptime since last boot. */
+  uptime: string;
+}
 
 /**
  * A node's reported switch state for one enrolment protocol, mirroring
@@ -45,21 +99,18 @@ export type ProtocolKind = "acme" | "est";
  * the node's next boot.
  */
 export interface NodeProtocolStatus {
-  protocol: ProtocolKind;
   configured: boolean;
-  running: boolean;
+  protocol: ProtocolKind;
   rebootPending: boolean;
+  running: boolean;
 }
 
-/** Fleet Manager peer-cert linkage for a node. */
-export interface FleetManagerLink {
-  /** Whether the node currently holds a valid peer certificate. */
-  linked: boolean;
-  /** Age of the peer certificate in days; undefined when pulled/unlinked. */
-  peerCertDays?: number;
-  /** Free-form status for the revoked/unlinked case. */
-  note?: string;
-}
+export type NodeRole = "intermediate" | "issuing" | "root";
+
+// The enrolment protocols a node can report switch state for (ProtocolStatus).
+// SCEP and Windows autoenrollment have no Pki block yet (cryptos#185, #108), so
+// a node never reports them and they are not part of this union.
+export type ProtocolKind = "acme" | "est";
 
 /** How the Fleet Manager reaches a root CA: a per-root mTLS connection context. */
 export interface RootConnection {
@@ -69,61 +120,10 @@ export interface RootConnection {
   mtlsIdentity: string;
 }
 
-export interface Node {
-  /** Operator-facing node name (also the route param). Renameable (#87). */
-  name: string;
-  /**
-   * Stable fleet inventory identifier (NodeSummary.id): what RenameNode
-   * addresses the node by, so the name can change without losing the node.
-   * Undefined in the mock fixtures, which stay keyed by name only.
-   */
-  id?: string;
-  /** mTLS gRPC address the manager reaches the node on. */
-  address: string;
-  role: NodeRole;
-  identityState: IdentityState;
-  /** Subject common name on this CA's own certificate. */
-  cn: string;
-  /** Common name of the parent CA that signs this node; undefined for the root. */
-  parentCn?: string;
-  /** Human summary of the issuer, as rendered in the detail panel. */
-  issuer: string;
-  /** Count of leaf/sub-CA certificates this node has issued. */
-  issued: number;
-  /** Count of certificates this node has revoked. */
-  revoked: number;
-  /** TPM / hardware-root attestation summary for the node's key material. */
-  tpm: string;
-  /** Fleet Manager peer-cert linkage. */
-  fleetManager: FleetManagerLink;
-  /** Times the node has booted. */
-  bootCount: number;
-  /** Human-readable uptime since last boot. */
-  uptime: string;
-  /** CRL distribution point; present only once the CA is established and issuing. */
-  crl?: string;
-  /** OCSP responder endpoint; present only once the CA is established and issuing. */
-  ocsp?: string;
-  /**
-   * True when the node holds a staged change that only takes effect on
-   * reboot (NodeSummary.reboot_required). Undefined in the mock fixtures,
-   * which treat it as false.
-   */
-  rebootRequired?: boolean;
-  /**
-   * The node's reported enrolment protocol state (NodeSummary.protocols).
-   * Undefined for a node that has never reported status, or that only reports
-   * protocols this fixture leaves unset.
-   */
-  protocols?: NodeProtocolStatus[];
-  /** Present on root nodes: the FM's dedicated connection context for this root. */
-  connection?: RootConnection;
-}
-
 /** A resolved trust edge from a parent CA to a child CA. */
 export interface TrustEdge {
-  parent: Node;
   child: Node;
+  parent: Node;
 }
 
 /** Every parent->child trust edge implied by the nodes' `parentCn` links. */
@@ -132,7 +132,7 @@ export const trustEdges = (): TrustEdge[] => {
   for (const child of mockNodes) {
     if (!child.parentCn) continue;
     const parent = mockNodes.find((n) => n.cn === child.parentCn);
-    if (parent) edges.push({ parent, child });
+    if (parent) edges.push({ child, parent });
   }
   return edges;
 };

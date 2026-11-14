@@ -14,9 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import type { FleetMode } from "@/lib/fleet/mode";
-
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import type { FleetMode } from "@/lib/fleet/mode";
 
 // currentMode drives the mocked fleetMode(); each describe sets it in a
 // beforeEach so the mock and live paths do not leak into one another.

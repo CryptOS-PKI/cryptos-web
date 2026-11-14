@@ -24,11 +24,10 @@ import { fleetMode } from "@/lib/fleet/mode";
 // owns them, and the browser's client certificate is what authenticates the
 // operator approving the request.
 
-export interface ConsentRequest {
-  allowedCeilings: OperatorLevel[];
-  clientName: string;
-  operator: { cn: string; level: OperatorLevel; serial: string };
-  redirectHost: string;
+export interface ConsentDecision {
+  approve: boolean;
+  label: string;
+  levelCeiling: OperatorLevel;
 }
 
 export type ConsentLoad =
@@ -36,10 +35,18 @@ export type ConsentLoad =
   | { kind: "expired" }
   | { kind: "ready"; request: ConsentRequest };
 
-export interface ConsentDecision {
-  approve: boolean;
-  label: string;
-  levelCeiling: OperatorLevel;
+export interface ConsentRequest {
+  allowedCeilings: OperatorLevel[];
+  clientName: string;
+  operator: { cn: string; level: OperatorLevel; serial: string };
+  redirectHost: string;
+}
+
+interface WireConsent {
+  allowed_ceilings: string[];
+  client_name: string;
+  operator: { cn: string; level: string; serial: string };
+  redirect_host: string;
 }
 
 export class ConsentError extends Error {
@@ -50,13 +57,6 @@ export class ConsentError extends Error {
     super(message);
     this.name = "ConsentError";
   }
-}
-
-interface WireConsent {
-  allowed_ceilings: string[];
-  client_name: string;
-  operator: { cn: string; level: string; serial: string };
-  redirect_host: string;
 }
 
 const MOCK_REQUEST: ConsentRequest = {

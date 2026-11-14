@@ -15,8 +15,6 @@ limitations under the License.
 */
 
 import { type DescMessage, fromJson, type JsonValue, toJson } from "@bufbuild/protobuf";
-import { describe, expect, it } from "vitest";
-
 import {
   AdoptNodeResponseSchema,
   ApprovalSchema,
@@ -29,6 +27,7 @@ import { OperatorCASchema } from "@cryptos-pki/api-client/cryptos/fleet/v1/opera
 import { AuditEventSchema } from "@cryptos-pki/api-client/cryptos/node/v1/audit_pb";
 import { MachineConfigSchema } from "@cryptos-pki/api-client/cryptos/node/v1/config_pb";
 import { NodeStatusSchema } from "@cryptos-pki/api-client/cryptos/node/v1/status_pb";
+import { describe, expect, it } from "vitest";
 
 // Connect-Web decodes JSON responses with ignoreUnknownFields on, so a field the
 // generated stubs do not know about is dropped without an error. A config read
