@@ -65,7 +65,7 @@ const issuingFanOut = (options: {
         : "ESTABLISHED";
     const issued = identityState === "ESTABLISHED" ? 60 + i * 7 : 0;
     return {
-      address: `10.20.${subnet}.${10 + i}:8443`,
+      address: `192.0.2.${100 + subnet * 10 + i}:8443`,
       bootCount: 1,
       cn: `${cnPrefix}${n}`,
       crl:
@@ -95,7 +95,7 @@ const issuingFanOut = (options: {
 
 export const mockNodes: Node[] = [
   {
-    address: "10.20.0.11:8443",
+    address: "192.0.2.11:8443",
     bootCount: 1,
     cn: "ACME Root CA G1",
     connection: {
@@ -113,7 +113,7 @@ export const mockNodes: Node[] = [
     uptime: "21d 03h",
   },
   {
-    address: "10.20.0.21:8443",
+    address: "192.0.2.21:8443",
     bootCount: 1,
     cn: "ACME Intermediate CA G1",
     crl: "http://pki.acme.example/int-g1/crl",
@@ -130,7 +130,7 @@ export const mockNodes: Node[] = [
     uptime: "6d 04h",
   },
   {
-    address: "10.20.0.22:8443",
+    address: "192.0.2.22:8443",
     bootCount: 2,
     cn: "ACME Intermediate CA G2",
     crl: "http://pki.acme.example/int-g2/crl",
@@ -176,7 +176,7 @@ export const mockNodes: Node[] = [
     subnet: 2,
   }),
   {
-    address: "10.20.10.11:8443",
+    address: "192.0.2.31:8443",
     bootCount: 1,
     cn: "ACME Root CA R2",
     connection: {
@@ -194,7 +194,7 @@ export const mockNodes: Node[] = [
     uptime: "9d 11h",
   },
   {
-    address: "10.20.10.21:8443",
+    address: "192.0.2.32:8443",
     bootCount: 1,
     cn: "ACME Intermediate CA R2",
     crl: "http://pki.acme.example/int-r2/crl",
@@ -241,7 +241,7 @@ const daysFromNow = (days: number): string =>
 
 export const mockEnrollments: EnrollmentRequest[] = [
   {
-    address: "10.20.1.80:8443",
+    address: "192.0.2.81:8443",
     attestation: { nodeId: "nid-7f3a", tpm: "TPM · sealed" },
     csr: { keyType: "ECDSA P-384", subjectCn: "ACME Issuing CA G4" },
     id: "enr-0001",
@@ -253,7 +253,7 @@ export const mockEnrollments: EnrollmentRequest[] = [
     status: "PENDING",
   },
   {
-    address: "10.20.10.80:8443",
+    address: "192.0.2.83:8443",
     attestation: { nodeId: "nid-2b9c", tpm: "TPM · sealed" },
     csr: { keyType: "ECDSA P-384", subjectCn: "ACME Intermediate CA R3" },
     id: "enr-0002",
@@ -265,7 +265,7 @@ export const mockEnrollments: EnrollmentRequest[] = [
     status: "PENDING",
   },
   {
-    address: "10.20.2.80:8443",
+    address: "192.0.2.82:8443",
     attestation: { nodeId: "nid-9d11", tpm: "UNAVAILABLE · nodeID" },
     csr: { keyType: "ECDSA P-256", subjectCn: "ACME Issuing CA H3" },
     id: "enr-0003",

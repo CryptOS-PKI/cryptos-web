@@ -50,7 +50,7 @@ const STATUS_TONE: Record<EnrollmentStatus, string> = {
 
 // A deterministic simulated request (varied by the current count, no RNG).
 const simulated = (n: number) => ({
-  address: `10.20.1.${100 + n}:8443`,
+  address: `192.0.2.${150 + n}:8443`,
   attestation: { nodeId: `nid-sim${n}`, tpm: "TPM · sealed" },
   csr: { keyType: "ECDSA P-384", subjectCn: `ACME Issuing CA S${n}` },
   parentCn: "ACME Intermediate CA G1",
