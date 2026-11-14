@@ -14,9 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { afterEach, describe, expect, it, vi } from "vitest";
-
 import type { MachineConfig } from "@cryptos-pki/api-client/cryptos/node/v1/config_pb";
+
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   adoptNode,
@@ -44,7 +44,7 @@ describe("adopt (mock mode)", () => {
 
   it("rejects an empty endpoint before any call", async () => {
     vi.spyOn(modeMod, "fleetMode").mockReturnValue("mock");
-    await expect(previewAdoption("   ")).rejects.toThrow(/endpoint/i);
+    await expect(previewAdoption(" ".repeat(3))).rejects.toThrow(/endpoint/i);
   });
 
   it("streams the documented phase sequence ending in established/done", async () => {

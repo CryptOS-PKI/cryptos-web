@@ -21,7 +21,7 @@ limitations under the License.
 // explicit dev opt-in (VITE_FLEET_MODE=mock) that keeps every surface on the
 // in-memory fixtures for offline UI work. Unset or unrecognized values default
 // to `live` now that the full loop is proven against a real node (X1 cutover).
-export type FleetMode = "live" | "live-auth" | "mock";
+export type FleetMode = "live-auth" | "live" | "mock";
 
 export const fleetMode = (): FleetMode => {
   const raw = import.meta.env.VITE_FLEET_MODE;

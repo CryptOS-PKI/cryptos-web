@@ -30,18 +30,18 @@ const REASON_METADATA_KEY = "x-cryptos-error-reason";
 const NODE_REASON_METADATA_KEY = "x-cryptos-node-reason";
 
 export const ErrorCode = {
-  OperatorCAUnconfigured: 1400,
-  BootstrapTokenInvalid: 1600,
   BootstrapClosed: 1601,
   BootstrapRateLimited: 1602,
-  BootstrapUnavailable: 1603,
   BootstrapSessionInvalid: 1604,
-  OperatorCARejected: 1605,
+  BootstrapTokenInvalid: 1600,
+  BootstrapUnavailable: 1603,
+  CertRejected: 1610,
   CsrRejected: 1606,
-  OperatorCAManagedByConfig: 1607,
   NoRevocationSource: 1608,
   OperatorCAInUse: 1609,
-  CertRejected: 1610,
+  OperatorCAManagedByConfig: 1607,
+  OperatorCARejected: 1605,
+  OperatorCAUnconfigured: 1400,
   RequestInvalid: 1611,
 } as const;
 

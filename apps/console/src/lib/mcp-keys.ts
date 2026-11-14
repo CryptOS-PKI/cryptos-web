@@ -14,8 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import type { OperatorLevel } from "@/context/auth";
 import type { McpKey } from "@cryptos-pki/api-client/cryptos/fleet/v1/fleet_pb";
+
+import type { OperatorLevel } from "@/context/auth";
 
 import { fleetClient } from "@/lib/fleet/client";
 import { fleetMode } from "@/lib/fleet/mode";
@@ -23,6 +24,11 @@ import { fleetMode } from "@/lib/fleet/mode";
 // MCP agent keys. The manager stores only a hash of each key, so the plaintext
 // exists in exactly one place: the CreateMcpKey response, which the create
 // dialog shows once and then drops.
+
+export interface CreatedMcpKey {
+  key: McpKeyRow;
+  plaintextKey: string;
+}
 
 export interface McpKeyRow {
   clientName: string;
@@ -35,11 +41,6 @@ export interface McpKeyRow {
   operatorSerial: string;
   revoked: boolean;
   revokedAt: string;
-}
-
-export interface CreatedMcpKey {
-  key: McpKeyRow;
-  plaintextKey: string;
 }
 
 const LEVELS: OperatorLevel[] = ["viewer", "operator", "admin"];

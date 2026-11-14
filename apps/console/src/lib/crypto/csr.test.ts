@@ -77,13 +77,13 @@ describe("parseCsr", () => {
   });
 
   it("rejects an empty paste with an instruction", async () => {
-    await expect(parseCsr("   ")).rejects.toThrow(/paste a pkcs#10/i);
+    await expect(parseCsr(" ".repeat(3))).rejects.toThrow(/paste a pkcs#10/i);
   });
 
   // A truncated paste is the common accident, and it must not reach the node.
   it("rejects a request whose signature does not verify", async () => {
     const pem = await makeCsr("host.acme.example", P384, P384_SIGN);
-    const body = pem.replace(/-----[^-]+-----/g, "").replace(/\s/g, "");
+    const body = pem.replaceAll(/-----[^-]+-----/g, "").replaceAll(/\s/g, "");
     // Flip bits inside the signature, which trails the request body.
     const mangledBody =
       body.slice(0, -8) + (body.slice(-8) === "AAAAAAAA" ? "BBBBBBBB" : "AAAAAAAA");

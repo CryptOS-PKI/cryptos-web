@@ -25,7 +25,7 @@ import {
 } from "@/lib/adapters";
 
 // currentMode drives the mocked fleetMode(); each describe sets it.
-let currentMode: "live" | "live-auth" | "mock" = "mock";
+let currentMode: "live-auth" | "live" | "mock" = "mock";
 const listAdapters = vi.fn();
 const setAdapterEnabled = vi.fn();
 

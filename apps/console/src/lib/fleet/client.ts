@@ -16,7 +16,6 @@ limitations under the License.
 
 import { createClient } from "@connectrpc/connect";
 import { createConnectTransport } from "@connectrpc/connect-web";
-
 import { FleetService } from "@cryptos-pki/api-client/cryptos/fleet/v1/fleet_pb";
 
 import { reportApiErrors } from "@/lib/fleet/error-reporter";

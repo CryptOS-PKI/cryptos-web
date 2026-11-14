@@ -28,6 +28,6 @@ describe("listNodeTsaCertificates (mock mode)", () => {
   it("orders certificates newest first", async () => {
     const certificates = await listNodeTsaCertificates("acme-issuing-01");
     const notBefores = certificates.map((c) => c.notBefore);
-    expect([...notBefores].sort().reverse()).toEqual(notBefores);
+    expect([...notBefores].sort((a, b) => b.localeCompare(a))).toEqual(notBefores);
   });
 });

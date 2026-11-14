@@ -23,9 +23,6 @@ limitations under the License.
 // A manager whose Postgres store is unreachable answers 503 with
 // status: "unavailable", still with a storage body.
 
-export type StorageMode = "memory" | "postgres";
-export type StorageState = "degraded" | "ok" | "unavailable";
-
 export interface HealthStatus {
   status: "degraded" | "ok" | "unavailable";
   storage: {
@@ -34,6 +31,9 @@ export interface HealthStatus {
     version?: string;
   };
 }
+export type StorageMode = "memory" | "postgres";
+
+export type StorageState = "degraded" | "ok" | "unavailable";
 
 const isHealthStatus = (value: unknown): value is HealthStatus =>
   typeof value === "object" &&

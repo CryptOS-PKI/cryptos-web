@@ -22,6 +22,21 @@ import type { IdentityState, Node, NodeRole } from "@/lib/mock";
 // vertical band so siblings never overlap. Coordinates are in an abstract graph
 // space; the view fits/pans/zooms over the computed bounds.
 
+/** Bounding box of all placed nodes (before padding). */
+export interface Bounds {
+  maxX: number;
+  maxY: number;
+  minX: number;
+  minY: number;
+}
+
+/** A parent -> child trust edge, keyed by node name, colored by the child state. */
+export interface Edge {
+  from: string;
+  state: IdentityState;
+  to: string;
+}
+
 /** A CA placed at graph-space coordinates. */
 export interface Placed {
   cn: string;
@@ -34,21 +49,6 @@ export interface Placed {
   state: IdentityState;
   x: number;
   y: number;
-}
-
-/** A parent -> child trust edge, keyed by node name, colored by the child state. */
-export interface Edge {
-  from: string;
-  state: IdentityState;
-  to: string;
-}
-
-/** Bounding box of all placed nodes (before padding). */
-export interface Bounds {
-  maxX: number;
-  maxY: number;
-  minX: number;
-  minY: number;
 }
 
 export interface TreeLayout {

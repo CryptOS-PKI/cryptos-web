@@ -88,14 +88,14 @@ const exportShroudedPkcs8 = async (
     ["deriveKey"],
   );
   const aesKey = await crypto.subtle.deriveKey(
-    { name: "PBKDF2", salt, iterations: PBKDF2_ITERATIONS, hash: "SHA-256" },
+    { hash: "SHA-256", iterations: PBKDF2_ITERATIONS, name: "PBKDF2", salt },
     baseKey,
-    { name: "AES-CBC", length: 256 },
+    { length: 256, name: "AES-CBC" },
     false,
     ["encrypt"],
   );
   const ciphertext = new Uint8Array(
-    await crypto.subtle.encrypt({ name: "AES-CBC", iv }, aesKey, pkcs8),
+    await crypto.subtle.encrypt({ iv, name: "AES-CBC" }, aesKey, pkcs8),
   );
   return encodeEncryptedPrivateKeyInfo(salt, PBKDF2_ITERATIONS, iv, ciphertext);
 };
@@ -157,21 +157,25 @@ const fillRepeated = (source: Uint8Array, length: number): Uint8Array => {
 // function instead. It is used ONLY for the integrity MAC KDF -- the private
 // key itself is sealed by WebCrypto's PBKDF2 + AES.
 const K256 = [
-  0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
-  0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
-  0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
-  0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
-  0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
-  0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
-  0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
-  0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
+  0x42_8a_2f_98, 0x71_37_44_91, 0xb5_c0_fb_cf, 0xe9_b5_db_a5, 0x39_56_c2_5b, 0x59_f1_11_f1,
+  0x92_3f_82_a4, 0xab_1c_5e_d5, 0xd8_07_aa_98, 0x12_83_5b_01, 0x24_31_85_be, 0x55_0c_7d_c3,
+  0x72_be_5d_74, 0x80_de_b1_fe, 0x9b_dc_06_a7, 0xc1_9b_f1_74, 0xe4_9b_69_c1, 0xef_be_47_86,
+  0x0f_c1_9d_c6, 0x24_0c_a1_cc, 0x2d_e9_2c_6f, 0x4a_74_84_aa, 0x5c_b0_a9_dc, 0x76_f9_88_da,
+  0x98_3e_51_52, 0xa8_31_c6_6d, 0xb0_03_27_c8, 0xbf_59_7f_c7, 0xc6_e0_0b_f3, 0xd5_a7_91_47,
+  0x06_ca_63_51, 0x14_29_29_67, 0x27_b7_0a_85, 0x2e_1b_21_38, 0x4d_2c_6d_fc, 0x53_38_0d_13,
+  0x65_0a_73_54, 0x76_6a_0a_bb, 0x81_c2_c9_2e, 0x92_72_2c_85, 0xa2_bf_e8_a1, 0xa8_1a_66_4b,
+  0xc2_4b_8b_70, 0xc7_6c_51_a3, 0xd1_92_e8_19, 0xd6_99_06_24, 0xf4_0e_35_85, 0x10_6a_a0_70,
+  0x19_a4_c1_16, 0x1e_37_6c_08, 0x27_48_77_4c, 0x34_b0_bc_b5, 0x39_1c_0c_b3, 0x4e_d8_aa_4a,
+  0x5b_9c_ca_4f, 0x68_2e_6f_f3, 0x74_8f_82_ee, 0x78_a5_63_6f, 0x84_c8_78_14, 0x8c_c7_02_08,
+  0x90_be_ff_fa, 0xa4_50_6c_eb, 0xbe_f9_a3_f7, 0xc6_71_78_f2,
 ];
 
 const rotr = (x: number, n: number): number => (x >>> n) | (x << (32 - n));
 
 const sha256Sync = (msg: Uint8Array): Uint8Array => {
   const h = [
-    0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19,
+    0x6a_09_e6_67, 0xbb_67_ae_85, 0x3c_6e_f3_72, 0xa5_4f_f5_3a, 0x51_0e_52_7f, 0x9b_05_68_8c,
+    0x1f_83_d9_ab, 0x5b_e0_cd_19,
   ];
   const bitLen = msg.length * 8;
   const withOne = msg.length + 1;
@@ -181,7 +185,7 @@ const sha256Sync = (msg: Uint8Array): Uint8Array => {
   // 64-bit big-endian length in the final 8 bytes (message length fits in 32 bits here).
   const dv = new DataView(padded.buffer);
   dv.setUint32(padded.length - 4, bitLen >>> 0);
-  dv.setUint32(padded.length - 8, Math.floor(bitLen / 0x100000000));
+  dv.setUint32(padded.length - 8, Math.floor(bitLen / 0x1_00_00_00_00));
 
   const w = new Uint32Array(64);
   for (let off = 0; off < padded.length; off += 64) {
@@ -258,7 +262,7 @@ const buildMacData = async (
   const hmacKey = await crypto.subtle.importKey(
     "raw",
     bufferOf(macKey),
-    { name: "HMAC", hash: "SHA-256" },
+    { hash: "SHA-256", name: "HMAC" },
     false,
     ["sign"],
   );

@@ -14,8 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import type { OperatorLevel } from "@/context/auth";
 import type { Approval } from "@cryptos-pki/api-client/cryptos/fleet/v1/fleet_pb";
+
+import type { OperatorLevel } from "@/context/auth";
 
 import { fleetClient } from "@/lib/fleet/client";
 import { fleetMode } from "@/lib/fleet/mode";
@@ -56,7 +57,7 @@ export const canDecide = (
   approval: Pick<ApprovalRow, "requiredLevel" | "status">,
 ): boolean => {
   const required = LEVELS.indexOf(approval.requiredLevel);
-  return approval.status === "pending" && required >= 0 && LEVELS.indexOf(level) >= required;
+  return approval.status === "pending" && required !== -1 && LEVELS.indexOf(level) >= required;
 };
 
 const toRow = (a: Approval): ApprovalRow => ({

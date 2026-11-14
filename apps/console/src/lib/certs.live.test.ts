@@ -63,7 +63,7 @@ describe("revokeCert live path", () => {
 
     expect(revokeCertificate).toHaveBeenCalledTimes(1);
     expect(revokeCertificate).toHaveBeenCalledWith(
-      expect.objectContaining({ serialHex: "0A1B", reasonCode: 1 }),
+      expect.objectContaining({ reasonCode: 1, serialHex: "0A1B" }),
     );
   });
 
@@ -71,7 +71,7 @@ describe("revokeCert live path", () => {
     await revokeCert("0C0D", "cessationOfOperation");
 
     expect(revokeCertificate).toHaveBeenCalledWith(
-      expect.objectContaining({ serialHex: "0C0D", reasonCode: 5 }),
+      expect.objectContaining({ reasonCode: 5, serialHex: "0C0D" }),
     );
   });
 });

@@ -17,10 +17,6 @@ limitations under the License.
 import { fleetClient } from "@/lib/fleet/client";
 import { fleetMode } from "@/lib/fleet/mode";
 
-// NodeOutcome mirrors the node's own Outcome enum (audit.proto), stripped of
-// its OUTCOME_ prefix by the manager before it reaches the web.
-export type NodeOutcome = "DENIED" | "ERROR" | "OK" | "UNSPECIFIED";
-
 // NodeAuditEvent is one entry from a managed node's own hash-chained audit
 // log, distinct from the manager's own action log (lib/audit.ts).
 export interface NodeAuditEvent {
@@ -38,6 +34,10 @@ export interface NodeAuditPage {
   entries: NodeAuditEvent[];
   nextPageToken: string;
 }
+
+// NodeOutcome mirrors the node's own Outcome enum (audit.proto), stripped of
+// its OUTCOME_ prefix by the manager before it reaches the web.
+export type NodeOutcome = "DENIED" | "ERROR" | "OK" | "UNSPECIFIED";
 
 export interface VerifyNodeAuditChainResult {
   entryCount: number;

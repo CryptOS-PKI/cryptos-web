@@ -14,9 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import type { MachineConfig } from "@cryptos-pki/api-client/cryptos/node/v1/config_pb";
+
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { MachineConfig } from "@cryptos-pki/api-client/cryptos/node/v1/config_pb";
 import { applyNodeConfig, formatList, getNodeConfig, parseList } from "@/lib/config";
 
 const getNodeConfigRpc = vi.fn();
@@ -35,9 +36,9 @@ const fetchedConfig = (): MachineConfig =>
   ({
     apiVersion: "cryptos.dev/v1alpha1",
     kind: "MachineConfig",
+    management: { managerCn: "fm-op", operatorSurfaceReadonly: false, trustPem: "trust-pem" },
+    pki: { revocationBaseUrl: "http://pki.acme/old/crl", rootKeyAlg: "ECDSA-P384" },
     role: { kind: "intermediate" },
-    pki: { rootKeyAlg: "ECDSA-P384", revocationBaseUrl: "http://pki.acme/old/crl" },
-    management: { managerCn: "fm-op", trustPem: "trust-pem", operatorSurfaceReadonly: false },
   }) as unknown as MachineConfig;
 
 describe("getNodeConfig (live)", () => {
@@ -69,7 +70,7 @@ describe("applyNodeConfig (live)", () => {
   it("sends the full config to the fleet client and surfaces requiresReboot", async () => {
     const full = fetchedConfig();
     const result = await applyNodeConfig("acme-int-01", full);
-    expect(applyNodeConfigRpc).toHaveBeenCalledWith({ nodeName: "acme-int-01", config: full });
+    expect(applyNodeConfigRpc).toHaveBeenCalledWith({ config: full, nodeName: "acme-int-01" });
     expect(result.requiresReboot).toBe(true);
     expect(result.generation).toBe(9);
   });
@@ -88,7 +89,7 @@ describe("parseList / formatList", () => {
       "10.0.1.53",
       "pki.example.org",
     ]);
-    expect(parseList("   ")).toEqual([]);
+    expect(parseList(" ".repeat(3))).toEqual([]);
   });
 
   it("formats a list so parseList reads it back unchanged", () => {

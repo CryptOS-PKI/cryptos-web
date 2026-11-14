@@ -14,19 +14,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { recordAudit } from "@/lib/audit";
-import { fleetClient } from "@/lib/fleet/client";
-import { fleetMode } from "@/lib/fleet/mode";
-import { identityStateLabels, roleLabels } from "@/lib/fleet/labels";
-import type { Node, ProtocolKind } from "@/lib/mock";
-import { refreshLiveNodes, setMockNodeProtocol } from "@/lib/nodes";
-
 import { ServiceProtocol } from "@cryptos-pki/api-client/cryptos/node/v1/status_pb";
 
-// ProtocolRoute is every protocol the console lists, including the two with no
-// node contract yet (#84). It is a superset of ProtocolKind (the mock.ts union
-// a node can actually report).
-export type ProtocolRoute = ProtocolKind | "ms-autoenroll" | "scep";
+import type { Node, ProtocolKind } from "@/lib/mock";
+
+import { recordAudit } from "@/lib/audit";
+import { fleetClient } from "@/lib/fleet/client";
+import { identityStateLabels, roleLabels } from "@/lib/fleet/labels";
+import { fleetMode } from "@/lib/fleet/mode";
+import { refreshLiveNodes, setMockNodeProtocol } from "@/lib/nodes";
 
 // ProtocolInfo is this catalog's one entry per protocol. `serviceProtocol` is
 // set only for a protocol a node can report and switch (#84: SCEP and Windows
@@ -38,6 +34,11 @@ export interface ProtocolInfo {
   readonly rfc: string;
   readonly serviceProtocol?: ServiceProtocol;
 }
+
+// ProtocolRoute is every protocol the console lists, including the two with no
+// node contract yet (#84). It is a superset of ProtocolKind (the mock.ts union
+// a node can actually report).
+export type ProtocolRoute = "ms-autoenroll" | "scep" | ProtocolKind;
 
 export const PROTOCOLS: ProtocolInfo[] = [
   {

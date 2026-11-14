@@ -14,17 +14,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import type { EnrollmentRequest as ProtoEnrollmentRequest } from "@cryptos-pki/api-client/cryptos/fleet/v1/fleet_pb";
+
 import { useEffect, useSyncExternalStore } from "react";
+
+import type { Node, NodeRole } from "@/lib/mock";
 
 import { recordAudit } from "@/lib/audit";
 import { canIssue, type CertKind } from "@/lib/certs";
 import { fleetClient } from "@/lib/fleet/client";
 import { fleetMode } from "@/lib/fleet/mode";
-import type { Node, NodeRole } from "@/lib/mock";
 import { mockEnrollments } from "@/lib/mock-fixtures";
 import { addNode, getNodeByCn } from "@/lib/nodes";
-
-import type { EnrollmentRequest as ProtoEnrollmentRequest } from "@cryptos-pki/api-client/cryptos/fleet/v1/fleet_pb";
 
 export interface Attestation {
   nodeId: string;
@@ -143,7 +144,7 @@ const subscribeLive = (l: () => void): (() => void) => {
   return () => liveListeners.delete(l);
 };
 
-const knownRoles = new Set<NodeRole>(["root", "intermediate", "issuing"]);
+const knownRoles = new Set<NodeRole>(["intermediate", "issuing", "root"]);
 const knownStatuses = new Set<EnrollmentStatus>(["APPROVED", "PENDING", "REJECTED"]);
 const knownKinds = new Set<EnrollmentKind>(["LINK", "SUBORDINATE"]);
 
@@ -315,7 +316,7 @@ export const approveEnrollment = async (id: string, link?: LinkApprovalMaterial)
     mockApproveEnrollment(id);
     return;
   }
-  await fleetClient().approveEnrollment({ id, ...(link ?? {}) });
+  await fleetClient().approveEnrollment({ id, ...link });
   await refreshLiveEnrollments();
 };
 

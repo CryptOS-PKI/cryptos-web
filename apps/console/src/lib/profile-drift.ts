@@ -16,6 +16,14 @@ limitations under the License.
 
 import type { CertProfile } from "@/lib/profiles";
 
+// DriftRow is one profile name's drift verdict. fieldDiffs is populated only
+// for a drifted row, listing every field that differs in a deterministic order.
+export interface DriftRow {
+  fieldDiffs?: FieldDiff[];
+  name: string;
+  status: DriftStatus;
+}
+
 // DriftStatus classifies a profile name across the catalog and a node:
 //   in-sync     the same name exists on both and every field matches
 //   drifted     the same name exists on both but a field differs
@@ -28,14 +36,6 @@ export interface FieldDiff {
   catalog: string;
   field: string;
   node: string;
-}
-
-// DriftRow is one profile name's drift verdict. fieldDiffs is populated only
-// for a drifted row, listing every field that differs in a deterministic order.
-export interface DriftRow {
-  fieldDiffs?: FieldDiff[];
-  name: string;
-  status: DriftStatus;
 }
 
 // render turns a comparable field value into a stable display string.
@@ -80,10 +80,10 @@ const diffProfiles = (catalog: CertProfile, node: CertProfile): FieldDiff[] => {
   const cv = fieldValues(catalog);
   const nv = fieldValues(node);
   const diffs: FieldDiff[] = [];
-  for (let i = 0; i < cv.length; i += 1) {
-    const c = render(cv[i].value);
+  for (const [i, element] of cv.entries()) {
+    const c = render(element.value);
     const n = render(nv[i].value);
-    if (c !== n) diffs.push({ catalog: c, field: cv[i].field, node: n });
+    if (c !== n) diffs.push({ catalog: c, field: element.field, node: n });
   }
   return diffs;
 };

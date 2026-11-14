@@ -1,0 +1,64 @@
+name: Console screenshots (Playwright)
+
+# Captures the console's main screens against fixture data (the mock build,
+# no real keys or hosts) and saves them as an artifact, so the website and
+# docs take their pictures from CI for each release instead of hand captures.
+#
+# Light and dark, desktop and mobile, full page. Runs on pull requests that
+# touch the console or the UI package (not while the PR is a draft) and on
+# every v* tag, so each release has its own named set.
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - "apps/console/**"
+      - "packages/ui/**"
+      - ".github/workflows/ci-screenshots.yml"
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+# A tag push has no pull request number, so key on the ref.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  screenshots:
+    name: Console screenshots (Playwright)
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chromium
+        # The browser build is the one the locked @playwright/test pins.
+        run: npx playwright install --with-deps chromium
+        working-directory: apps/console
+
+      - name: Capture screenshots
+        run: npx playwright test
+        working-directory: apps/console
+
+      - name: Save screenshots
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: console-screenshots-${{ github.ref_type == 'tag' && github.ref_name || format('pr-{0}', github.event.pull_request.number) }}
+          path: apps/console/screenshots
+          if-no-files-found: error
+          retention-days: 90

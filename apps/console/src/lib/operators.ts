@@ -32,6 +32,34 @@ export const OPERATOR_LEVELS: OperatorLevel[] = ["viewer", "operator", "admin"];
 
 export const OPERATOR_LEVEL_OID = "1.3.6.1.4.1.59999.1.1";
 
+export interface CreatedCredentialRequest {
+  csrPem: string;
+  expiresAt: string;
+  extfileSection: string;
+  opensslCommand: string;
+  requestId: string;
+}
+
+export interface CredentialRequestRow {
+  completedSerial: string;
+  createdAt: string;
+  createdByCn: string;
+  csrPem: string;
+  email: string;
+  expiresAt: string;
+  fullName: string;
+  id: string;
+  level: string;
+  state: string;
+}
+
+export interface DenyResult {
+  issuerSha256: string;
+  revokedAt: string;
+  serialHex: string;
+  warnings: string[];
+}
+
 export interface OperatorCredentialRow {
   commonName: string;
   crlRevoked: boolean;
@@ -49,36 +77,8 @@ export interface OperatorCredentialRow {
   serialHex: string;
 }
 
-export interface CredentialRequestRow {
-  completedSerial: string;
-  createdAt: string;
-  createdByCn: string;
-  csrPem: string;
-  email: string;
-  expiresAt: string;
-  fullName: string;
-  id: string;
-  level: string;
-  state: string;
-}
-
-export interface CreatedCredentialRequest {
-  csrPem: string;
-  expiresAt: string;
-  extfileSection: string;
-  opensslCommand: string;
-  requestId: string;
-}
-
 export interface RecordedCredential {
   credential: OperatorCredentialRow;
-  warnings: string[];
-}
-
-export interface DenyResult {
-  issuerSha256: string;
-  revokedAt: string;
-  serialHex: string;
   warnings: string[];
 }
 
@@ -108,7 +108,9 @@ const hexPair = (b: number): string => b.toString(16).padStart(2, "0").toUpperCa
 // manager returns it. Mock mode and the anonymous request page use it; live
 // screens show the manager's own copy.
 export const levelExtfileSection = (level: OperatorLevel): string => {
-  const der = [0x13, level.length, ...new TextEncoder().encode(level)].map(hexPair).join(":");
+  const der = [0x13, level.length, ...new TextEncoder().encode(level)]
+    .map((b) => hexPair(b))
+    .join(":");
   return [
     `[ op_${level} ]`,
     "basicConstraints       = critical, CA:FALSE",

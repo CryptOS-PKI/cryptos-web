@@ -16,19 +16,19 @@ limitations under the License.
 
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { getNode } from "@/lib/nodes";
 import {
-  MOCK_NOW_MS,
+  __resetCerts,
   allCerts,
   canIssue,
   certsFor,
   daysUntilExpiry,
   expiryClass,
   issueCert,
+  MOCK_NOW_MS,
   renewCert,
   revokeCert,
-  __resetCerts,
 } from "@/lib/certs";
+import { getNode } from "@/lib/nodes";
 
 describe("canIssue", () => {
   it("gates by role and state", () => {
@@ -50,10 +50,10 @@ describe("cert store", () => {
   it("issueCert adds a VALID cert to the issuer", async () => {
     const before = certsFor("acme-issuing-01").length;
     const cert = await issueCert("acme-issuing-01", {
-      kind: "leaf",
-      subjectCn: "web.acme.example",
-      sans: ["web.acme.example"],
       eku: ["serverAuth"],
+      kind: "leaf",
+      sans: ["web.acme.example"],
+      subjectCn: "web.acme.example",
       validityDays: 90,
     });
     expect(cert.status).toBe("VALID");
@@ -64,10 +64,10 @@ describe("cert store", () => {
 
   it("revokeCert flips status and records the reason", async () => {
     const cert = await issueCert("acme-issuing-01", {
-      kind: "leaf",
-      subjectCn: "api.acme.example",
-      sans: [],
       eku: ["serverAuth"],
+      kind: "leaf",
+      sans: [],
+      subjectCn: "api.acme.example",
       validityDays: 30,
     });
     revokeCert(cert.serial, "keyCompromise");
@@ -112,11 +112,11 @@ describe("renewCert", () => {
 
   it("issues a fresh cert with the same subject/profile and supersedes the old one", async () => {
     const orig = await issueCert("acme-issuing-01", {
+      eku: ["server_auth"],
       kind: "leaf",
+      profile: "TLS Server (LDAPS)",
       subjectCn: "renew.acme.example",
       validityDays: 90,
-      profile: "TLS Server (LDAPS)",
-      eku: ["server_auth"],
     });
     const fresh = renewCert(orig.serial);
     expect(fresh).toBeDefined();

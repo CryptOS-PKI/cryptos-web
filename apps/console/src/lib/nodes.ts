@@ -14,19 +14,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import type { NodeSummary } from "@cryptos-pki/api-client/cryptos/fleet/v1/fleet_pb";
+
+import {
+  type ProtocolStatus,
+  ServiceProtocol,
+} from "@cryptos-pki/api-client/cryptos/node/v1/status_pb";
 import { useEffect, useSyncExternalStore } from "react";
+
+import type { IdentityState, Node, NodeProtocolStatus, ProtocolKind } from "@/lib/mock";
 
 import { fleetClient } from "@/lib/fleet/client";
 import { fleetMode } from "@/lib/fleet/mode";
 import { validateNodeName } from "@/lib/fleet/node-name";
 import { mockNodes } from "@/lib/mock-fixtures";
-import type { IdentityState, Node, NodeProtocolStatus, ProtocolKind } from "@/lib/mock";
-
-import type { NodeSummary } from "@cryptos-pki/api-client/cryptos/fleet/v1/fleet_pb";
-import {
-  ServiceProtocol,
-  type ProtocolStatus,
-} from "@cryptos-pki/api-client/cryptos/node/v1/status_pb";
 
 // The mock fleet. Seeded from the mock fixture; mutated by enrollment approval
 // (addNode). useSyncExternalStore lets the topology, nodes table, and root list
@@ -65,7 +66,7 @@ const subscribeLive = (l: () => void): (() => void) => {
   return () => liveListeners.delete(l);
 };
 
-const knownIdentityStates = new Set<IdentityState>(["ESTABLISHED", "AWAITING_CERT", "REVOKED"]);
+const knownIdentityStates = new Set<IdentityState>(["AWAITING_CERT", "ESTABLISHED", "REVOKED"]);
 
 // ServiceProtocol -> the web's ProtocolKind. SCEP, TSA and Windows
 // autoenrollment have no Pki block yet (cryptos#185, #108), so a node never
@@ -112,7 +113,7 @@ export const fromSummary = (summary: NodeSummary): Node => ({
   // parent.
   parentCn: summary.issuer && summary.issuer !== summary.cn ? summary.issuer : undefined,
   protocols: (summary.protocols ?? [])
-    .map(fromProtocolStatus)
+    .map((p) => fromProtocolStatus(p))
     .filter((p): p is NodeProtocolStatus => p !== undefined),
   rebootRequired: summary.rebootRequired,
   revoked: 0,

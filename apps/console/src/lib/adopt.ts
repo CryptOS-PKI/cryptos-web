@@ -14,13 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { create } from "@bufbuild/protobuf";
-
 import type { MachineConfig } from "@cryptos-pki/api-client/cryptos/node/v1/config_pb";
+
+import { create } from "@bufbuild/protobuf";
 import {
   type InstallDisk,
   InstallDiskSchema,
 } from "@cryptos-pki/api-client/cryptos/node/v1/node_pb";
+
 import { fleetClient } from "@/lib/fleet/client";
 import { fleetMode } from "@/lib/fleet/mode";
 
@@ -163,16 +164,16 @@ export const listInstallDisks = async (
   if (fleetMode() === "mock") {
     return [
       create(InstallDiskSchema, {
-        path: "/dev/nvme0n1",
-        sizeBytes: 512n * 1024n * 1024n * 1024n,
         model: "Mock NVMe SSD",
+        path: "/dev/nvme0n1",
         rotational: false,
+        sizeBytes: 512n * 1024n * 1024n * 1024n,
       }),
       create(InstallDiskSchema, {
-        path: "/dev/sda",
-        sizeBytes: 1024n * 1024n * 1024n * 1024n,
         model: "Mock SATA disk",
+        path: "/dev/sda",
         rotational: true,
+        sizeBytes: 1024n * 1024n * 1024n * 1024n,
       }),
     ];
   }
@@ -198,7 +199,7 @@ export const formatDiskSize = (bytes: bigint): string => {
 // manager/node error propagates out of the iteration for the wizard to show
 // inline rather than being swallowed. No secret is sent to an unpinned
 // endpoint: the operator-confirmed fingerprint is passed as the pin.
-export async function* adoptNode(
+export const adoptNode = async function* (
   endpoint: string,
   pinnedCertSha256: string,
   config: MachineConfig,
@@ -256,7 +257,7 @@ export async function* adoptNode(
         });
         // Keep a mismatch that nobody is awaiting yet from surfacing as an
         // unhandled rejection; it still rejects the await below.
-        confirmed.catch(() => undefined);
+        confirmed.catch(() => {});
         yield s;
         await confirmed;
         continue;
@@ -279,4 +280,4 @@ export async function* adoptNode(
       presentedCertSha256: message.presentedCertSha256,
     };
   }
-}
+};

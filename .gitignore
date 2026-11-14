@@ -21,3 +21,9 @@ plan/
 
 # brainstorming visual-companion scratch
 .superpowers/
+
+# Playwright
+test-results/
+playwright-report/
+screenshots/
+dist-shots*/

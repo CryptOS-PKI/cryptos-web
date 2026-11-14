@@ -15,9 +15,9 @@ limitations under the License.
 */
 
 import { Code, ConnectError } from "@connectrpc/connect";
+import { ErrorCode, ErrorReason } from "@cryptos-pki/api-client/cryptos/fleet/v1/errors_pb";
 import { describe, expect, it } from "vitest";
 
-import { ErrorCode, ErrorReason } from "@cryptos-pki/api-client/cryptos/fleet/v1/errors_pb";
 import { describeFleetError, fleetErrorMessage } from "@/lib/fleet/error-copy";
 
 const refusal = (code: number, reason?: string): ConnectError =>
